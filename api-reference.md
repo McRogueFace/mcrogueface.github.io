@@ -49,6 +49,8 @@ import mcrfpy
 
 ### Scene Management
 
+**⚠️ Caution:** Scene Management is currently being transitioned in McRogueFace. `createScene` and `setScene` are some of the oldest methods in the API, from when this game engine was a fork of [COMP 4300 taught by Dave Churchill, free on Youtube](https://www.youtube.com/playlist?list=PL_xRyXins84_Sq7yZkxGP_MgYAH-Zo8Uu). a `Scene` object is available, and will be the only way to manage scenes in the near future.
+
 #### `createScene(name: str) -> None`
 
 Creates a new empty scene with the given name. Scenes are containers for all game objects and UI elements.
@@ -191,6 +193,8 @@ while len(ui) > 0:
 
 ### Timer System
 
+**⚠️ Caution:** a `Timer` class is available in the Python API already, and will become the preferred/only way to interact with timers soon.
+
 #### `setTimer(name: str, callback: callable, interval_ms: int) -> None`
 
 Creates a recurring timer that calls the specified function at regular intervals.
@@ -285,6 +289,8 @@ mcrfpy.setTimer("limited", limited_timer, 1000)
 ---
 
 ### Audio Functions
+
+**⚠️ Caution:** The Audio system of McRogueFace will become more object-oriented *soon* (TM).
 
 #### `createSoundBuffer(filename: str) -> int`
 
@@ -677,61 +683,28 @@ Sets a function to handle keyboard input for the current scene. The callback rec
 **Examples:**
 ```python
 # Basic keyboard handler
-def handle_keypress(key):
+def handle_keypress(key, state):
     print(f"Key pressed: {key}")
     
-    if key == ord('W'):
+    if state != "start": # can also be "end"
+        return # if you're not tracking held/released keys, you can probably drop "end" events
+
+    if key == 'W':
         player.move_up()
-    elif key == ord('A'):
+    elif key == 'A':
         player.move_left()
-    elif key == ord('S'):
+    elif key == 'S':
         player.move_down()
-    elif key == ord('D'):
+    elif key == 'D':
         player.move_right()
 
 mcrfpy.keypressScene(handle_keypress)
-
-# Arrow keys and special keys
-def game_controls(key):
-    # Arrow keys
-    if key == 262:  # Right arrow
-        player.move(1, 0)
-    elif key == 263:  # Left arrow
-        player.move(-1, 0)
-    elif key == 264:  # Down arrow
-        player.move(0, 1)
-    elif key == 265:  # Up arrow
-        player.move(0, -1)
-    
-    # Special keys
-    elif key == 32:  # Space
-        player.jump()
-    elif key == 27:  # Escape
-        pause_game()
-    elif key == 13:  # Enter
-        interact()
-
-# Different handlers for different scenes
-def menu_keys(key):
-    if key == 265:  # Up
-        menu.previous_option()
-    elif key == 264:  # Down
-        menu.next_option()
-    elif key == 13:  # Enter
-        menu.select_option()
-
-# Set handler based on scene
-if mcrfpy.currentScene() == "menu":
-    mcrfpy.keypressScene(menu_keys)
-else:
-    mcrfpy.keypressScene(game_controls)
 ```
 
 **Notes:**
-- Only one handler per scene
-- Key codes are SFML key codes (not ASCII for special keys)
+- Only one handler per scene. `keypressScene` changes the active scene's keypress handler; this will be fixed when `Scene` objects are finished
+- Key codes are SFML key name strings (not ASCII for special keys)
 - Setting a new handler replaces the previous one
-- Handler is called only for key press, not release
 
 ---
 
@@ -1153,6 +1126,8 @@ def bring_to_front(element):
 
 ### EntityCollection
 
+**⚠️  EntityCollection cannot be instantiated.** Use a list, dictionary, or any other container to manage your entities. `EntityCollection` is the interface for C++ to handle rendering for entities that are placed on a Grid.
+
 Container for Entity objects on a Grid.
 
 **Methods:**
@@ -1438,6 +1413,8 @@ def clear_overlays():
 
 Visibility state for a specific grid position from an entity's perspective.
 
+💡 TCOD is used to calculate visible and discovered tiles - set walkable and transparent on the Grid tiles, and call `.update_visibility()` on the entity after moving or modifying terrain to get accurate `GridPointState` values from `Entity.at(x, y)`.
+
 **Properties:**
 - `visible` (bool): Whether this tile is currently visible
 - `discovered` (bool): Whether this tile has ever been seen
@@ -1465,23 +1442,6 @@ def render_fog_of_war(entity):
             else:
                 # Never seen - black
                 point.color_overlay = mcrfpy.Color(0, 0, 0, 255)
-
-# Update visibility
-def update_los(entity, range=8):
-    ex, ey = entity.pos
-    
-    # Clear current visibility
-    for x in range(100):
-        for y in range(100):
-            entity.at(x, y).visible = False
-    
-    # Calculate new visibility
-    for x in range(max(0, ex - range), min(100, ex + range + 1)):
-        for y in range(max(0, ey - range), min(100, ey + range + 1)):
-            if can_see(ex, ey, x, y):
-                state = entity.at(x, y)
-                state.visible = True
-                state.discovered = True
 
 # Check what player knows about a tile
 def examine_tile(x, y):
@@ -1521,6 +1481,10 @@ def find_path_using_memory(entity, target_x, target_y):
 ## Automation API
 
 The automation API (`mcrfpy.automation`) provides programmatic control over mouse and keyboard input for testing and automation.
+
+**⚠️) Caution:** The mouse input automation is in quite bad shape at the moment.
+
+**⚠️) Caution:** Don't start McRogueFace in headless mode without a scripted way to exit. The game will run with no interface, and You'll have to close the program with `Ctrl+C`.
 
 ### Screenshot
 
@@ -2476,7 +2440,7 @@ for i, option in enumerate(["Start", "Options", "Quit"]):
 
 ### `default_texture`
 
-The default texture (kenney_tinydungeon.png) with 16x16 sprites.
+The default texture (`kenney_tinydungeon.png`) with 16x16 sprites.
 
 **Type:** Texture
 
