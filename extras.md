@@ -357,7 +357,7 @@ Thank you to our [100+ contributors](https://github.com/mcrogueface/mcrogueface/
   <p>Join thousands of developers creating amazing roguelike games!</p>
   <div class="cta-buttons">
     <a href="quickstart.html" class="btn btn-primary btn-lg">Get Started</a>
-    <a href="https://discord.gg/mcrogueface" class="btn btn-secondary btn-lg">Join Discord</a>
+    <a href="https://github.com/jmccardle/McRogueFace" class="btn btn-secondary btn-lg">View Source</a>
   </div>
 </div>
 

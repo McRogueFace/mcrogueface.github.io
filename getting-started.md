@@ -212,7 +212,7 @@ Now that you understand the basics:
 1. **Explore the Examples**: Look at the Crypt of Sokoban source in `src/scripts/`
 2. **Read the API Reference**: [Full API Documentation](api-reference.md)
 3. **Try the Tutorials**: [Advanced tutorials](tutorials.md) for specific features
-4. **Join the Community**: Ask questions on [GitHub Discussions](https://github.com/jmcb/McRogueFace/discussions)
+4. **Study the Source**: Examine the [implementation](https://github.com/jmccardle/McRogueFace) for deeper understanding
 
 ## Common Issues
 

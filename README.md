@@ -26,16 +26,6 @@ This documentation is designed to be hosted on GitHub Pages. To build locally:
 2. Run `jekyll serve` in this directory
 3. View at `http://localhost:4000`
 
-## Contributing
-
-To contribute to the documentation:
-
-1. Fork this repository
-2. Make your changes
-3. Submit a pull request
-
-Please ensure all code examples are tested and working with the latest McRogueFace version.
-
 ## License
 
 Documentation is licensed under CC BY 4.0. Code examples are MIT licensed.

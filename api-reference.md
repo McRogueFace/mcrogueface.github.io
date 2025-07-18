@@ -4,7 +4,7 @@
 
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • **[API Reference](https://mcrogueface.github.io/api)** • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
+[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • **[API Reference](https://mcrogueface.github.io/api-reference)** • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
 
 ---
 

@@ -10,7 +10,7 @@ layout: default
 
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • **[C++ Extensions](https://mcrogueface.github.io/extending-cpp)**
+[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api-reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • **[C++ Extensions](https://mcrogueface.github.io/extending-cpp)**
 
 ---
 
@@ -27,7 +27,6 @@ layout: default
 7. [Testing Your Extension](#testing-extension)
 8. [Case Study: Creating a Custom Particle System](#case-study-particles)
 9. [Best Practices and Common Pitfalls](#best-practices)
-10. [Contributing Back to Core](#contributing)
 
 ## Introduction: When and Why to Extend in C++ {#introduction}
 
@@ -35,17 +34,19 @@ While McRogueFace provides a powerful Python API for game development, there are
 
 ### When to Extend in C++
 
-- **Performance-Critical Features**: Particle systems, complex collision detection, pathfinding algorithms
+- **Code That Runs Every Frame**: If you need logic to execute continuously without timer overhead, implement it in C++
 - **Hardware Integration**: Custom input devices, specialized rendering techniques
 - **Engine Features**: New UI components, audio effects, rendering pipelines
 - **Library Integration**: Bringing in external C++ libraries for physics, networking, etc.
 
 ### Benefits of C++ Extensions
 
-- **Native Performance**: Direct access to SFML and hardware acceleration
+- **Frame-Perfect Execution**: Code that needs to run every single frame should be in C++ to avoid timer overhead
 - **Memory Control**: Precise memory management for resource-intensive features
 - **Type Safety**: Compile-time checking and better IDE support
 - **Engine Integration**: Seamless integration with the existing C++ codebase
+
+Note: Python with NumPy can achieve excellent performance for many tasks. The main reason to use C++ is when you need code to run every frame without the overhead of timers - for this use case, implement directly in C++.
 
 ## Architecture Overview {#architecture-overview}
 
@@ -73,9 +74,22 @@ McRogueFace follows a layered architecture that makes it extensible:
 
 ### Key Components
 
-1. **UIDrawable Base Class**: All visual elements inherit from this
+1. **UIDrawable Base Class**: Abstract base class for all visual elements
+   - Derived classes: `UIFrame`, `UISprite`, `UICaption`, and `UIGrid`
+   - Can be drawn directly on scenes or nested within UIFrame containers
+   - Handles click event routing through the `click_at()` virtual method
+   - Click events propagate from top-level elements down through nested children
+
 2. **Scene System**: Manages game states and transitions
+   - `Scene` base class for C++ scenes
+   - `PyScene` for Python-controlled scenes with UI element management
+
 3. **Python Bindings**: CPython API integration for scripting
+   - McRogueFace operates on an "honor system" - Python scripts must return control
+   - The engine calls scripts when starting, but scripts must return to allow the game loop to run
+   - If a script doesn't return (e.g., infinite loop), McRogueFace will hang
+   - Event handlers can register callbacks and modify UI elements during execution
+
 4. **Resource Management**: Textures, fonts, and audio handling
 
 ## Setting Up Your Development Environment {#development-setup}
@@ -91,12 +105,16 @@ sudo apt-get install -y \
     python3.12-dev \
     git
 
-# macOS
-brew install cmake sfml python@3.12
 
 # Windows (using vcpkg)
 vcpkg install sfml
 ```
+
+> **Note**: On Windows, when building with CMake, use the correct command:
+> 
+> ```bash
+> cmake --build . --config Release --parallel
+> ```
 
 ### Building McRogueFace
 
@@ -157,6 +175,7 @@ McRogueFace/
 │   ├── Py*.h/cpp            # Python binding helpers
 │   ├── McRFPy_API.h/cpp     # Main Python API
 │   ├── Scene.h/cpp          # Scene management
+│   ├── PyScene.h/cpp        # Python scene management
 │   └── main.cpp             # Entry point
 ├── deps/                     # Dependencies
 │   ├── cpython/             # Python headers
@@ -219,6 +238,8 @@ public:
 ```
 
 ### Step 2: Add to PyObjectsEnum
+
+> **⚠️ Warning**: Creating new UI elements by adding to PyObjectsEnum has never been tested and may not work as expected. Consider using the alternative approach described in [Best Practices](#best-practices) instead.
 
 Update `src/UIDrawable.h`:
 
@@ -325,6 +346,8 @@ bool UIProgressBar::getProperty(const std::string& name, float& value) const {
 ```
 
 ## Adding Python Bindings {#python-bindings}
+
+> **⚠️ Warning**: This section on adding Python bindings is largely untested and may be overly complex. The binding process involves many intricate steps that can easily go wrong. Consider using existing UI elements and extending them in Python instead.
 
 Now let's expose our progress bar to Python.
 
@@ -765,6 +788,43 @@ frame.click = on_click
 
 ## Best Practices and Common Pitfalls {#best-practices}
 
+### Alternative to Creating New UI Elements
+
+> **Recommended Approach**: Instead of creating entirely new UI element types (which requires modifying PyObjectsEnum and has never been tested), consider configuring existing `Frame` elements and overriding their render methods:
+
+```python
+# Create a custom progress bar using Frame
+class ProgressBar:
+    def __init__(self, x, y, width, height):
+        self.frame = mcrfpy.Frame(x, y, width, height)
+        self.frame.fill_color = (50, 50, 50)  # Background
+        self.frame.outline = 2
+        self.frame.outline_color = (100, 100, 100)
+        
+        # Create fill as a child frame
+        self.fill = mcrfpy.Frame(2, 2, 0, height - 4)
+        self.fill.fill_color = (0, 255, 0)
+        self.frame.children.append(self.fill)
+        
+        self._progress = 0.0
+    
+    @property
+    def progress(self):
+        return self._progress
+    
+    @progress.setter
+    def progress(self, value):
+        self._progress = max(0.0, min(1.0, value))
+        # Update fill width
+        self.fill.w = (self.frame.w - 4) * self._progress
+```
+
+This approach:
+- Works with the existing codebase
+- Requires no C++ modifications
+- Is fully tested and supported
+- Can be extended with Python inheritance
+
 ### Memory Management
 
 **✅ DO:**
@@ -778,6 +838,53 @@ frame.click = on_click
 - Create circular references between C++ and Python objects
 
 ### Python Integration
+
+**✅ DO:**
+```cpp
+// Register with Python object cache for proper type preservation
+static PyObject* create_custom_element(PyObject* self, PyObject* args) {
+    auto element = std::make_shared<UICustomElement>();
+    
+    // CRITICAL: Without this, derived types are lost!
+    // The Python object cache maintains weak references
+    auto py_obj = (PyUICustomElementObject*)type->tp_alloc(type, 0);
+    py_obj->data = element;
+    
+    // Register in cache to preserve type information
+    PythonObjectCache::register_object(element.get(), (PyObject*)py_obj);
+    
+    return (PyObject*)py_obj;
+}
+```
+
+**Example: Python Object Cache Requirements**
+
+Extension classes must properly interact with the Python object cache:
+
+```cpp
+// In your custom element's Python getter
+static PyObject* UICustomElement_get_child(PyObject* self, void* closure) {
+    auto obj = (PyUICustomElementObject*)self;
+    auto child = obj->data->getChild();
+    
+    // Check cache first - this preserves derived Python types!
+    PyObject* cached = PythonObjectCache::get(child.get());
+    if (cached) {
+        Py_INCREF(cached);
+        return cached;
+    }
+    
+    // Create new Python object and cache it
+    auto py_child = create_python_wrapper(child);
+    PythonObjectCache::register_object(child.get(), py_child);
+    return py_child;
+}
+```
+
+Without proper cache management:
+- Python subclasses of your C++ types will lose their Python-specific attributes
+- Type information gets lost when objects round-trip through C++
+- `isinstance()` checks may fail unexpectedly
 
 **✅ DO:**
 ```cpp
@@ -819,17 +926,11 @@ McRogueFace runs Python in a single thread. When adding C++ extensions:
 - Use the existing timer system for periodic updates
 - If you must use threads, ensure proper GIL handling
 
-## Contributing Back to Core {#contributing}
+## Code Style Guidelines {#code-style}
 
-### Contribution Process
+When extending McRogueFace for your own projects, following these conventions will help maintain consistency:
 
-1. **Discuss First**: Open an issue describing your extension
-2. **Follow Standards**: Match the existing code style
-3. **Write Tests**: Add tests for your new functionality
-4. **Document**: Update both inline docs and user documentation
-5. **Submit PR**: Create a pull request with clear description
-
-### Code Style Guidelines
+### Naming Conventions
 
 ```cpp
 // Class naming: UI prefix for UI components
@@ -858,9 +959,9 @@ namespace mcrfpydef {
 }
 ```
 
-### Documentation Requirements
+### Documentation Best Practices
 
-Every public method must have inline documentation:
+Every public method should have inline documentation:
 
 ```cpp
 {"myMethod", (PyCFunction)UIMyComponent::myMethod, METH_VARARGS,
@@ -920,4 +1021,5 @@ Happy hacking! 🚀
 
 ---
 
-*For more information, check out the [API Reference](/api-reference) or join our [Discord community](https://discord.gg/mcrogueface).*
+*For more information, check out the [API Reference](/api-reference) and explore the [source code](https://github.com/jmccardle/McRogueFace).*
+

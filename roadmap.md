@@ -30,7 +30,7 @@ nav_order: 8
 - ✅ **Advanced UI Components** - Grids, sprites, frames, and captions
 - ✅ **Sound System** - Full audio support with spatial effects
 - ✅ **Documentation** - Comprehensive API reference and tutorials
-- ✅ **Cross-platform Support** - Linux, Windows, macOS
+- ✅ **Cross-platform Support** - Linux, Windows
 
 ---
 
@@ -124,41 +124,6 @@ Q2 2025: Version 1.0 Release
     Submit Your Feature Request
   </a>
 </div>
-
----
-
-## Contributing to McRogueFace
-
-### How to Get Involved
-
-#### Code Contributions
-1. **Fork the repository** on GitHub
-2. **Pick an issue** labeled `good-first-issue`
-3. **Submit a PR** with your changes
-4. **Join discussions** in our Discord
-
-#### Documentation
-- Improve tutorials and examples
-- Translate docs to other languages
-- Create video tutorials
-- Write blog posts about your games
-
-#### Community Building
-- Answer questions on Discord
-- Share your games and demos
-- Create asset packs
-- Organize game jams
-
-### Contribution Guidelines
-
-```markdown
-## Pull Request Checklist
-- [ ] Code follows project style guide
-- [ ] Tests pass locally
-- [ ] Documentation updated
-- [ ] Changelog entry added
-- [ ] No merge conflicts
-```
 
 ---
 

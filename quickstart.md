@@ -4,7 +4,7 @@
 
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • **[Quickstart](https://mcrogueface.github.io/quickstart)** • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
+[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • **[Quickstart](https://mcrogueface.github.io/quickstart)** • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api-reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
 
 ---
 
@@ -12,13 +12,15 @@
 
 This guide will have you running games and making changes in just a few minutes. No compilation needed!
 
+**⚠️ Caution:** McRogueFace is in *Alpha Pre-Release* - the API may change, hopefully for the better. Download the source code or clone the repository to review the complete documentation in the `/docs` directory, and check back frequently for updates.
+
 ### 1. Download McRogueFace
+
 
 1. Go to the [latest release](https://github.com/jmccardle/McRogueFace/releases/latest)
 2. Download the right version for your system:
-   - **Windows**: `mcrogueface-windows.zip`
-   - **Mac**: `mcrogueface-macos.zip`
-   - **Linux**: `mcrogueface-linux.tar.gz`
+   - **Windows**: [McRogueFace-0.1.0-prerelease2-Win.zip](https://github.com/jmccardle/McRogueFace/releases/download/v0.1.0-prerelease2/McRogueFace-0.1.0-prerelease2-Win.zip)
+   - **Linux**: [McRogueFace-0.1.0-prerelease2-Linux.tar.bz2](https://github.com/jmccardle/McRogueFace/releases/download/v0.1.0-prerelease2/McRogueFace-0.1.0-prerelease2-Linux.tar.bz2)
 3. Extract the archive to a folder (e.g., `C:\Games\McRogueFace` or `~/McRogueFace`)
 
 ### 2. Run the Demo Game
@@ -30,7 +32,7 @@ Open a terminal/command prompt in the McRogueFace folder and run:
 mcrogueface.exe
 ```
 
-**Mac/Linux:**
+**Linux:**
 ```bash
 ./mcrogueface
 ```
@@ -39,88 +41,133 @@ You should see the demo game start up! Use arrow keys to move around, click butt
 
 ### 3. Switch to a Different Game
 
-McRogueFace comes with multiple example games. Let's switch from the demo to the full "Crypt of Sokoban" game:
+McRogueFace automatically runs `scripts/game.py` on startup. The demo game is already running when you start McRogueFace - it includes the full "Crypt of Sokoban" game with the main menu.
 
-1. Open `scripts/game.py` in a text editor
-2. Change the content to:
+To see a simpler example, you can replace `scripts/game.py` with:
+
 ```python
-import crypt_of_sokoban as game
-game.run()
-```
-3. Save and run McRogueFace again
+import mcrfpy
 
-Now you're playing a complete roguelike with enemies, items, and puzzle mechanics!
+# Create a simple test scene
+mcrfpy.createScene("test")
+
+# Load a texture (sprite sheet) and font
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+font = mcrfpy.Font("assets/JetbrainsMono.ttf")
+
+# Create a grid for tile-based graphics
+grid = mcrfpy.Grid(20, 15, texture, (10, 10), (800, 600))
+
+# Add it to the scene's UI
+ui = mcrfpy.sceneUI("test")
+ui.append(grid)
+
+# Switch to our scene
+mcrfpy.setScene("test")
+
+# Add keyboard controls
+def move_around(key, state):
+    if state == "start":
+        print(f"You pressed {key}")
+
+mcrfpy.keypressScene(move_around)
+```
+
+Save and run McRogueFace again to see your simple scene!
 
 ### 4. Make Your First Change
 
-Let's add a custom button to the main menu. Open `scripts/game.py` and replace it with:
+Let's create a custom main menu with buttons. Open `scripts/game.py` and replace it with:
 
 ```python
 import mcrfpy
 
 # Create a scene
-scene = mcrfpy.Scene("main_menu")
-mcrfpy.setScene("main_menu")
+mcrfpy.createScene("main_menu")
+
+# Load resources
+font = mcrfpy.Font("assets/JetbrainsMono.ttf")
+btn_tex = mcrfpy.Texture("assets/48px_ui_icons-KenneyNL.png", 48, 48)
+
+# Get the scene's UI collection
+ui = mcrfpy.sceneUI("main_menu")
 
 # Add a background
-bg = mcrfpy.Frame(0, 0, 1920, 1080, fill_color=(20, 20, 40))
-scene.ui.append(bg)
+bg = mcrfpy.Frame(0, 0, 1024, 768, fill_color=(20, 20, 40))
+ui.append(bg)
 
 # Add a title
-title = mcrfpy.Caption(760, 100, 400, 100, "My Awesome Game")
+title = mcrfpy.Caption((312, 100), "My Awesome Game", font, fill_color=(255, 255, 100))
 title.font_size = 48
-title.color = (255, 255, 100)
-scene.ui.append(title)
+title.outline = 2
+title.outline_color = (0, 0, 0)
+ui.append(title)
 
-# Add a custom button
-def start_game():
-    print("Starting the game!")
-    # Load the actual game
-    import crypt_of_sokoban as game
-    game.run()
+# Create a button using Frame + Caption + click handler
+button_frame = mcrfpy.Frame(362, 300, 300, 80, fill_color=(50, 150, 50))
+button_caption = mcrfpy.Caption((150, 25), "Start Game", font, fill_color=(255, 255, 255))
+button_caption.font_size = 24
+button_frame.children.append(button_caption)
 
-button = mcrfpy.Button(810, 400, 300, 80, "Start Adventure")
-button.bg_color = (50, 150, 50)
-button.hover_color = (70, 200, 70)
-button.click_color = (40, 100, 40)
-button.onclick = start_game
-scene.ui.append(button)
+# Add click handler
+def start_game(x, y, button, event):
+    if event == "end":  # Mouse button release
+        print("Starting the game!")
+        # Create and switch to game scene
+        mcrfpy.createScene("game")
+        mcrfpy.setScene("game")
 
-# Add a quit button
-def quit_game():
-    mcrfpy.quit()
+button_frame.click = start_game
+ui.append(button_frame)
 
-quit_btn = mcrfpy.Button(810, 500, 300, 80, "Quit")
-quit_btn.bg_color = (150, 50, 50)
-quit_btn.onclick = quit_game
-scene.ui.append(quit_btn)
+# Switch to our menu scene
+mcrfpy.setScene("main_menu")
 ```
 
-Save and run - you now have a custom main menu!
+Save and run - you now have a custom main menu with a working button!
 
-### 5. Add a Game Item
+### 5. Add a Game Entity
 
-Let's create a custom item for Crypt of Sokoban. Create a new file `scripts/my_items.py`:
+Let's create a custom entity for a game. Entities in McRogueFace can be NPCs, enemies, or interactive objects. Here's an example:
 
 ```python
-from cos_entities import Item
+import mcrfpy
 
-class MagicWand(Item):
-    def __init__(self, x, y):
-        # Use sprite position 123 from the sprite sheet
-        super().__init__(x, y, sprite_index=123)
-        self.name = "Magic Wand"
-        self.description = "Casts fireballs at enemies"
-        
-    def use(self, user, target=None):
-        if target and hasattr(target, 'take_damage'):
-            print(f"{user.name} zaps {target.name} with the {self.name}!")
-            target.take_damage(25)
-            return True
-        return False
+# Create a scene and load resources
+mcrfpy.createScene("game")
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+font = mcrfpy.Font("assets/JetbrainsMono.ttf")
+
+# Create a grid
+grid = mcrfpy.Grid(20, 15, texture, (10, 10), (640, 480))
+ui = mcrfpy.sceneUI("game")
+ui.append(grid)
+
+# Add the player entity
+player = mcrfpy.Entity((10, 7), texture, 85)  # Sprite 85 is a character
+grid.entities.append(player)
+
+# Add an NPC entity
+npc = mcrfpy.Entity((5, 5), texture, 109)  # Sprite 109 is a monster
+grid.entities.append(npc)
+
+# Add a treasure chest
+treasure = mcrfpy.Entity((15, 10), texture, 89)  # Sprite 89 is a chest
+grid.entities.append(treasure)
+
+# Basic movement with keyboard
+def handle_keys(key, state):
+    if state == "start":
+        if key == "W": player.pos = (player.pos.x, player.pos.y - 1)
+        elif key == "S": player.pos = (player.pos.x, player.pos.y + 1)
+        elif key == "A": player.pos = (player.pos.x - 1, player.pos.y)
+        elif key == "D": player.pos = (player.pos.x + 1, player.pos.y)
+
+mcrfpy.keypressScene(handle_keys)
+mcrfpy.setScene("game")
 ```
 
-To add it to the game, you'd modify the level generation to spawn your item!
+For more complex entity behavior, look at the Crypt of Sokoban source in `src/scripts/cos_entities.py`!
 
 ### 6. Load a Custom Sprite Sheet
 
@@ -129,20 +176,34 @@ Want to use your own graphics? Here's how:
 ```python
 import mcrfpy
 
-# Load your sprite sheet (32x32 pixel tiles)
-mcrfpy.loadTexture("sprites", "assets/my_sprites.png", 32, 32)
+# Create a scene
+mcrfpy.createScene("game")
 
-# Use it in the game
-scene = mcrfpy.Scene("game")
-grid = mcrfpy.Grid(50, 50, 20, 15, "sprites", 32, 32)
+# Load your sprite sheet (tile width, tile height)
+my_texture = mcrfpy.Texture("assets/my_sprites.png", 32, 32)
 
-# Set specific tiles
-grid.at(5, 5).sprite = 10  # Tree sprite at position 10
-grid.at(6, 5).sprite = 11  # Rock sprite at position 11
+# Create a grid using your texture
+grid = mcrfpy.Grid(20, 15, my_texture, (10, 10), (640, 480))
 
-scene.ui.append(grid)
+# Set specific tiles - grid.at() returns a grid point
+grid.at(5, 5).sprite = 10  # Tree sprite at index 10
+grid.at(6, 5).sprite = 11  # Rock sprite at index 11
+
+# You can also set walkability
+grid.at(6, 5).walkable = False  # Make the rock solid
+
+# Add the grid to the scene
+ui = mcrfpy.sceneUI("game")
+ui.append(grid)
+
+# Switch to the scene
 mcrfpy.setScene("game")
 ```
+
+Tips for sprite sheets:
+- Use consistent tile sizes (16x16, 32x32, etc.)
+- Sprites are indexed left-to-right, top-to-bottom starting at 0
+- PNG format with transparency works best
 
 ## What's Next?
 
@@ -151,7 +212,7 @@ mcrfpy.setScene("game")
 - **[Cookbook](https://mcrogueface.github.io/cookbook)** - Copy/paste solutions for common tasks
 
 ### Reference Material  
-- **[Complete API Reference](https://mcrogueface.github.io/api)** - Every function and class documented
+- **[Complete API Reference](https://mcrogueface.github.io/api-reference)** - Every function and class documented
 - **[Example Games](https://github.com/jmccardle/McRogueFace/tree/main/examples)** - Full source code to learn from
 
 ### Advanced Topics
@@ -175,10 +236,8 @@ Check that the `assets/` and `scripts/` folders are in the same directory as the
 
 ## Get Help
 
-- **Discord**: [Join our community](https://discord.gg/mcrogueface)
-- **Issues**: [Report bugs](https://github.com/jmccardle/McRogueFace/issues)
-- **Discussions**: [Ask questions](https://github.com/jmccardle/McRogueFace/discussions)
+- **Documentation**: Check the [API Reference](/api-reference) and [Examples](/examples)
+- **Source Code**: Browse the [GitHub repository](https://github.com/jmccardle/McRogueFace) for implementation details
 
 ---
 
-Ready to make games? Download McRogueFace and start creating!
