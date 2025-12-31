@@ -1,91 +1,131 @@
 # McRogueFace
 
-**Make 2D games with Python** - No C++ required!
+**A Python game engine for roguelikes and tile-based games** - C++ performance, Python simplicity.
 
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api-reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
+[**Source Code**](https://github.com/jmccardle/McRogueFace) | [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) | [**Quickstart**](https://mcrogueface.github.io/quickstart) | [**Tutorials**](https://mcrogueface.github.io/tutorials) | [**API Reference**](https://mcrogueface.github.io/api-reference) | [**Cookbook**](https://mcrogueface.github.io/cookbook) | [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
 
 ---
 
-McRogueFace is a powerful roguelike game engine that combines C++ performance with Python flexibility. Create tile-based games with procedural generation, UI systems, and full audio support - all scriptable in Python.
+## Build Roguelikes Without the Boilerplate
 
-## Key Features
+McRogueFace is a game engine designed specifically for roguelikes and tile-based games. Write your game logic in Python while the C++ engine handles rendering, pathfinding, and field-of-view calculations. No game loop to manage, no low-level graphics code - just import `mcrfpy` and start building your dungeon.
 
-- **Grid-based World System** - Efficient tile-based rendering with camera controls
-- **Entity Management** - Spawn and control game objects on your grid
-- **UI Framework** - Frames, captions, sprites, and nested layouts
-- **Audio System** - Background music and sound effects
-- **Input Handling** - Flexible keyboard and mouse input mapping
-- **Scene Management** - Organize your game into multiple scenes
+<div style="text-align: center; margin: 2em 0;">
+<a href="https://mcrogueface.github.io/quickstart" style="background: #4a9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin-right: 12px; font-weight: bold;">Get Started</a>
+<a href="https://github.com/jmccardle/McRogueFace" style="background: #333; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View on GitHub</a>
+</div>
+
+---
+
+## Feature Highlights
+
+### Grid and Entity System
+The Grid is the foundation of your game world. Place tiles, spawn entities, and let the engine handle efficient rendering with automatic camera controls and zoom. Entity positions are in tile coordinates - no pixel math required.
+
+### Built-in FOV and Pathfinding
+Field-of-view uses libtcod algorithms out of the box. Set `walkable` and `transparent` on your tiles, call `update_visibility()` on your entities, and you get accurate line-of-sight. A* and Dijkstra pathfinding work the same way - define your terrain, get paths back.
+
+### Animation System
+Smooth movement, color transitions, and property interpolation through a declarative animation API. Chain animations with callbacks, queue moves for responsive controls, choose from multiple easing functions.
+
+### Scene Management
+Organize your game into scenes - menus, gameplay, inventory screens. Each scene has its own UI collection and can be switched instantly. The engine preserves scene state, so switching back picks up right where you left off.
+
+### Sprite-Based Rendering
+Load sprite sheets with `mcrfpy.Texture()`, specify tile dimensions, and reference sprites by index. The same texture works for Grid tiles, Entities, and UI Sprites. Supports transparency, color tinting, and overlay layers.
+
+### Audio and Input
+Background music, sound effects, and volume control built in. Keyboard input comes through a simple callback with key name and state. Click handlers attach directly to UI elements and Grid tiles.
+
+---
 
 ## Quick Example
+
+Here is a complete, runnable example that creates a scene with a grid, places some walls and floors, adds a player entity, and lets you move with WASD:
 
 ```python
 import mcrfpy
 
-# Create a game scene
+# Create and switch to a game scene
 mcrfpy.createScene("game")
 mcrfpy.setScene("game")
 
-# Create a 50x50 grid world
-grid = mcrfpy.Grid(50, 50, mcrfpy.default_texture, (0, 0), (800, 600))
-ui = mcrfpy.sceneUI("game")
-ui.append(grid)
+# Load a sprite sheet (16x16 pixel tiles)
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
 
-# Add a player entity
-player = mcrfpy.Entity(grid)
-player.pos = (25, 25)  # Center of the grid
-player.sprite_number = 5  # Use sprite index 5
-grid.children.append(player)
+# Create a 20x15 tile grid, displayed at 2x zoom
+grid = mcrfpy.Grid(
+    grid_size=(20, 15),
+    texture=texture,
+    pos=(112, 84),
+    size=(800, 600)
+)
+grid.zoom = 2.0
 
-# Set up keyboard controls
-def on_keypress(key):
-    if key == 119:  # 'w' key
-        player.pos = (player.pos[0], player.pos[1] - 1)
-    elif key == 115:  # 's' key
-        player.pos = (player.pos[0], player.pos[1] + 1)
-    # ... more controls
+# Fill with floor tiles, add walls around edges
+for y in range(15):
+    for x in range(20):
+        point = grid.at(x, y)
+        if x == 0 or x == 19 or y == 0 or y == 14:
+            point.tilesprite = 3   # wall
+            point.walkable = False
+        else:
+            point.tilesprite = 0   # floor
+            point.walkable = True
 
-mcrfpy.keypressScene(on_keypress)
+# Add the grid to the scene
+mcrfpy.sceneUI("game").append(grid)
+
+# Create a player entity at tile (10, 7)
+player = mcrfpy.Entity((10, 7), texture=texture, sprite_index=84)
+grid.entities.append(player)
+
+# Handle keyboard input
+def on_key(key, state):
+    if state != "start":
+        return
+    x, y = int(player.x), int(player.y)
+    if key == "W": y -= 1
+    elif key == "S": y += 1
+    elif key == "A": x -= 1
+    elif key == "D": x += 1
+
+    # Only move if destination is walkable
+    if grid.at(x, y).walkable:
+        player.x, player.y = x, y
+
+mcrfpy.keypressScene(on_key)
 ```
 
-## Primary Types
+Save this as `scripts/game.py`, run `mcrogueface`, and you have a movable character in a walled room. The grid handles rendering, the entity tracks position in tile coordinates, and the keyboard callback updates state on each keypress.
 
-McRogueFace provides five primary types for building games:
+---
 
-### 1. **Grid** - Your Game World
-The Grid is the foundation of your roguelike - a tile-based world that efficiently renders terrain, handles camera movement, and manages entities.
+## Why McRogueFace?
 
-### 2. **Entity** - Game Objects
-Entities are objects that exist on your Grid - players, enemies, items, and interactive elements. Each entity has a position and sprite.
+### Compared to Pygame
+Pygame gives you a blank canvas and event loop. McRogueFace gives you a Grid, Entity, and FOV system purpose-built for roguelikes. You write game logic instead of rendering code.
 
-### 3. **Frame** - UI Containers
-Frames are rectangular UI panels that can contain other UI elements. Use them for menus, HUDs, and dialog boxes.
+### Compared to libtcod/python-tcod
+libtcod is console-based with character cells. McRogueFace is sprite-based with full graphical rendering, while still providing the same FOV and pathfinding algorithms you expect.
 
-### 4. **Sprite** - Image Display
-Sprites display single images from texture atlases. Perfect for UI icons, decorations, and non-grid visuals.
+### Compared to Godot/Unity
+Full game engines require learning their editor, scene format, and scripting integration. McRogueFace is a single executable - your entire game is Python scripts that run when the engine starts. No project files, no asset pipeline, no compile step.
 
-### 5. **Caption** - Text Display
-Captions render text with customizable fonts and colors. Use them for labels, dialog, and game messages.
+### The Roguelike-First Design
+Most engines treat tile-based games as one use case among many. McRogueFace treats it as the primary use case. Grid coordinates, turn-based input, visibility state, pathfinding costs - these are first-class concepts, not things you build on top of a general-purpose renderer.
 
-## Getting Started
+---
 
-1. [Installation Guide](getting-started.html#installation)
-2. [Your First Game](getting-started.html#first-game)
-3. [API Reference](api-reference)
-4. [Tutorials](tutorials.html)
+## Get Involved
 
-## Architecture
+McRogueFace is open source under the MIT license.
 
-McRogueFace uses a hybrid architecture:
-- **C++ Core**: High-performance rendering, audio, and input handling
-- **Python Scripts**: Game logic, AI, procedural generation
-- **mcrfpy Module**: Bridge between C++ engine and Python code
+- [GitHub Repository](https://github.com/jmccardle/McRogueFace) - Source code, issues, and releases
+- [Quickstart Guide](https://mcrogueface.github.io/quickstart) - Download and run in 5 minutes
+- [Tutorials](https://mcrogueface.github.io/tutorials) - Step-by-step guide from basics to complete games
+- [API Reference](https://mcrogueface.github.io/api-reference) - Complete documentation of the `mcrfpy` module
 
-This design gives you the best of both worlds - the performance of C++ with the rapid development of Python.
-
-## Community
-
-- [GitHub Repository](https://github.com/user/McRogueFace)
-- [7DRL Entry](https://7drl.com/) - Created for 7DRL 2025
+Created for [7DRL 2025](https://7drl.com/). Contributions welcome.

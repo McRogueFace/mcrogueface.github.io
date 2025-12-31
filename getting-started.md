@@ -1,244 +1,425 @@
 # Getting Started with McRogueFace
 
-Welcome to McRogueFace! This guide will help you get up and running with your first game.
+**Make 2D games with Python** - No C++ required!
 
-## Installation
+---
 
-### Prerequisites
+[**Source Code**](https://github.com/jmccardle/McRogueFace) | [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) | **[Getting Started](https://mcrogueface.github.io/getting-started)** | [**Tutorials**](https://mcrogueface.github.io/tutorials) | [**API Reference**](https://mcrogueface.github.io/api-reference) | [**Cookbook**](https://mcrogueface.github.io/cookbook) | [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
 
-Before installing McRogueFace, ensure you have:
+---
 
-- **C++ Compiler**: GCC 7+, Clang 5+, or MSVC 2017+
+This guide will help you get McRogueFace installed and running your first game script.
+
+## Prerequisites
+
+Before building McRogueFace, ensure you have the following installed:
+
+### Required Software
+
+- **C++17 Compiler**: GCC 7+, Clang 5+, or MSVC 2017+
 - **CMake**: Version 3.14 or higher
-- **Python**: Version 3.12 or higher
+- **Python**: Version 3.12 development headers
+- **SFML**: Version 2.5+ (multimedia library)
 - **Git**: For cloning the repository
-- **SFML**: Version 2.5+ (usually installed automatically)
 
-### Linux Installation
+### Linux (Ubuntu/Debian)
 
 ```bash
-# Install dependencies (Ubuntu/Debian)
+# Install all dependencies
 sudo apt-get update
 sudo apt-get install build-essential cmake git libsfml-dev python3.12-dev
+```
 
+### Linux (Fedora)
+
+```bash
+sudo dnf install gcc-c++ cmake git SFML-devel python3.12-devel
+```
+
+### Windows
+
+1. Install [Visual Studio 2019+](https://visualstudio.microsoft.com/) with C++ workload
+2. Install [CMake](https://cmake.org/download/)
+3. Install [Python 3.12](https://www.python.org/downloads/)
+4. SFML will be downloaded automatically during build
+
+## Building McRogueFace
+
+### Option 1: Download Pre-built Release (Recommended)
+
+1. Go to the [latest release](https://github.com/jmccardle/McRogueFace/releases/latest)
+2. Download the appropriate version:
+   - **Windows**: `McRogueFace-*-Win.zip`
+   - **Linux**: `McRogueFace-*-Linux.tar.bz2`
+3. Extract to a folder (e.g., `~/McRogueFace` or `C:\Games\McRogueFace`)
+
+### Option 2: Build from Source
+
+#### Linux
+
+```bash
 # Clone the repository
-git clone https://github.com/jmcb/McRogueFace.git
+git clone https://github.com/jmccardle/McRogueFace.git
 cd McRogueFace
 
 # Build the project
 make
 
-# Run the example game
+# The executable will be in build/
 cd build
 ./mcrogueface
 ```
 
-### Windows Installation
+#### Windows
 
 ```powershell
 # Clone the repository
-git clone https://github.com/jmcb/McRogueFace.git
+git clone https://github.com/jmccardle/McRogueFace.git
 cd McRogueFace
 
 # Build with CMake
 mkdir build
 cd build
 cmake ..
-cmake --build .
+cmake --build . --config Release
 
-# Run the example game
-mcrogueface.exe
+# Run the executable
+Release\mcrogueface.exe
 ```
+
+### Verify Installation
+
+After building or extracting, verify your installation:
+
+```bash
+# Linux
+./mcrogueface --version
+
+# Windows
+mcrogueface.exe --version
+```
+
+You should see the demo game start up when running without arguments.
 
 ## Your First Game
 
-Let's create a simple "Hello World" game to understand the basics.
+McRogueFace runs Python scripts automatically. The engine looks for `scripts/game.py` on startup.
 
-### Step 1: Create the Game Script
-
-Create a new file `scripts/hello_game.py` in your build directory:
+Create a new file `scripts/game.py` with the following content:
 
 ```python
 import mcrfpy
 
-# Create a new scene
-mcrfpy.createScene("main")
+# Create a scene - scenes are containers for all UI elements
+mcrfpy.createScene("hello")
 
-# Create a title
-title = mcrfpy.Caption(400, 100, "Hello McRogueFace!")
-title.font = mcrfpy.default_font
-title.font_size = 32
-title.font_color = (255, 255, 255)  # White
-title.centered = True
+# Add a caption (text display)
+caption = mcrfpy.Caption(
+    pos=(400, 300),
+    text="Hello Roguelike!"
+)
+caption.fill_color = mcrfpy.Color(255, 255, 100)  # Yellow text
+caption.font_size = 32
 
-# Create instructions
-instructions = mcrfpy.Caption(400, 200, "Press ESC to exit")
-instructions.font = mcrfpy.default_font
-instructions.font_size = 18
-instructions.font_color = (200, 200, 200)  # Light gray
-instructions.centered = True
+# Add the caption to the scene's UI collection
+mcrfpy.sceneUI("hello").append(caption)
 
-# Add a background frame
-background = mcrfpy.Frame(200, 50, 400, 200)
-background.bgcolor = (64, 64, 128)  # Blue-gray
-background.outline = 2
+# Add instructions
+instructions = mcrfpy.Caption(
+    pos=(350, 350),
+    text="Press ESC to exit, or any key to see it printed"
+)
+instructions.fill_color = mcrfpy.Color(200, 200, 200)
+instructions.font_size = 16
+mcrfpy.sceneUI("hello").append(instructions)
 
-# Add elements to the scene
-ui = mcrfpy.sceneUI("main")
-ui.append(background)
-ui.append(title)
-ui.append(instructions)
-
-# Handle keyboard input
-def handle_keys(key):
+# Input handler - receives (key, action) where action is "start" or "end"
+def on_key(key, action):
+    if action != "start":  # Only respond to key press, not release
+        return
     if key == "Escape":
         mcrfpy.exit()
     print(f"Key pressed: {key}")
 
-# Register the keyboard handler
-mcrfpy.keypressScene(handle_keys)
+# Register the keyboard handler for this scene
+mcrfpy.keypressScene(on_key)
 
-# Switch to our scene
-mcrfpy.setScene("main")
+# Activate the scene (make it visible)
+mcrfpy.setScene("hello")
 ```
 
-### Step 2: Run Your Game
+Run McRogueFace to see your game:
 
 ```bash
-./mcrogueface
+./mcrogueface  # Linux
+mcrogueface.exe  # Windows
 ```
 
-Your game should display a window with a blue-gray background, white title text, and respond to the ESC key.
+You should see yellow text that says "Hello Roguelike!" and pressing keys will print to the console.
 
 ## Understanding the Basics
 
+### How McRogueFace Works
+
+McRogueFace is different from traditional Python game frameworks:
+
+1. **No game loop needed** - The engine handles the render loop internally
+2. **Scripts are imported** - Your Python script runs once at startup to set up the game
+3. **Event-driven** - Use callbacks for input handling and timers for updates
+
 ### Scenes
 
-Scenes are containers for your game states (menu, gameplay, game over, etc.):
+Scenes are containers for your game states (menu, gameplay, inventory, etc.):
 
 ```python
 # Create scenes
 mcrfpy.createScene("menu")
 mcrfpy.createScene("game")
-mcrfpy.createScene("gameover")
+mcrfpy.createScene("game_over")
 
 # Switch between scenes
-mcrfpy.setScene("menu")  # Show the menu
+mcrfpy.setScene("menu")
 ```
 
 ### UI Elements
 
-McRogueFace provides several UI element types:
+McRogueFace provides several UI element types. All use keyword arguments:
 
-#### Captions (Text)
+#### Caption (Text)
+
 ```python
-text = mcrfpy.Caption(x, y, "Your text here")
-text.font = mcrfpy.default_font
+text = mcrfpy.Caption(
+    pos=(100, 100),
+    text="Your text here"
+)
+text.fill_color = mcrfpy.Color(255, 255, 255)
 text.font_size = 24
-text.font_color = (255, 255, 255)  # RGB
-text.centered = True  # Center on x,y position
 ```
 
-#### Sprites
-```python
-# Load a texture (sprite sheet)
-texture = mcrfpy.Texture("assets/sprites.png", 16, 16)  # 16x16 tiles
+#### Frame (Container)
 
-# Create a sprite
-sprite = mcrfpy.Sprite(x, y)
-sprite.texture = texture
-sprite.sprite_index = 0  # Which tile to show
-sprite.scale = (2.0, 2.0)  # Make it bigger
+```python
+panel = mcrfpy.Frame(
+    pos=(50, 50),
+    size=(400, 300),
+    fill_color=mcrfpy.Color(50, 50, 80)
+)
+panel.outline = 2
+panel.outline_color = mcrfpy.Color(255, 255, 255)
 ```
 
-#### Frames (Containers)
+#### Grid (Tilemap)
+
 ```python
-frame = mcrfpy.Frame(x, y, width, height)
-frame.bgcolor = (50, 50, 50)  # Dark gray
-frame.outline = 2  # 2-pixel border
-frame.outline_color = (255, 255, 255)  # White border
+# Load a sprite sheet texture (16x16 pixel tiles)
+texture = mcrfpy.Texture("assets/tiles.png", 16, 16)
+
+# Create a 20x15 tile grid
+grid = mcrfpy.Grid(
+    pos=(10, 10),
+    grid_size=(20, 15),
+    texture=texture,
+    size=(640, 480)  # Display size in pixels
+)
+
+# Set individual tiles using grid.at()
+grid.at(5, 5).tilesprite = 10  # Set tile at (5,5) to sprite index 10
+grid.at(5, 5).walkable = True
 ```
 
-#### Grids (Tilemaps)
-```python
-# Create a 20x15 grid of 32x32 pixel tiles
-grid = mcrfpy.Grid(x, y, 20, 15, texture, 32, 32)
+#### Entity (Grid Object)
 
-# Set individual tiles
-grid.set_tile(tile_x, tile_y, sprite_index)
+```python
+# Create an entity on the grid
+player = mcrfpy.Entity(
+    grid_pos=(10, 7),
+    texture=texture,
+    sprite_index=64  # Character sprite
+)
+
+# Add to grid's entity collection
+grid.entities.append(player)
+
+# Move the entity
+player.x = 11
+player.y = 7
 ```
 
 ### Input Handling
 
-Handle keyboard input with callback functions:
+Keyboard input uses a callback that receives the key name and action:
 
 ```python
-def on_keypress(key):
-    if key == "w" or key == "Up":
-        # Move up
-        pass
-    elif key == "s" or key == "Down":
-        # Move down
-        pass
-    elif key == "Space":
-        # Action
-        pass
+def on_key(key, action):
+    if action != "start":  # Filter out key release events
+        return
 
-mcrfpy.keypressScene(on_keypress)
+    if key == "W" or key == "Up":
+        player.y -= 1
+    elif key == "S" or key == "Down":
+        player.y += 1
+    elif key == "A" or key == "Left":
+        player.x -= 1
+    elif key == "D" or key == "Right":
+        player.x += 1
+
+mcrfpy.keypressScene(on_key)
 ```
 
-### Game Loop with Timers
+### Timers
 
-Create game loops using timers:
+For animations and game updates, use timers:
 
 ```python
 def game_update(runtime):
     # This runs every 100ms
-    # Update game logic here
-    player.move()
+    update_enemies()
     check_collisions()
-    
-# Set a timer to call game_update every 100ms
+
+# Create a recurring timer
 mcrfpy.setTimer("gameloop", game_update, 100)
 
-# Stop the timer
+# Stop the timer when done
 mcrfpy.delTimer("gameloop")
+```
+
+## A More Complete Example
+
+Here is a working example with a movable character on a grid:
+
+```python
+import mcrfpy
+
+# Create and set up the scene
+mcrfpy.createScene("game")
+
+# Load the tileset texture
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+
+# Create a grid
+grid = mcrfpy.Grid(
+    pos=(32, 32),
+    grid_size=(20, 15),
+    texture=texture,
+    size=(640, 480)
+)
+grid.zoom = 2.0  # Scale up for visibility
+
+# Fill the grid with floor tiles, walls on edges
+FLOOR = 0
+WALL = 3
+
+for y in range(15):
+    for x in range(20):
+        point = grid.at(x, y)
+        if x == 0 or x == 19 or y == 0 or y == 14:
+            point.tilesprite = WALL
+            point.walkable = False
+        else:
+            point.tilesprite = FLOOR
+            point.walkable = True
+
+# Add the grid to the scene
+mcrfpy.sceneUI("game").append(grid)
+
+# Create the player entity
+player = mcrfpy.Entity(
+    grid_pos=(10, 7),
+    texture=texture,
+    sprite_index=85  # Character sprite
+)
+grid.entities.append(player)
+
+# Add a title
+title = mcrfpy.Caption(
+    pos=(250, 5),
+    text="Use WASD or Arrow Keys to Move"
+)
+title.fill_color = mcrfpy.Color(255, 255, 255)
+mcrfpy.sceneUI("game").append(title)
+
+# Input handler with collision detection
+def on_key(key, action):
+    if action != "start":
+        return
+
+    # Calculate new position
+    new_x, new_y = int(player.x), int(player.y)
+
+    if key == "W" or key == "Up":
+        new_y -= 1
+    elif key == "S" or key == "Down":
+        new_y += 1
+    elif key == "A" or key == "Left":
+        new_x -= 1
+    elif key == "D" or key == "Right":
+        new_x += 1
+    elif key == "Escape":
+        mcrfpy.exit()
+        return
+
+    # Check if the new position is walkable
+    point = grid.at(new_x, new_y)
+    if point and point.walkable:
+        player.x = new_x
+        player.y = new_y
+
+mcrfpy.keypressScene(on_key)
+mcrfpy.setScene("game")
+
+print("Game started! Use WASD or arrow keys to move.")
 ```
 
 ## Next Steps
 
-Now that you understand the basics:
+Now that you have a working game foundation:
 
-1. **Explore the Examples**: Look at the Crypt of Sokoban source in `src/scripts/`
-2. **Read the API Reference**: [Full API Documentation](api-reference.md)
-3. **Try the Tutorials**: [Advanced tutorials](tutorials.md) for specific features
-4. **Study the Source**: Examine the [implementation](https://github.com/jmccardle/McRogueFace) for deeper understanding
+1. **Follow the Tutorials** - Start with [Part 0: Scene, Texture, and Grid](/tutorials#part-0-scene-texture-and-grid) for a complete walkthrough
+2. **Browse the API Reference** - See [API Reference](/api-reference) for all available functions and classes
+3. **Check the Cookbook** - Find [copy-paste solutions](/cookbook) for common tasks
+4. **Study the Demo Game** - Look at `src/scripts/` in the repository for the full "Crypt of Sokoban" source code
 
-## Common Issues
+## Troubleshooting
 
 ### "Module 'mcrfpy' not found"
-- Make sure you're running from the `build` directory
-- Check that Python 3.12 is installed
+
+You are running `python scripts/game.py` directly. McRogueFace embeds Python - run the `mcrogueface` executable instead, which will import your script automatically.
+
+### Black screen on startup
+
+- Check that the `assets/` and `scripts/` folders are in the same directory as the `mcrogueface` executable
+- Ensure `scripts/game.py` exists and has no Python syntax errors
+- Check the console for error messages
 
 ### Graphics not showing
+
 - Verify your texture paths are correct (relative to the executable)
-- Check that sprite indices are within texture bounds
+- Check that sprite indices are within the texture bounds
+- Make sure you called `ui.append()` to add elements to the scene
+- Confirm you called `mcrfpy.setScene()` to activate the scene
 
 ### Game crashes on start
-- Look for Python errors in the console
-- Ensure all required assets are in the `assets/` directory
+
+- Look for Python errors in the console output
+- Ensure all required asset files exist in `assets/`
+- Check for typos in file paths (they are case-sensitive on Linux)
 
 ### Performance issues
+
 - Use timers instead of tight loops
 - Limit the number of entities on screen
-- Consider using RenderTexture for static content
+- Use appropriate timer intervals (16ms for 60 FPS, 33ms for 30 FPS)
 
-## Tips for Success
+### Python errors not showing
 
-1. **Start Small**: Build simple games before attempting complex projects
-2. **Use Timers**: They're essential for animations and game logic
-3. **Organize Scenes**: Keep menu, gameplay, and UI in separate scenes
-4. **Test Often**: Use the automation API to create repeatable tests
-5. **Read the Source**: The engine source code is well-documented
+Run McRogueFace from a terminal/command prompt to see Python error messages and print() output.
+
+## Getting Help
+
+- **Documentation**: [API Reference](/api-reference), [Tutorials](/tutorials), [Cookbook](/cookbook)
+- **Source Code**: [GitHub Repository](https://github.com/jmccardle/McRogueFace)
+- **Issues**: Report bugs on the [GitHub Issues](https://github.com/jmccardle/McRogueFace/issues) page
+
+---
 
 Happy game development with McRogueFace!
