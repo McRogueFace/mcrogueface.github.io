@@ -126,9 +126,9 @@ grid = mcrfpy.Grid(
     pos=(80, 100),
     size=(720, 480),
     grid_size=(GRID_WIDTH, GRID_HEIGHT),
-    texture=texture
+    texture=texture,
+    zoom=1.5
 )
-grid.zoom = 1.5
 
 # Build the map
 create_map(grid)
@@ -469,9 +469,9 @@ texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
 
 grid = mcrfpy.Grid(
     pos=(80, 100), size=(720, 480),
-    grid_size=(GRID_WIDTH, GRID_HEIGHT), texture=texture
+    grid_size=(GRID_WIDTH, GRID_HEIGHT), texture=texture,
+    zoom=1.5
 )
-grid.zoom = 1.5
 create_map(grid)
 
 player = mcrfpy.Entity(grid_pos=(5, 10), texture=texture, sprite_index=SPRITE_PLAYER)

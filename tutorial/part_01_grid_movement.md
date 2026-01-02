@@ -50,15 +50,14 @@ texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
 
 # Create the grid
 # The grid displays tiles and contains entities
+# Note: zoom must be set in the constructor to ensure correct initial camera position
 grid = mcrfpy.Grid(
     pos=(100, 80),          # Position on screen (pixels)
     size=(640, 480),        # Display size (pixels)
     grid_size=(GRID_WIDTH, GRID_HEIGHT),  # Size in tiles
-    texture=texture
+    texture=texture,
+    zoom=2.0                # Zoom level (set here, not after, for correct camera!)
 )
-
-# Set the zoom level for better visibility
-grid.zoom = 2.0
 
 # Fill the grid with floor tiles
 for y in range(GRID_HEIGHT):
@@ -166,7 +165,8 @@ grid = mcrfpy.Grid(
     pos=(100, 80),
     size=(640, 480),
     grid_size=(GRID_WIDTH, GRID_HEIGHT),
-    texture=texture
+    texture=texture,
+    zoom=2.0
 )
 ```
 
@@ -175,6 +175,7 @@ The `Grid` is your game world container. Key parameters:
 - `size`: How large to draw the grid (in pixels)
 - `grid_size`: The number of tiles (width, height)
 - `texture`: The sprite sheet to use for tiles and entities
+- `zoom`: Magnification level (important: set in constructor for correct camera position!)
 
 ### Two Coordinate Systems
 
