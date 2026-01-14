@@ -1,5 +1,7 @@
 # Message Log Widget
 
+![Message Log Recipe](/images/cookbook/ui_message_log.png)
+
 A scrolling message log is essential for RPGs, roguelikes, and any game that needs to display event history. This recipe shows how to build a reusable message log using Frame and Caption elements.
 
 ## The Pattern

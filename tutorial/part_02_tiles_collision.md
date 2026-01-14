@@ -1,5 +1,7 @@
 # Part 2: Walls, Floors, and Collision
 
+![Part 2 Preview](/images/tutorials/part_02_tiles_collision.png)
+
 In Part 1, we created a grid and moved a player around freely. Now we will add walls that block movement, creating a proper dungeon feel with collision detection.
 
 ## What You Will Learn

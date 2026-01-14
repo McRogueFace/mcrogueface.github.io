@@ -1,5 +1,7 @@
 # Part 4: Field of View
 
+![Part 4 Preview](/images/tutorials/part_04_fov.png)
+
 In Part 3, we generated procedural dungeons. Now we will add field of view (FOV) so players can only see what is nearby. This creates the classic roguelike "fog of war" where unexplored areas are hidden and explored areas fade into memory.
 
 ## What You Will Learn

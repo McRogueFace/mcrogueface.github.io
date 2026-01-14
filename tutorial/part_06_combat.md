@@ -1,5 +1,7 @@
 # Part 6: Combat System
 
+![Part 6 Preview](/images/tutorials/part_06_combat.png)
+
 In Part 5, we populated our dungeon with enemies. Now we will make them dangerous. When the player bumps into an enemy, combat ensues. Swords clash, HP drops, and only the strongest survive.
 
 ## What You Will Learn

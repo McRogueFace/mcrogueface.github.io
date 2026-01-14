@@ -7,6 +7,8 @@ nav_order: 1
 
 # Basic Fog of War
 
+![Fog of War Recipe](/images/cookbook/grid_fog_of_war.png)
+
 Create classic roguelike visibility with visible, discovered, and unknown areas using the Grid's FOV system.
 
 ---

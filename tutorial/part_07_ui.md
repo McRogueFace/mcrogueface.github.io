@@ -1,5 +1,7 @@
 # Part 7: User Interface
 
+![Part 7 Preview](/images/tutorials/part_07_ui.png)
+
 In Part 6, we implemented combat with a simple HP display and message log. Now we will build a proper user interface with a visual health bar, a scrolling message log, and dungeon information. Good UI makes the difference between a confusing game and an engaging one.
 
 ## What You Will Learn

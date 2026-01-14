@@ -1,5 +1,7 @@
 # Health Bar Widget
 
+![Health Bar Recipe](/images/cookbook/ui_health_bar.png)
+
 Health bars are a staple of game UI. This recipe shows how to build a flexible health bar using nested Frames - an outer background frame and an inner fill frame that scales with the current value.
 
 ## The Pattern

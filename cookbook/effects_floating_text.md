@@ -1,5 +1,7 @@
 # Floating Damage Numbers
 
+![Floating Text Recipe](/images/cookbook/effects_floating_text.png)
+
 Text that floats upward and fades out, commonly used for damage numbers, healing, XP gains, and other combat feedback.
 
 ## Quick Example

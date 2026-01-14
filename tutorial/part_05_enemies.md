@@ -1,5 +1,7 @@
 # Part 5: Placing Enemies
 
+![Part 5 Preview](/images/tutorials/part_05_enemies.png)
+
 In Part 4, we added field of view so players explore a fog-shrouded dungeon. Now we will populate that dungeon with enemies - goblins, orcs, and trolls lurking in the shadows, waiting for our brave adventurer.
 
 ## What You Will Learn

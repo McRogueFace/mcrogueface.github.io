@@ -1,5 +1,7 @@
 # Part 3: Procedural Dungeon Generation
 
+![Part 3 Preview](/images/tutorials/part_03_dungeon_generation.png)
+
 In Part 2, we created a simple map by hand with walls and floors. Now we will generate dungeons procedurally using rooms and corridors, creating a different layout every time you play.
 
 ## What You Will Learn

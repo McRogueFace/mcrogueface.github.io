@@ -1,5 +1,7 @@
 # Part 1: The '@' and the Dungeon Grid
 
+![Part 1 Preview](/images/tutorials/part_01_grid_movement.png)
+
 In this part, we will create a tile-based game world using a Grid, place a player Entity represented by the classic '@' symbol, and handle keyboard input to move the player around.
 
 ## What You Will Learn

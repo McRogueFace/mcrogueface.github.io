@@ -7,6 +7,8 @@ nav_order: 2
 
 # Room and Corridor Generator
 
+![Dungeon Generator Recipe](/images/cookbook/grid_dungeon_generator.png)
+
 Generate procedural dungeons with rectangular rooms connected by tunnels.
 
 ---

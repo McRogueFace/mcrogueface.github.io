@@ -1,5 +1,7 @@
 # Melee Combat System
 
+![Melee Combat Recipe](/images/cookbook/combat_melee.png)
+
 HP, attack, defense calculations and combat resolution.
 
 ## Overview
