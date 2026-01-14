@@ -5,106 +5,121 @@ A handy cheat sheet for common McRogueFace operations.
 ## Scene Management
 
 ```python
-# Create and switch scenes
-mcrfpy.createScene("menu")
-mcrfpy.setScene("menu")
+# Create and activate scenes (modern API)
+scene = mcrfpy.Scene("menu")
+scene.activate()
 current = mcrfpy.currentScene()
 
-# Get UI elements for current scene
-ui = mcrfpy.sceneUI("menu")
-ui.append(element)
+# Access scene UI elements
+scene.children.append(element)
+
+# Set input handler on scene
+scene.on_key = on_key
 ```
 
 ## UI Elements
 
 ### Caption (Text)
 ```python
-text = mcrfpy.Caption((x, y), "Hello World")
-text.font = mcrfpy.default_font
-text.font_size = 24
-text.font_color = (255, 255, 255)  # RGB
-text.centered = True
-text.pos = (new_x, new_y)  # Reposition
+caption = mcrfpy.Caption(text="Hello World", pos=(x, y))
+caption.font = mcrfpy.default_font
+caption.font_size = 24
+caption.fill_color = mcrfpy.Color(255, 255, 255)
+caption.pos = (new_x, new_y)  # Reposition
 ```
 
 ### Sprite
 ```python
 texture = mcrfpy.Texture("sprites.png", 16, 16)
-sprite = mcrfpy.Sprite(x, y)
-sprite.texture = texture
-sprite.sprite_index = 0
+sprite = mcrfpy.Sprite(pos=(x, y), texture=texture, sprite_index=0)
 sprite.scale = (2.0, 2.0)
 sprite.pos = (new_x, new_y)
 ```
 
 ### Frame (Container)
 ```python
-frame = mcrfpy.Frame(x, y, width, height)
-frame.bgcolor = (64, 64, 128)
+frame = mcrfpy.Frame(pos=(x, y), size=(width, height))
+frame.fill_color = mcrfpy.Color(64, 64, 128)
 frame.outline = 2
-frame.outline_color = (255, 255, 255)
+frame.outline_color = mcrfpy.Color(255, 255, 255)
 frame.children.append(caption)  # Add child elements
+
+# Alignment (NEW!)
+frame.align = mcrfpy.Alignment.CENTER  # Auto-position in parent
+frame.margin = 10.0  # Offset from edge
 ```
 
 ### Grid (Tilemap)
 ```python
-grid = mcrfpy.Grid(x, y, cols, rows, texture, tile_w, tile_h)
-grid.set_tile(tile_x, tile_y, sprite_index)
-tile_index = grid.get_tile(tile_x, tile_y)
+grid = mcrfpy.Grid(grid_size=(cols, rows), texture=texture, pos=(x, y), size=(w, h))
+cell = grid.at(tile_x, tile_y)
+cell.tilesprite = sprite_index
+cell.walkable = True
+cell.transparent = True
 grid.entities.append(entity)  # Add entities
 ```
 
 ### Entity
 ```python
-entity = mcrfpy.Entity(grid_x, grid_y)
-entity.texture = texture
-entity.sprite_index = 84
-entity.pos = (new_x, new_y)  # Move entity
-index = entity.index()  # Get position in collection
+entity = mcrfpy.Entity(pos=(grid_x, grid_y), texture=texture, sprite_index=84)
+entity.x, entity.y = new_x, new_y  # Move entity
+grid.entities.append(entity)
 ```
 
 ## Collections
 
 ```python
-# UICollection (for UI elements)
-ui = mcrfpy.sceneUI("scene_name")
-ui.append(element)
-ui.remove(element)
-for element in ui:
+# Scene children (modern API)
+scene = mcrfpy.Scene("game")
+scene.children.append(element)
+scene.children.remove(element)
+for element in scene.children:
     print(element)
 
 # EntityCollection (for entities in grids)
 entities = grid.entities
 entities.append(entity)
-entities.extend([e1, e2, e3])  # Add multiple
 entities.remove(entity)
 ```
 
 ## Input Handling
 
 ```python
-def on_key(key):
-    if key == "w" or key == "Up":
-        player.move_up()
+def on_key(key, state):
+    if state != "start":  # Ignore key release
+        return
+    if key == "W" or key == "Up":
+        move_player(0, -1)
     elif key == "Escape":
         mcrfpy.exit()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 ```
 
 ## Timers
 
 ```python
-def update(runtime):
-    # Called every 100ms
-    # runtime is total seconds since start
-    player.update(0.1)
+def update(timer, runtime):
+    # timer: the Timer object
+    # runtime: total seconds since start
+    player.update()
 
-# Start timer
-mcrfpy.setTimer("game_loop", update, 100)
+# Create timer (interval in seconds)
+timer = mcrfpy.Timer("game_loop", update, 0.1)  # 100ms = 0.1s
 
-# Stop timer
-mcrfpy.delTimer("game_loop")
+# Cancel timer
+timer.cancel()
+```
+
+## Headless Mode & Testing
+
+```python
+# Advance simulation time (for testing)
+mcrfpy.step(0.1)  # Advance by 0.1 seconds
+
+# Screenshots (synchronous in headless)
+from mcrfpy import automation
+automation.screenshot("game.png")
 ```
 
 ## Audio
@@ -124,97 +139,119 @@ mcrfpy.setMusicVolume(50)
 
 ### Game Loop
 ```python
-def game_update(runtime):
-    # Update logic
-    player.update()
-    enemies.update()
+scene = mcrfpy.Scene("game")
+scene.activate()
+
+def game_update(timer, runtime):
+    update_player()
+    update_enemies()
     check_collisions()
 
-mcrfpy.setTimer("main", game_update, 16)  # ~60 FPS
+timer = mcrfpy.Timer("main", game_update, 0.016)  # ~60 FPS
 ```
 
 ### Scene Transitions
 ```python
-def to_menu():
-    mcrfpy.setScene("menu")
-    mcrfpy.delTimer("game_loop")
-    mcrfpy.setTimer("menu_loop", menu_update, 100)
+menu_scene = mcrfpy.Scene("menu")
+game_scene = mcrfpy.Scene("game")
+
+def start_game():
+    game_scene.activate()
+
+def return_to_menu():
+    menu_scene.activate()
 ```
 
-### Entity Movement
+### Grid Movement with Collision
 ```python
-# Grid-based movement
-entity.pos = (entity.pos[0] + dx, entity.pos[1] + dy)
+def move_player(dx, dy):
+    new_x = int(player.x) + dx
+    new_y = int(player.y) + dy
 
-# Check grid bounds
-if 0 <= new_x < grid.grid_x and 0 <= new_y < grid.grid_y:
-    entity.pos = (new_x, new_y)
+    if grid.at(new_x, new_y).walkable:
+        player.x, player.y = new_x, new_y
+        grid.center = (player.x, player.y)
 ```
 
 ### Click Handling
 ```python
-def on_click(x, y, btn, type):
-    if btn == "left" and type == "start":
+def on_click(x, y, btn, action):
+    if btn == "left" and action == "start":
         print(f"Clicked at {x}, {y}")
 
-sprite.click_callable = on_click
+frame.click = on_click
 ```
 
-## Automation API
+## Pathfinding & FOV
 
 ```python
-from mcrfpy import automation
+# Field of View
+grid.compute_fov(player.x, player.y, radius=10)
+if grid.is_in_fov(enemy.x, enemy.y):
+    print("Enemy visible!")
 
-# Screenshots
-automation.screenshot("game.png")
+# A* Pathfinding
+path = grid.compute_astar(start_x, start_y, end_x, end_y)
 
-# Mouse control
-automation.click(x, y)
-automation.moveTo(x, y)
-automation.dragTo(x, y)
-
-# Keyboard
-automation.typewrite("Hello")
-automation.keyDown("shift")
-automation.keyUp("shift")
-automation.hotkey("ctrl", "s")
+# Dijkstra Maps (NEW!)
+dijkstra = grid.get_dijkstra_map((source_x, source_y))
+distance = dijkstra.distance((target_x, target_y))
+heightmap = dijkstra.to_heightmap()  # For procgen!
 ```
 
-## Color/Vector Helpers
+## Animation
 
 ```python
-# Colors can be tuples
-color = (255, 0, 0)  # Red
-frame.bgcolor = color
+# Animate any property
+anim = mcrfpy.Animation("x", target=200.0, duration=1.0, easing="easeInOut")
+anim.start(frame)
 
-# Vectors can be tuples or Vector objects
-pos = (100, 200)
-vec = mcrfpy.Vector(100, 200)
+# With callback
+def on_complete(anim, target):
+    print("Animation done!")
+
+anim = mcrfpy.Animation("opacity", 0.0, 0.5, "easeOut", callback=on_complete)
+anim.start(element)
 ```
 
-## Window Control
+## Alignment System (NEW!)
 
 ```python
-# Exit game
-mcrfpy.exit()
+# Auto-position elements in their parent
+child.align = mcrfpy.Alignment.CENTER      # Centered
+child.align = mcrfpy.Alignment.TOP_LEFT    # Corner with margin
+child.align = mcrfpy.Alignment.BOTTOM_RIGHT
+child.margin = 10.0  # Offset from edge
 
-# Change window scale
-mcrfpy.setScale(2.0)  # 2x window size
+# Alignment values: TOP_LEFT, TOP_CENTER, TOP_RIGHT,
+#                   CENTER_LEFT, CENTER, CENTER_RIGHT,
+#                   BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+```
+
+## Color Helper
+
+```python
+# Use mcrfpy.Color for colors
+red = mcrfpy.Color(255, 0, 0)
+transparent_blue = mcrfpy.Color(0, 0, 255, 128)  # RGBA
+
+frame.fill_color = red
+caption.fill_color = mcrfpy.Color(255, 255, 255)
 ```
 
 ## Tips
 
-1. **Always use timers** for game loops and animations
-2. **Check texture paths** - they're relative to the executable
-3. **Scene names are global** - use consistent naming
-4. **Entities need a grid** - add to grid.entities collection
-5. **Use default resources** - mcrfpy.default_font and default_texture
-6. **Test with automation** - great for regression testing
+1. **Use `mcrfpy.Scene()`** - modern API with `scene.children` and `scene.on_key`
+2. **Timer callbacks take `(timer, runtime)`** - not just runtime
+3. **Use `mcrfpy.step()`** for testing - advances simulation time instantly
+4. **Alignment auto-updates** - child repositions when parent resizes
+5. **Grid.at() returns a cell** - set `tilesprite`, `walkable`, `transparent`
+6. **Dijkstra.to_heightmap()** - great for procgen and visualization
 
 ## Common Issues
 
-- **No text showing**: Ensure font is loaded (use mcrfpy.default_font)
-- **Sprite not visible**: Check texture path and sprite_index bounds
-- **Entity not moving**: Ensure it's in a grid's entity collection
-- **Timer not firing**: Check scene is active and timer name is unique
-- **Click not working**: Assign click_callable to the UI element
+- **Scene not showing**: Call `scene.activate()` after creating
+- **Timer not firing**: Check callback signature is `(timer, runtime)`
+- **Alignment not working**: Element must be added to parent's `children`
+- **Key handler not working**: Use `scene.on_key = handler`, not old API
+- **Colors look wrong**: Use `mcrfpy.Color()`, not tuples
