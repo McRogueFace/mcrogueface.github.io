@@ -215,8 +215,8 @@ fov_layer.apply_perspective(
 import mcrfpy
 
 # Setup
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
+scene = mcrfpy.Scene("game")
+scene.activate()
 
 # Create grid
 grid = mcrfpy.Grid(
@@ -225,7 +225,7 @@ grid = mcrfpy.Grid(
     pos=(0, 0),
     size=(800, 600)
 )
-mcrfpy.sceneUI("game").append(grid)
+scene.children.append(grid)
 
 # Initialize map with walls and floors
 for y in range(30):
@@ -311,7 +311,7 @@ def on_key(key, action):
             grid.center = player.pos
             update_fov()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 ```
 
 ## Enemy Visibility

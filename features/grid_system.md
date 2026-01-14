@@ -8,7 +8,7 @@ The Grid is the foundation of tile-based games in McRogueFace. It provides effic
 import mcrfpy
 
 # Create a scene first
-mcrfpy.createScene("game")
+scene = mcrfpy.Scene("game")
 
 # Basic grid creation
 grid = mcrfpy.Grid(
@@ -19,8 +19,7 @@ grid = mcrfpy.Grid(
 )
 
 # Add to scene
-ui = mcrfpy.sceneUI("game")
-ui.append(grid)
+scene.children.append(grid)
 ```
 
 ### Constructor Parameters
@@ -241,7 +240,7 @@ def update_camera():
     grid.center_y = current_y + (target_y - current_y) * lerp_speed
 
 # Call every frame
-mcrfpy.setTimer("camera", lambda dt: update_camera(), 16)
+camera_timer = mcrfpy.Timer("camera", lambda t, rt: update_camera(), 0.016)
 
 # Zoom controls
 grid.zoom = 1.0   # Default view
@@ -271,8 +270,8 @@ import mcrfpy
 import random
 
 # Setup scene
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
+scene = mcrfpy.Scene("game")
+scene.activate()
 
 # Create grid
 grid = mcrfpy.Grid(
@@ -281,7 +280,7 @@ grid = mcrfpy.Grid(
     pos=(0, 0),
     size=(800, 600)
 )
-mcrfpy.sceneUI("game").append(grid)
+scene.children.append(grid)
 
 # Initialize map (all walls)
 for y in range(50):
@@ -361,7 +360,7 @@ def on_key(key, action):
         player.pos = (new_x, new_y)
         grid.center = player.pos
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 ```
 
 ## Notes and Caveats

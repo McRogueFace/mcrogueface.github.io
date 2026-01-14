@@ -153,7 +153,7 @@ def setup_game() -> mcrfpy.Scene:
 
     # Create the player entity
     player_entity = mcrfpy.Entity(
-        pos=(player_x, player_y),
+        grid_pos=(player_x, player_y),
         texture=texture,
         sprite_index=SPRITE_PLAYER
     )

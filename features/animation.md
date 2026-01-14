@@ -248,9 +248,9 @@ def damage_flash(entity):
     # Flash to red
     entity.fill_color = mcrfpy.Color(255, 0, 0)
 
-    # Wait then restore
-    mcrfpy.setTimer("damage_flash", lambda dt: restore_color(None, entity), 100)
-    mcrfpy.setTimer("damage_flash_cleanup", lambda dt: mcrfpy.delTimer("damage_flash"), 200)
+    # Wait then restore (using Animation callback instead of timer)
+    # Alternative: use setTimeout-style pattern with Animation
+    mcrfpy.Animation("opacity", 1.0, 0.1, "linear", callback=lambda a, t: restore_color(None, entity)).start(entity)
 ```
 
 ### Floating Damage Numbers
@@ -264,10 +264,10 @@ def show_damage_number(x, y, damage):
         font_size=16
     )
     text.fill_color = mcrfpy.Color(255, 100, 100)
-    mcrfpy.sceneUI("game").append(text)
+    scene.children.append(text)  # Assumes 'scene' variable is available
 
     def remove_text(anim, target):
-        mcrfpy.sceneUI("game").remove(target)
+        scene.children.remove(target)
 
     # Float up and fade out
     mcrfpy.Animation("y", y - 30, 1.0, "easeOut").start(text)
@@ -280,18 +280,17 @@ def show_damage_number(x, y, damage):
 import mcrfpy
 
 # Setup scene
-mcrfpy.createScene("animation_demo")
-mcrfpy.setScene("animation_demo")
-ui = mcrfpy.sceneUI("animation_demo")
+scene = mcrfpy.Scene("animation_demo")
+scene.activate()
 
 # Create animated elements
 box = mcrfpy.Frame(pos=(50, 50), size=(100, 100))
 box.fill_color = mcrfpy.Color(255, 0, 0)
-ui.append(box)
+scene.children.append(box)
 
 label = mcrfpy.Caption(pos=(400, 300), text="Animation Demo")
 label.fill_color = mcrfpy.Color(255, 255, 255)
-ui.append(label)
+scene.children.append(label)
 
 # Animation state
 animation_running = False
@@ -337,12 +336,12 @@ def on_key(key, action):
     if action == "start" and key.lower() == "space":
         run_demo()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 
 # Instructions
 instructions = mcrfpy.Caption(pos=(300, 550), text="Press SPACE to run animation")
 instructions.fill_color = mcrfpy.Color(200, 200, 200)
-ui.append(instructions)
+scene.children.append(instructions)
 ```
 
 ## Performance Considerations

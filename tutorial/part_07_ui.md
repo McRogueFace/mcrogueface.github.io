@@ -1284,7 +1284,7 @@ class AnimatedHealthBar(HealthBar):
             self._update_display()
 
 # Use a timer to animate
-mcrfpy.setTimer("hp_animate", lambda: health_bar.animate(), 50)
+timer = mcrfpy.Timer("hp_animate", lambda t, rt: health_bar.animate(), 0.05)
 ```
 
 ### Challenge: Combat Log File

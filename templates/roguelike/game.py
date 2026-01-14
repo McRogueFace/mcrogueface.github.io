@@ -192,9 +192,8 @@ def initialize_game() -> None:
     4. Initializes the FOV system
     5. Sets up input handling
     """
-    # Create the game scene
-    mcrfpy.createScene("game")
-    ui = mcrfpy.sceneUI("game")
+    # Create the game scene (modern Scene object pattern)
+    scene = mcrfpy.Scene("game")
 
     # Load the tileset texture
     # The default McRogueFace texture works great for roguelikes
@@ -212,7 +211,7 @@ def initialize_game() -> None:
         grid_size=(MAP_WIDTH, MAP_HEIGHT),   # Map size in tiles
         texture=game.texture
     )
-    ui.append(game.grid)
+    scene.children.append(game.grid)
 
     # Generate dungeon layout
     game.rooms = generate_dungeon()
@@ -249,11 +248,11 @@ def initialize_game() -> None:
     # Initial FOV calculation
     update_fov()
 
-    # Register input handler
-    mcrfpy.keypressScene(handle_keys)
+    # Register input handler (modern scene.on_key pattern)
+    scene.on_key = handle_keys
 
-    # Switch to game scene
-    mcrfpy.setScene("game")
+    # Activate the game scene
+    scene.activate()
 
 
 # =============================================================================

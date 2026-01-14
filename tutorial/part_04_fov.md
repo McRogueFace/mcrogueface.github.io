@@ -554,7 +554,7 @@ import math
 base_radius = 8
 time_counter = 0
 
-def update_lighting():
+def update_lighting(timer, runtime):
     global time_counter
     time_counter += 1
     # Vary radius between 7 and 9
@@ -562,7 +562,7 @@ def update_lighting():
     current_radius = int(base_radius - 1 + flicker * 2)
     update_fov(grid, fov_layer, int(player.x), int(player.y), current_radius)
 
-mcrfpy.setTimer("lighting", update_lighting, 100)  # Update every 100ms
+light_timer = mcrfpy.Timer("lighting", update_lighting, 0.1)  # Update every 100ms
 ```
 
 ### Challenge: Enemy Visibility

@@ -235,8 +235,8 @@ The key handler receives two arguments:
 - `key`: A string identifying the key ("W", "Up", "Space", "Escape", etc.)
 - `action`: Either "start" (key pressed) or "end" (key released)
 
-Setting `scene.on_key` is preferred over `mcrfpy.keypressScene()` because:
-- It can be set on ANY scene, not just the current one
+Setting `scene.on_key` is the standard approach because:
+- It can be set on ANY scene, not just the active one
 - It keeps the handler associated with its scene object
 
 ## Grid Coordinate System
