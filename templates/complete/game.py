@@ -43,9 +43,9 @@ class Game:
         self.texture = mcrfpy.Texture(TEXTURE_PATH, 16, 16)
         self.font = mcrfpy.Font(FONT_PATH)
 
-        # Create scene
-        mcrfpy.createScene("game")
-        self.ui_collection = mcrfpy.sceneUI("game")
+        # Create scene (modern Scene object pattern)
+        self.scene = mcrfpy.Scene("game")
+        self.ui_collection = self.scene.children
 
         # Create grid
         self.grid = mcrfpy.Grid(
@@ -70,14 +70,14 @@ class Game:
         self.death_screen: Optional[DeathScreen] = None
         self.game_over = False
 
-        # Set up input handling
-        mcrfpy.keypressScene(self.handle_keypress)
+        # Set up input handling (modern scene.on_key pattern)
+        self.scene.on_key = self.handle_keypress
 
         # Start the game
         self.new_game()
 
-        # Switch to game scene
-        mcrfpy.setScene("game")
+        # Activate the game scene
+        self.scene.activate()
 
     def new_game(self) -> None:
         """Start a new game from level 1."""
