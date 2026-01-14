@@ -170,21 +170,15 @@ class PathAnimator:
         self.current_step += 1
         delay_ms = int(self.step_duration * 1000) + 20  # Small buffer
 
-        mcrfpy.setTimer(
-            f"path_{id(self)}",
-            lambda dt: self._continue(),
-            delay_ms
-        )
+        def continue_path(timer, runtime):
+            if self.animating:  # Check if still active
+                self._animate_next_step()
 
-    def _continue(self):
-        """Continue to next step."""
-        mcrfpy.delTimer(f"path_{id(self)}")
-        self._animate_next_step()
+        mcrfpy.Timer(f"path_{id(self)}", continue_path, delay_ms)
 
     def stop(self):
         """Stop path animation."""
-        self.animating = False
-        mcrfpy.delTimer(f"path_{id(self)}")
+        self.animating = False  # Timer callbacks will check this flag
 
 
 # Usage
@@ -277,7 +271,7 @@ class MovementController:
         cam_y.start(self.grid)
 
 
-# Usage
+# Usage (assumes scene, player, game_grid already defined)
 controller = MovementController(player, game_grid, move_duration=0.15)
 
 def handle_input(key, action):
@@ -293,7 +287,7 @@ def handle_input(key, action):
     elif key in ["D", "Right"]:
         controller.queue_move(1, 0)
 
-mcrfpy.keypressScene(handle_input)
+scene.on_key = handle_input
 ```
 
 ## Bounce Effect

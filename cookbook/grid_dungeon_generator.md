@@ -262,13 +262,11 @@ class DungeonGenerator:
 import mcrfpy
 
 # Setup
-mcrfpy.createScene("dungeon")
-mcrfpy.setScene("dungeon")
-ui = mcrfpy.sceneUI("dungeon")
+scene = mcrfpy.Scene("dungeon")
 
 texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
 grid = mcrfpy.Grid(60, 40, texture, 0, 0, 960, 640)
-ui.append(grid)
+scene.children.append(grid)
 
 # Generate dungeon
 generator = DungeonGenerator(grid, seed=42)

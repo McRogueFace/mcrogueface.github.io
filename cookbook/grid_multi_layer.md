@@ -288,10 +288,10 @@ for x in range(8, 12):
         effects.add_effect(x, y, 'poison', duration=5)
 
 # Update in game loop
-def game_update(runtime):
+def game_update(timer, runtime):
     effects.update(0.016)  # 60 FPS
 
-mcrfpy.setTimer("effects", game_update, 16)
+mcrfpy.Timer("effects", game_update, 16)
 ```
 
 ---
@@ -359,10 +359,10 @@ movement_cells = get_movement_range(player.pos, 5)
 layers.highlight_cells(movement_cells, mcrfpy.Color(50, 100, 255, 80))
 
 # Game loop
-def update(runtime):
+def update(timer, runtime):
     layers.update(0.016)
 
-mcrfpy.setTimer("layers", update, 16)
+mcrfpy.Timer("layers", update, 16)
 ```
 
 ---

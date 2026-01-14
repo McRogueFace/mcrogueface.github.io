@@ -72,20 +72,18 @@ class ModalDialog:
 
         # Title
         self.title_caption = mcrfpy.Caption(
-            self.title,
-            mcrfpy.default_font,
-            dialog_x + 20,
-            dialog_y + 15
+            text=self.title,
+            x=dialog_x + 20,
+            y=dialog_y + 15
         )
         self.title_caption.fill_color = mcrfpy.Color(255, 220, 100)
         self.title_caption.visible = False
 
         # Message
         self.message_caption = mcrfpy.Caption(
-            self.message,
-            mcrfpy.default_font,
-            dialog_x + 20,
-            dialog_y + 50
+            text=self.message,
+            x=dialog_x + 20,
+            y=dialog_y + 50
         )
         self.message_caption.fill_color = mcrfpy.Color(220, 220, 220)
         self.message_caption.visible = False
@@ -121,7 +119,7 @@ class ModalDialog:
             label_x = btn_x + (self.button_width - len(label) * 8) // 2
             label_y = button_y + (self.button_height - 16) // 2
 
-            btn_label = mcrfpy.Caption(label, mcrfpy.default_font, label_x, label_y)
+            btn_label = mcrfpy.Caption(text=label, x=label_x, y=label_y)
             btn_label.fill_color = mcrfpy.Color(255, 255, 255)
             btn_label.visible = False
             self.button_labels.append(btn_label)
@@ -159,18 +157,16 @@ class ModalDialog:
 
 
 # Usage Example
-mcrfpy.createScene("modal_demo")
-mcrfpy.setScene("modal_demo")
-ui = mcrfpy.sceneUI("modal_demo")
+scene = mcrfpy.Scene("modal_demo")
 
 # Background content
 bg = mcrfpy.Frame(0, 0, 1024, 768)
 bg.fill_color = mcrfpy.Color(30, 30, 45)
-ui.append(bg)
+scene.children.append(bg)
 
-label = mcrfpy.Caption("Press SPACE to show dialog", mcrfpy.default_font, 350, 350)
+label = mcrfpy.Caption(text="Press SPACE to show dialog", x=350, y=350)
 label.fill_color = mcrfpy.Color(200, 200, 200)
-ui.append(label)
+scene.children.append(label)
 
 # Create dialog
 def on_dialog_close(index, label):
@@ -186,7 +182,7 @@ dialog = ModalDialog(
     ["Yes", "No"],
     on_dialog_close
 )
-dialog.add_to_scene(ui)
+dialog.add_to_scene(scene.children)
 
 # Show dialog on keypress
 def on_key(key, state):
@@ -197,7 +193,8 @@ def on_key(key, state):
     elif key == "Escape" and dialog.visible:
         dialog.hide()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
+scene.activate()
 ```
 
 ## Enhanced Dialog with Multiple Styles
@@ -297,20 +294,18 @@ class EnhancedDialog:
 
         # Title text
         self.title_caption = mcrfpy.Caption(
-            self.title,
-            mcrfpy.default_font,
-            dx + 15,
-            dy + 10
+            text=self.title,
+            x=dx + 15,
+            y=dy + 10
         )
         self.title_caption.fill_color = self.style['title']
         self.title_caption.visible = False
 
         # Message
         self.message_caption = mcrfpy.Caption(
-            self.message,
-            mcrfpy.default_font,
-            dx + 20,
-            dy + 50
+            text=self.message,
+            x=dx + 20,
+            y=dy + 50
         )
         self.message_caption.fill_color = mcrfpy.Color(230, 230, 230)
         self.message_caption.visible = False
@@ -347,7 +342,7 @@ class EnhancedDialog:
             lx = bx + (btn_width - len(label) * 8) // 2
             ly = btn_y + (btn_height - 16) // 2
 
-            lbl = mcrfpy.Caption(label, mcrfpy.default_font, lx, ly)
+            lbl = mcrfpy.Caption(text=label, x=lx, y=ly)
             lbl.fill_color = mcrfpy.Color(255, 255, 255)
             lbl.visible = False
             self.button_labels.append(lbl)
@@ -456,13 +451,11 @@ class EnhancedDialog:
 
 
 # Usage with different styles
-mcrfpy.createScene("styled_dialogs")
-mcrfpy.setScene("styled_dialogs")
-ui = mcrfpy.sceneUI("styled_dialogs")
+scene = mcrfpy.Scene("styled_dialogs")
 
 bg = mcrfpy.Frame(0, 0, 1024, 768)
 bg.fill_color = mcrfpy.Color(35, 35, 45)
-ui.append(bg)
+scene.children.append(bg)
 
 # Current dialog reference
 current_dialog = None
@@ -475,7 +468,7 @@ def show_info():
         ["OK"],
         DialogStyle.INFO
     )
-    current_dialog.add_to_scene(ui)
+    current_dialog.add_to_scene(scene.children)
     current_dialog.show()
 
 def show_warning():
@@ -487,7 +480,7 @@ def show_warning():
         DialogStyle.WARNING,
         lambda i, l: print(f"Warning response: {l}")
     )
-    current_dialog.add_to_scene(ui)
+    current_dialog.add_to_scene(scene.children)
     current_dialog.show()
 
 def show_error():
@@ -498,7 +491,7 @@ def show_error():
         ["Retry", "Cancel"],
         DialogStyle.ERROR
     )
-    current_dialog.add_to_scene(ui)
+    current_dialog.add_to_scene(scene.children)
     current_dialog.show()
 
 def show_success():
@@ -509,16 +502,16 @@ def show_success():
         ["Continue"],
         DialogStyle.SUCCESS
     )
-    current_dialog.add_to_scene(ui)
+    current_dialog.add_to_scene(scene.children)
     current_dialog.show()
 
 # Help text
 help_text = mcrfpy.Caption(
-    "Press: 1=Info  2=Warning  3=Error  4=Success",
-    mcrfpy.default_font, 280, 700
+    text="Press: 1=Info  2=Warning  3=Error  4=Success",
+    x=280, y=700
 )
 help_text.fill_color = mcrfpy.Color(150, 150, 150)
-ui.append(help_text)
+scene.children.append(help_text)
 
 def on_key(key, state):
     global current_dialog
@@ -538,7 +531,8 @@ def on_key(key, state):
     elif key == "Num4" or key == "4":
         show_success()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
+scene.activate()
 ```
 
 ## Dialog Manager for Queued Dialogs
@@ -637,29 +631,27 @@ manager.show("Third", "And this is last", ["Done"])
 import mcrfpy
 
 # Scene setup
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
-ui = mcrfpy.sceneUI("game")
+scene = mcrfpy.Scene("game")
 
 # Game background
 bg = mcrfpy.Frame(0, 0, 1024, 768)
 bg.fill_color = mcrfpy.Color(25, 35, 45)
-ui.append(bg)
+scene.children.append(bg)
 
-title = mcrfpy.Caption("My Game", mcrfpy.default_font, 450, 50)
+title = mcrfpy.Caption(text="My Game", x=450, y=50)
 title.fill_color = mcrfpy.Color(255, 255, 255)
-ui.append(title)
+scene.children.append(title)
 
 # Quit button
 quit_btn = mcrfpy.Frame(430, 400, 160, 50)
 quit_btn.fill_color = mcrfpy.Color(150, 50, 50)
 quit_btn.outline = 2
 quit_btn.outline_color = mcrfpy.Color(200, 100, 100)
-ui.append(quit_btn)
+scene.children.append(quit_btn)
 
-quit_label = mcrfpy.Caption("Quit Game", mcrfpy.default_font, 460, 415)
+quit_label = mcrfpy.Caption(text="Quit Game", x=460, y=415)
 quit_label.fill_color = mcrfpy.Color(255, 255, 255)
-ui.append(quit_label)
+scene.children.append(quit_label)
 
 # Confirmation dialog
 confirm_dialog = None
@@ -678,7 +670,7 @@ def show_quit_confirm():
         DialogStyle.WARNING,
         on_response
     )
-    confirm_dialog.add_to_scene(ui)
+    confirm_dialog.add_to_scene(scene.children)
     confirm_dialog.show()
 
 quit_btn.click = lambda x, y, b, a: show_quit_confirm() if a == "start" else None
@@ -693,5 +685,6 @@ def on_key(key, state):
     if key == "Escape":
         show_quit_confirm()
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
+scene.activate()
 ```

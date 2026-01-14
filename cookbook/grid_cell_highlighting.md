@@ -319,11 +319,11 @@ class AnimatedHighlight:
 # Update in game loop
 animated_highlights = AnimatedHighlight(grid)
 
-def game_update(runtime):
+def game_update(timer, runtime):
     dt = 0.016  # ~60 FPS
     animated_highlights.update(dt)
 
-mcrfpy.setTimer("highlight_anim", game_update, 16)
+mcrfpy.Timer("highlight_anim", game_update, 16)
 ```
 
 ---

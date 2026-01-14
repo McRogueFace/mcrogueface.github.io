@@ -75,16 +75,16 @@ class HealthBar:
 
 
 # Usage Example
-mcrfpy.createScene("health_demo")
-mcrfpy.setScene("health_demo")
-ui = mcrfpy.sceneUI("health_demo")
+scene = mcrfpy.Scene("health_demo")
 
 # Create a health bar
 hp_bar = HealthBar(50, 50, 200, 20, current=75, maximum=100)
-hp_bar.add_to_scene(ui)
+hp_bar.add_to_scene(scene.children)
 
 # Update health
 hp_bar.set_health(50)  # Now at 50%
+
+scene.activate()
 ```
 
 ## Enhanced Health Bar with Text and Colors
@@ -133,10 +133,9 @@ class EnhancedHealthBar:
         self.label = None
         if show_text:
             self.label = mcrfpy.Caption(
-                "",
-                mcrfpy.default_font,
-                x + w / 2 - 20,
-                y + h / 2 - 8
+                text="",
+                x=x + w / 2 - 20,
+                y=y + h / 2 - 8
             )
             self.label.fill_color = mcrfpy.Color(255, 255, 255)
             self.label.outline = 1
@@ -194,18 +193,18 @@ class EnhancedHealthBar:
 
 
 # Usage
-mcrfpy.createScene("demo")
-mcrfpy.setScene("demo")
-ui = mcrfpy.sceneUI("demo")
+scene = mcrfpy.Scene("demo")
 
 # Create enhanced health bar
 hp = EnhancedHealthBar(50, 50, 250, 25, current=100, maximum=100)
-hp.add_to_scene(ui)
+hp.add_to_scene(scene.children)
 
 # Simulate damage
 hp.damage(30)  # Now 70/100, shows green
 hp.damage(25)  # Now 45/100, shows orange
 hp.damage(20)  # Now 25/100, shows red
+
+scene.activate()
 ```
 
 ## Animated Health Bar
@@ -285,23 +284,27 @@ class AnimatedHealthBar:
 
     def _start_animation(self):
         """Start animating toward target health."""
-        mcrfpy.delTimer(self.timer_name)
+        self._animating = True
 
-        def animate_step(dt):
+        def animate_step(timer, runtime):
+            if not self._animating:
+                return
             # Lerp toward target
             diff = self.current - self.display_current
             if abs(diff) < 0.5:
                 self.display_current = self.current
-                mcrfpy.delTimer(self.timer_name)
+                self._animating = False
                 # Also update damage preview
                 self.damage_fill.w = self.fill.w
             else:
                 # Move 10% of the way each frame
                 self.display_current += diff * 0.1
+                # Continue animation
+                mcrfpy.Timer(self.timer_name, animate_step, 16)
 
             self._update_display()
 
-        mcrfpy.setTimer(self.timer_name, animate_step, 16)
+        mcrfpy.Timer(self.timer_name, animate_step, 16)
 
     def damage(self, amount):
         """Apply damage with animation."""
@@ -361,7 +364,7 @@ class ResourceBar:
         self.fill.outline = 0
 
         # Label (left side)
-        self.label = mcrfpy.Caption(label, mcrfpy.default_font, x - 30, y + 2)
+        self.label = mcrfpy.Caption(text=label, x=x - 30, y=y + 2)
         self.label.fill_color = mcrfpy.Color(200, 200, 200)
 
         self._update()
@@ -419,17 +422,17 @@ class PlayerStats:
 
 
 # Usage
-mcrfpy.createScene("stats_demo")
-mcrfpy.setScene("stats_demo")
-ui = mcrfpy.sceneUI("stats_demo")
+scene = mcrfpy.Scene("stats_demo")
 
 stats = PlayerStats(80, 20)
-stats.add_to_scene(ui)
+stats.add_to_scene(scene.children)
 
 # Update individual stats
 stats.hp.set_value(75)
 stats.mp.set_value(30)
 stats.stamina.set_value(60)
+
+scene.activate()
 ```
 
 ## McRogueFace-Specific Considerations
@@ -448,28 +451,26 @@ stats.stamina.set_value(60)
 
 ```python
 import mcrfpy
+import random
 
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
-ui = mcrfpy.sceneUI("game")
+scene = mcrfpy.Scene("game")
 
 # Player health bar at top
 player_hp = EnhancedHealthBar(10, 10, 300, 30, 100, 100)
-player_hp.add_to_scene(ui)
+player_hp.add_to_scene(scene.children)
 
 # Enemy health bar
 enemy_hp = EnhancedHealthBar(400, 10, 200, 20, 50, 50)
-enemy_hp.add_to_scene(ui)
+enemy_hp.add_to_scene(scene.children)
 
 # Simulate combat
-def combat_tick(dt):
-    import random
+def combat_tick(timer, runtime):
     if random.random() < 0.3:
         player_hp.damage(random.randint(5, 15))
     if random.random() < 0.4:
         enemy_hp.damage(random.randint(3, 8))
 
-mcrfpy.setTimer("combat", combat_tick, 1000)
+combat_timer = mcrfpy.Timer("combat", combat_tick, 1000)
 
 # Keyboard controls for testing
 def on_key(key, state):
@@ -480,5 +481,6 @@ def on_key(key, state):
     elif key == "D":
         player_hp.damage(10)
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
+scene.activate()
 ```

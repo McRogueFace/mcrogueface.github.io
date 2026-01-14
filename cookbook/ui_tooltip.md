@@ -43,7 +43,7 @@ class Tooltip:
         self.frame.visible = False
 
         # Tooltip text
-        self.caption = mcrfpy.Caption(text, mcrfpy.default_font, 5, 5)
+        self.caption = mcrfpy.Caption(text=text, x=5, y=5)
         self.caption.fill_color = mcrfpy.Color(255, 255, 220)
         self.caption.visible = False
 
@@ -109,34 +109,32 @@ def make_hoverable(element, tooltip, tooltip_text=None):
 
 
 # Usage Example
-mcrfpy.createScene("tooltip_demo")
-mcrfpy.setScene("tooltip_demo")
-ui = mcrfpy.sceneUI("tooltip_demo")
+scene = mcrfpy.Scene("tooltip_demo")
 
 # Create some buttons
 button1 = mcrfpy.Frame(100, 100, 120, 40)
 button1.fill_color = mcrfpy.Color(60, 60, 100)
 button1.outline = 2
 button1.outline_color = mcrfpy.Color(100, 100, 150)
-ui.append(button1)
+scene.children.append(button1)
 
-btn1_label = mcrfpy.Caption("Attack", mcrfpy.default_font, 125, 112)
+btn1_label = mcrfpy.Caption(text="Attack", x=125, y=112)
 btn1_label.fill_color = mcrfpy.Color(255, 255, 255)
-ui.append(btn1_label)
+scene.children.append(btn1_label)
 
 button2 = mcrfpy.Frame(100, 160, 120, 40)
 button2.fill_color = mcrfpy.Color(60, 100, 60)
 button2.outline = 2
 button2.outline_color = mcrfpy.Color(100, 150, 100)
-ui.append(button2)
+scene.children.append(button2)
 
-btn2_label = mcrfpy.Caption("Defend", mcrfpy.default_font, 125, 172)
+btn2_label = mcrfpy.Caption(text="Defend", x=125, y=172)
 btn2_label.fill_color = mcrfpy.Color(255, 255, 255)
-ui.append(btn2_label)
+scene.children.append(btn2_label)
 
 # Create shared tooltip (add last for top layer)
 tooltip = Tooltip("", width=250)
-tooltip.add_to_scene(ui)
+tooltip.add_to_scene(scene.children)
 
 # Make buttons hoverable
 make_hoverable(button1, tooltip, "Deal damage to the enemy")
@@ -146,7 +144,7 @@ make_hoverable(button2, tooltip, "Reduce incoming damage by 50%")
 # This requires tracking mouse position globally
 last_hover_element = None
 
-def global_mouse_check(dt):
+def global_mouse_check(timer, runtime):
     """Check if mouse is still over a hoverable element."""
     from mcrfpy import automation
     mx, my = automation.position()
@@ -162,7 +160,8 @@ def global_mouse_check(dt):
     if not over_element and tooltip.visible:
         tooltip.hide()
 
-mcrfpy.setTimer("tooltip_check", global_mouse_check, 100)
+mcrfpy.Timer("tooltip_check", global_mouse_check, 100)
+scene.activate()
 ```
 
 ## Tooltip Manager for Multiple Elements
@@ -194,7 +193,7 @@ class TooltipManager:
         self.tooltip_frame.outline_color = mcrfpy.Color(80, 80, 100)
         self.tooltip_frame.visible = False
 
-        self.tooltip_text = mcrfpy.Caption("", mcrfpy.default_font, 0, 0)
+        self.tooltip_text = mcrfpy.Caption(text="", x=0, y=0)
         self.tooltip_text.fill_color = mcrfpy.Color(255, 255, 230)
         self.tooltip_text.visible = False
 
@@ -228,10 +227,9 @@ class TooltipManager:
         if elem_id not in self.elements:
             return
 
-        # Cancel any pending tooltip
+        # Cancel any pending tooltip by invalidating timer
         if self.hover_timer:
-            mcrfpy.delTimer(self.hover_timer)
-            self.hover_timer = None
+            self.hover_timer = None  # Timer callbacks check this
 
         # Start delay timer for showing tooltip
         self.pending_element = element
@@ -241,12 +239,12 @@ class TooltipManager:
         timer_name = f"tooltip_delay_{id(self)}"
         self.hover_timer = timer_name
 
-        def show_after_delay(dt):
+        def show_after_delay(timer, runtime):
             if self.pending_element == element:
                 self._show_tooltip(element, self.pending_x, self.pending_y)
             self.hover_timer = None
 
-        mcrfpy.setTimer(timer_name, show_after_delay, self.hover_delay)
+        mcrfpy.Timer(timer_name, show_after_delay, self.hover_delay)
 
     def _show_tooltip(self, element, x, y):
         """Display tooltip for element."""
@@ -297,9 +295,8 @@ class TooltipManager:
         self.tooltip_text.visible = False
         self.current_element = None
 
-        if self.hover_timer:
-            mcrfpy.delTimer(self.hover_timer)
-            self.hover_timer = None
+        # Invalidate pending timer (callbacks check hover_timer)
+        self.hover_timer = None
 
     def add_to_scene(self, ui):
         """Add tooltip to scene (call last for top layer)."""
@@ -323,9 +320,7 @@ class TooltipManager:
 
 
 # Usage
-mcrfpy.createScene("demo")
-mcrfpy.setScene("demo")
-ui = mcrfpy.sceneUI("demo")
+scene = mcrfpy.Scene("demo")
 
 # Create tooltip manager
 tips = TooltipManager()
@@ -335,7 +330,7 @@ sword_frame = mcrfpy.Frame(100, 100, 64, 64)
 sword_frame.fill_color = mcrfpy.Color(80, 60, 40)
 sword_frame.outline = 2
 sword_frame.outline_color = mcrfpy.Color(120, 100, 80)
-ui.append(sword_frame)
+scene.children.append(sword_frame)
 
 tips.register(
     sword_frame,
@@ -347,7 +342,7 @@ shield_frame = mcrfpy.Frame(180, 100, 64, 64)
 shield_frame.fill_color = mcrfpy.Color(60, 60, 80)
 shield_frame.outline = 2
 shield_frame.outline_color = mcrfpy.Color(100, 100, 120)
-ui.append(shield_frame)
+scene.children.append(shield_frame)
 
 tips.register(
     shield_frame,
@@ -356,15 +351,16 @@ tips.register(
 )
 
 # Add tooltip last for top layer
-tips.add_to_scene(ui)
+tips.add_to_scene(scene.children)
 
 # Update loop to check mouse position
-def update_tooltips(dt):
+def update_tooltips(timer, runtime):
     from mcrfpy import automation
     x, y = automation.position()
     tips.update(x, y)
 
-mcrfpy.setTimer("tooltip_update", update_tooltips, 50)
+mcrfpy.Timer("tooltip_update", update_tooltips, 50)
+scene.activate()
 ```
 
 ## Inline Tooltip (Attached to Element)
@@ -389,7 +385,7 @@ def create_info_icon(x, y, tooltip_text, ui):
     icon.outline = 1
     icon.outline_color = mcrfpy.Color(100, 160, 210)
 
-    icon_label = mcrfpy.Caption("i", mcrfpy.default_font, x + 6, y + 2)
+    icon_label = mcrfpy.Caption(text="i", x=x + 6, y=y + 2)
     icon_label.fill_color = mcrfpy.Color(255, 255, 255)
 
     # Tooltip (positioned to the right of icon)
@@ -399,7 +395,7 @@ def create_info_icon(x, y, tooltip_text, ui):
     tip_frame.outline_color = mcrfpy.Color(80, 80, 100)
     tip_frame.visible = False
 
-    tip_text = mcrfpy.Caption(tooltip_text, mcrfpy.default_font, x + 33, y + 3)
+    tip_text = mcrfpy.Caption(text=tooltip_text, x=x + 33, y=y + 3)
     tip_text.fill_color = mcrfpy.Color(220, 220, 220)
     tip_text.visible = False
 
@@ -411,7 +407,7 @@ def create_info_icon(x, y, tooltip_text, ui):
     icon.click = on_icon_hover
 
     # Track when to hide
-    def check_hover(dt):
+    def check_hover(timer, runtime):
         from mcrfpy import automation
         mx, my = automation.position()
         if not (icon.x <= mx <= icon.x + icon.w and
@@ -421,7 +417,7 @@ def create_info_icon(x, y, tooltip_text, ui):
                 tip_text.visible = False
 
     timer_name = f"info_hover_{id(icon)}"
-    mcrfpy.setTimer(timer_name, check_hover, 100)
+    mcrfpy.Timer(timer_name, check_hover, 100)
 
     # Add to scene
     ui.append(icon)
@@ -433,16 +429,15 @@ def create_info_icon(x, y, tooltip_text, ui):
 
 
 # Usage
-mcrfpy.createScene("info_demo")
-mcrfpy.setScene("info_demo")
-ui = mcrfpy.sceneUI("info_demo")
+scene = mcrfpy.Scene("info_demo")
 
 # Setting with info icon
-setting_label = mcrfpy.Caption("Difficulty:", mcrfpy.default_font, 100, 100)
+setting_label = mcrfpy.Caption(text="Difficulty:", x=100, y=100)
 setting_label.fill_color = mcrfpy.Color(200, 200, 200)
-ui.append(setting_label)
+scene.children.append(setting_label)
 
-create_info_icon(200, 98, "Affects enemy\nHP and damage", ui)
+create_info_icon(200, 98, "Affects enemy\nHP and damage", scene.children)
+scene.activate()
 ```
 
 ## McRogueFace-Specific Considerations
@@ -464,14 +459,12 @@ create_info_icon(200, 98, "Affects enemy\nHP and damage", ui)
 ```python
 import mcrfpy
 
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
-ui = mcrfpy.sceneUI("game")
+scene = mcrfpy.Scene("game")
 
 # Background
 bg = mcrfpy.Frame(0, 0, 1024, 768)
 bg.fill_color = mcrfpy.Color(25, 25, 35)
-ui.append(bg)
+scene.children.append(bg)
 
 # Create inventory slots with tooltips
 class InventorySlot:
@@ -481,7 +474,7 @@ class InventorySlot:
         self.frame.outline = 1
         self.frame.outline_color = mcrfpy.Color(80, 80, 90)
 
-        self.label = mcrfpy.Caption(item_name[:3], mcrfpy.default_font, x + 10, y + 15)
+        self.label = mcrfpy.Caption(text=item_name[:3], x=x + 10, y=y + 15)
         self.label.fill_color = mcrfpy.Color(200, 200, 200)
 
         tooltip_mgr.register(self.frame, item_desc, title=item_name)
@@ -505,17 +498,18 @@ items = [
 slots = []
 for i, (name, desc) in enumerate(items):
     slot = InventorySlot(100 + i * 60, 100, name, desc, tips)
-    slot.add_to_scene(ui)
+    slot.add_to_scene(scene.children)
     slots.append(slot)
 
 # Add tooltip last
-tips.add_to_scene(ui)
+tips.add_to_scene(scene.children)
 
 # Update loop
-def update(dt):
+def update(timer, runtime):
     from mcrfpy import automation
     x, y = automation.position()
     tips.update(x, y)
 
-mcrfpy.setTimer("update", update, 50)
+mcrfpy.Timer("update", update, 50)
+scene.activate()
 ```

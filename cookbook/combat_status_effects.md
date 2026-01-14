@@ -375,7 +375,8 @@ class EffectIndicator:
         "confusion": 17,
     }
 
-    def __init__(self, entity, ui_texture, offset_x=0, offset_y=-20):
+    def __init__(self, scene, entity, ui_texture, offset_x=0, offset_y=-20):
+        self.scene = scene
         self.entity = entity
         self.texture = ui_texture
         self.offset_x = offset_x
@@ -384,8 +385,6 @@ class EffectIndicator:
 
     def update(self, effect_manager):
         """Update displayed effect icons."""
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
         # Get current effects
         current_effects = {e.name for e in effect_manager.effects}
 
@@ -393,7 +392,10 @@ class EffectIndicator:
         for name in list(self.icons.keys()):
             if name not in current_effects:
                 try:
-                    ui.remove(self.icons[name])
+                    for i, elem in enumerate(self.scene.children):
+                        if elem is self.icons[name]:
+                            self.scene.children.remove(i)
+                            break
                 except:
                     pass
                 del self.icons[name]
@@ -406,15 +408,17 @@ class EffectIndicator:
                 y = self.entity.entity.y * 16 + self.offset_y
 
                 icon = mcrfpy.Sprite(self.texture, sprite_idx, x, y, 0.5)
-                ui.append(icon)
+                self.scene.children.append(icon)
                 self.icons[name] = icon
 
     def clear(self):
         """Remove all icons."""
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
         for icon in self.icons.values():
             try:
-                ui.remove(icon)
+                for i, elem in enumerate(self.scene.children):
+                    if elem is icon:
+                        self.scene.children.remove(i)
+                        break
             except:
                 pass
         self.icons.clear()

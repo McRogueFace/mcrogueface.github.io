@@ -59,10 +59,9 @@ class Menu:
         self.title_caption = None
         if title:
             self.title_caption = mcrfpy.Caption(
-                title,
-                mcrfpy.default_font,
-                x + self.padding,
-                y + self.padding
+                text=title,
+                x=x + self.padding,
+                y=y + self.padding
             )
             self.title_caption.fill_color = mcrfpy.Color(255, 255, 255)
 
@@ -71,10 +70,9 @@ class Menu:
         for i, option in enumerate(options):
             caption_y = y + self.padding + title_offset + i * self.line_height
             caption = mcrfpy.Caption(
-                option,
-                mcrfpy.default_font,
-                x + self.padding,
-                caption_y
+                text=option,
+                x=x + self.padding,
+                y=caption_y
             )
             caption.fill_color = self.color_normal
             self.option_captions.append(caption)
@@ -138,16 +136,18 @@ class Menu:
 
 
 # Usage Example
-mcrfpy.createScene("menu_demo")
-mcrfpy.setScene("menu_demo")
-ui = mcrfpy.sceneUI("menu_demo")
+scene = mcrfpy.Scene("menu_demo")
+
+# Create other scenes for navigation
+game_scene = mcrfpy.Scene("game")
+options_scene = mcrfpy.Scene("options")
 
 def on_menu_select(index, option):
     print(f"Selected: {option} (index {index})")
     if option == "Start Game":
-        mcrfpy.setScene("game")
+        game_scene.activate()
     elif option == "Options":
-        mcrfpy.setScene("options")
+        options_scene.activate()
     elif option == "Quit":
         mcrfpy.exit()
 
@@ -157,14 +157,15 @@ menu = Menu(
     on_menu_select,
     title="Main Menu"
 )
-menu.add_to_scene(ui)
+menu.add_to_scene(scene.children)
 
 def handle_keys(key, state):
     if state != "start":
         return
     menu.handle_key(key)
 
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
+scene.activate()
 ```
 
 ## Enhanced Menu with Submenus and Descriptions
@@ -238,10 +239,9 @@ class EnhancedMenu:
         self.title_caption = None
         if self.title:
             self.title_caption = mcrfpy.Caption(
-                self.title,
-                mcrfpy.default_font,
-                self.x + self.padding,
-                self.y + self.padding
+                text=self.title,
+                x=self.x + self.padding,
+                y=self.y + self.padding
             )
             self.title_caption.fill_color = self.colors['title']
 
@@ -260,10 +260,9 @@ class EnhancedMenu:
         for i, opt in enumerate(self.options):
             caption_y = self.y + self.padding + title_offset + i * self.line_height + 5
             caption = mcrfpy.Caption(
-                opt.get('label', '???'),
-                mcrfpy.default_font,
-                self.x + self.padding + 10,
-                caption_y
+                text=opt.get('label', '???'),
+                x=self.x + self.padding + 10,
+                y=caption_y
             )
             enabled = opt.get('enabled', True)
             caption.fill_color = self.colors['normal'] if enabled else self.colors['disabled']
@@ -272,10 +271,9 @@ class EnhancedMenu:
             # Add arrow for submenus
             if opt.get('submenu'):
                 arrow = mcrfpy.Caption(
-                    ">",
-                    mcrfpy.default_font,
-                    self.x + self.width - self.padding - 15,
-                    caption_y
+                    text=">",
+                    x=self.x + self.width - self.padding - 15,
+                    y=caption_y
                 )
                 arrow.fill_color = caption.fill_color
                 opt['_arrow'] = arrow
@@ -283,10 +281,9 @@ class EnhancedMenu:
         # Description text at bottom
         desc_y = self.y + height - desc_height + 5
         self.description = mcrfpy.Caption(
-            "",
-            mcrfpy.default_font,
-            self.x + self.padding,
-            desc_y
+            text="",
+            x=self.x + self.padding,
+            y=desc_y
         )
         self.description.fill_color = self.colors['description']
 
@@ -393,9 +390,7 @@ class EnhancedMenu:
 
 
 # Usage with submenus
-mcrfpy.createScene("menu")
-mcrfpy.setScene("menu")
-ui = mcrfpy.sceneUI("menu")
+scene = mcrfpy.Scene("menu")
 
 # Create options submenu
 options_menu = EnhancedMenu(350, 220, [
@@ -433,13 +428,13 @@ main_menu.title = "My Game"
 
 options_menu.parent_menu = main_menu
 current_menu = main_menu
-main_menu.add_to_scene(ui)
+main_menu.add_to_scene(scene.children)
 
 def switch_menu(new_menu):
     global current_menu
-    current_menu.remove_from_scene(ui)
+    current_menu.remove_from_scene(scene.children)
     current_menu = new_menu
-    current_menu.add_to_scene(ui)
+    current_menu.add_to_scene(scene.children)
 
 def handle_keys(key, state):
     global current_menu
@@ -459,7 +454,8 @@ def handle_keys(key, state):
         if parent:
             switch_menu(parent)
 
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
+scene.activate()
 ```
 
 ## Horizontal Menu Bar
@@ -498,10 +494,9 @@ class MenuBar:
         self.item_captions = []
         for i, item in enumerate(items):
             cap = mcrfpy.Caption(
-                item['label'],
-                mcrfpy.default_font,
-                10 + i * self.item_width,
-                y + 7
+                text=item['label'],
+                x=10 + i * self.item_width,
+                y=y + 7
             )
             cap.fill_color = mcrfpy.Color(200, 200, 200)
             self.item_captions.append(cap)
@@ -543,10 +538,9 @@ class MenuBar:
         self.dropdown_captions = []
         for i, opt in enumerate(options):
             cap = mcrfpy.Caption(
-                opt['label'],
-                mcrfpy.default_font,
-                x + 10,
-                y + 5 + i * 25
+                text=opt['label'],
+                x=x + 10,
+                y=y + 5 + i * 25
             )
             cap.fill_color = mcrfpy.Color(200, 200, 200)
             self.dropdown_captions.append(cap)
@@ -621,7 +615,7 @@ class MenuBar:
 
 ## McRogueFace-Specific Considerations
 
-1. **Keyboard Input**: The `keypressScene` callback receives key names as strings like "Up", "Down", "Return", "Escape". Handle both arrow keys and WASD for accessibility.
+1. **Keyboard Input**: The `scene.on_key` callback receives key names as strings like "Up", "Down", "Return", "Escape". Handle both arrow keys and WASD for accessibility.
 
 2. **Focus Management**: Only one menu should handle input at a time. Use an `active` flag or a global `current_menu` reference.
 
@@ -637,19 +631,17 @@ class MenuBar:
 import mcrfpy
 
 # Setup
-mcrfpy.createScene("main_menu")
-mcrfpy.setScene("main_menu")
-ui = mcrfpy.sceneUI("main_menu")
+scene = mcrfpy.Scene("main_menu")
 
 # Background
 bg = mcrfpy.Frame(0, 0, 1024, 768)
 bg.fill_color = mcrfpy.Color(20, 20, 35)
-ui.append(bg)
+scene.children.append(bg)
 
 # Title
-title = mcrfpy.Caption("DUNGEON QUEST", mcrfpy.default_font, 350, 100)
+title = mcrfpy.Caption(text="DUNGEON QUEST", x=350, y=100)
 title.fill_color = mcrfpy.Color(255, 200, 50)
-ui.append(title)
+scene.children.append(title)
 
 # Menu
 def start_game():
@@ -669,7 +661,7 @@ menu = Menu(
     }.get(i, lambda: None)(),
     title="Main Menu"
 )
-menu.add_to_scene(ui)
+menu.add_to_scene(scene.children)
 
 # Input
 def on_key(key, state):
@@ -677,5 +669,6 @@ def on_key(key, state):
         return
     menu.handle_key(key)
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
+scene.activate()
 ```

@@ -233,7 +233,7 @@ def handle_player_input(key, action):
         if try_move_or_attack(player, dx, dy):
             end_current_turn()
 
-mcrfpy.keypressScene(handle_player_input)
+scene.on_key = handle_player_input
 ```
 
 ## Turn Display UI
@@ -241,27 +241,24 @@ mcrfpy.keypressScene(handle_player_input)
 Show the turn order to the player:
 
 ```python
-def create_turn_order_ui(turn_manager, x=800, y=50):
+def create_turn_order_ui(scene, turn_manager, x=800, y=50):
     """Create a visual turn order display."""
-    ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
     # Background frame
     frame = mcrfpy.Frame(x, y, 200, 300)
     frame.fill_color = mcrfpy.Color(30, 30, 30, 200)
     frame.outline = 2
     frame.outline_color = mcrfpy.Color(100, 100, 100)
-    ui.append(frame)
+    scene.children.append(frame)
 
     # Title
-    title = mcrfpy.Caption("Turn Order", x + 10, y + 10)
+    title = mcrfpy.Caption(text="Turn Order", x=x + 10, y=y + 10)
     title.fill_color = mcrfpy.Color(255, 255, 255)
-    ui.append(title)
+    scene.children.append(title)
 
     return frame
 
-def update_turn_order_display(frame, turn_manager, x=800, y=50):
+def update_turn_order_display(scene, frame, turn_manager, x=800, y=50):
     """Update the turn order display."""
-    ui = mcrfpy.sceneUI(mcrfpy.currentScene())
 
     # Clear old entries (keep frame and title)
     # In practice, store references to caption objects and update them

@@ -82,10 +82,9 @@ class MessageLog:
         for i, msg_idx in enumerate(range(start_idx, end_idx)):
             msg = self.messages[msg_idx]
             caption = mcrfpy.Caption(
-                msg['text'],
-                mcrfpy.default_font,
-                self.frame.x + 5,
-                self.frame.y + 5 + (i * self.line_height)
+                text=msg['text'],
+                x=self.frame.x + 5,
+                y=self.frame.y + 5 + (i * self.line_height)
             )
             caption.fill_color = msg['color']
             self.frame.children.append(caption)
@@ -109,13 +108,13 @@ class MessageLog:
 
 
 # Usage Example
-mcrfpy.createScene("log_demo")
-mcrfpy.setScene("log_demo")
-ui = mcrfpy.sceneUI("log_demo")
+scene = mcrfpy.Scene("log_demo")
 
 # Create the message log
 log = MessageLog(50, 400, 400, 200)
-ui.append(log.frame)
+scene.children.append(log.frame)
+
+scene.activate()
 
 # Add some test messages
 log.add("Welcome to the dungeon!")
@@ -221,10 +220,9 @@ class EnhancedMessageLog:
         for i, msg_idx in enumerate(range(start_idx, end_idx)):
             msg = filtered[msg_idx]
             caption = mcrfpy.Caption(
-                msg['text'],
-                mcrfpy.default_font,
-                self.frame.x + 8,
-                self.frame.y + 4 + (i * self.line_height)
+                text=msg['text'],
+                x=self.frame.x + 8,
+                y=self.frame.y + 4 + (i * self.line_height)
             )
             caption.fill_color = msg['color']
             self.frame.children.append(caption)
@@ -254,8 +252,10 @@ class EnhancedMessageLog:
 
 
 # Usage
+scene = mcrfpy.Scene("enhanced_log_demo")
 log = EnhancedMessageLog(50, 400, 500, 250)
-ui.append(log.frame)
+scene.children.append(log.frame)
+scene.activate()
 
 log.system("Game loaded successfully.")
 log.combat("You attack the skeleton!")
@@ -284,7 +284,7 @@ def handle_keys(key, state):
     elif key == "PageDown":
         log.scroll_down(5)
 
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
 
 # Or with mouse scroll on the frame
 def on_log_scroll(x, y, button, action):
@@ -316,16 +316,14 @@ See the full working example that demonstrates all features:
 import mcrfpy
 
 # Initialize
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
-ui = mcrfpy.sceneUI("game")
+scene = mcrfpy.Scene("game")
 
 # Create log at bottom of screen
 log = EnhancedMessageLog(10, 500, 700, 250, line_height=20)
-ui.append(log.frame)
+scene.children.append(log.frame)
 
 # Simulate game events
-def simulate_combat(dt):
+def simulate_combat(timer, runtime):
     import random
     events = [
         ("You swing your sword!", "combat"),
@@ -337,7 +335,7 @@ def simulate_combat(dt):
     log.add(event[0], event[1])
 
 # Add messages every 2 seconds for demo
-mcrfpy.setTimer("combat_sim", simulate_combat, 2000)
+mcrfpy.Timer("combat_sim", simulate_combat, 2000)
 
 # Keyboard controls
 def on_key(key, state):
@@ -354,8 +352,10 @@ def on_key(key, state):
     elif key == "A":
         log.set_filter(None)  # All
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 
 log.system("Press PageUp/PageDown to scroll")
 log.system("Press C for combat, L for loot, A for all")
+
+scene.activate()
 ```

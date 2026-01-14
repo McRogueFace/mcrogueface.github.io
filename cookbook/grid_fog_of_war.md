@@ -26,7 +26,7 @@ Fog of war provides three visibility states:
 import mcrfpy
 
 # Create scene and grid
-mcrfpy.createScene("game")
+scene = mcrfpy.Scene("game")
 texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
 grid = mcrfpy.Grid(50, 50, texture, 0, 0, 800, 600)
 
@@ -90,16 +90,14 @@ color_layer.apply_perspective(
 import mcrfpy
 
 # Scene setup
-mcrfpy.createScene("dungeon")
-mcrfpy.setScene("dungeon")
-ui = mcrfpy.sceneUI("dungeon")
+scene = mcrfpy.Scene("dungeon")
 
 # Load tileset
 texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
 
 # Create grid
 grid = mcrfpy.Grid(50, 50, texture, 0, 0, 800, 600)
-ui.append(grid)
+scene.children.append(grid)
 
 # Initialize dungeon - walls block sight and movement
 for x in range(50):
@@ -171,13 +169,15 @@ def handle_input(key, state):
             player.pos = (new_x, new_y)
             update_visibility()
 
-mcrfpy.keypressScene(handle_input)
+scene.on_key = handle_input
 
 # Initial FOV calculation
 update_visibility()
 
 # Center camera on player
 grid.center = player.pos
+
+scene.activate()
 ```
 
 ---

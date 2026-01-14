@@ -192,31 +192,31 @@ Show damage with animations and effects:
 ```python
 import mcrfpy
 
-def show_damage_number(x, y, damage, is_critical=False):
+def show_damage_number(scene, x, y, damage, is_critical=False):
     """Display floating damage number."""
-    ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
     # Create damage text
     text = f"{damage}" if not is_critical else f"CRIT {damage}!"
     color = mcrfpy.Color(255, 255, 0) if is_critical else mcrfpy.Color(255, 100, 100)
 
-    caption = mcrfpy.Caption(text, x, y)
+    caption = mcrfpy.Caption(text=text, x=x, y=y)
     caption.fill_color = color
-    ui.append(caption)
+    scene.children.append(caption)
 
     # Animate upward and fade out
     anim_y = mcrfpy.Animation("y", float(y - 30), 0.8, "easeOut")
     anim_y.start(caption)
 
     # Remove after animation
-    def cleanup(dt):
+    def cleanup(timer, runtime):
         try:
-            ui.remove(caption)
+            for i, elem in enumerate(scene.children):
+                if elem is caption:
+                    scene.children.remove(i)
+                    break
         except:
             pass
-        mcrfpy.delTimer(f"dmg_{id(caption)}")
 
-    mcrfpy.setTimer(f"dmg_{id(caption)}", cleanup, 800)
+    mcrfpy.Timer(f"dmg_{id(caption)}", cleanup, 800)
 
 
 def flash_entity(entity, color, duration=0.2):
@@ -232,34 +232,33 @@ def flash_entity(entity, color, duration=0.2):
 
     entity.sprite_number = damage_sprite
 
-    def restore(dt):
+    timer_name = f"flash_{id(entity)}"
+
+    def restore(timer, runtime):
         entity.sprite_number = original_sprite
-        mcrfpy.delTimer(f"flash_{id(entity)}")
 
-    mcrfpy.setTimer(f"flash_{id(entity)}", restore, int(duration * 1000))
+    mcrfpy.Timer(timer_name, restore, int(duration * 1000))
 
 
-def shake_screen(intensity=5, duration=0.3):
+def shake_screen(grid, intensity=5, duration=0.3):
     """Shake the camera for impact feedback."""
-    grid = get_current_grid()  # Get your grid reference
-    original_center = (grid.center_x, grid.center_y)
+    original_center = (grid.center[0], grid.center[1])
 
     shake_count = [0]
     max_shakes = int(duration * 60)  # 60 fps
+    timer_ref = [None]  # Store timer reference for cleanup
 
-    def do_shake(dt):
+    def do_shake(timer, runtime):
         if shake_count[0] >= max_shakes:
-            grid.center_x, grid.center_y = original_center
-            mcrfpy.delTimer("screen_shake")
+            grid.center = original_center
             return
 
         offset_x = random.uniform(-intensity, intensity)
         offset_y = random.uniform(-intensity, intensity)
-        grid.center_x = original_center[0] + offset_x
-        grid.center_y = original_center[1] + offset_y
+        grid.center = (original_center[0] + offset_x, original_center[1] + offset_y)
         shake_count[0] += 1
 
-    mcrfpy.setTimer("screen_shake", do_shake, 16)
+    mcrfpy.Timer("screen_shake", do_shake, 16)
 ```
 
 ## Health Bar Display
@@ -270,23 +269,22 @@ Show HP for entities:
 class HealthBar:
     """Visual health bar for an entity."""
 
-    def __init__(self, combat_entity, offset_y=-10, width=32, height=4):
+    def __init__(self, scene, combat_entity, offset_y=-10, width=32, height=4):
+        self.scene = scene
         self.entity = combat_entity
         self.offset_y = offset_y
         self.width = width
         self.height = height
 
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
         # Background (red/empty)
         self.bg = mcrfpy.Frame(0, 0, width, height)
         self.bg.fill_color = mcrfpy.Color(100, 0, 0)
-        ui.append(self.bg)
+        scene.children.append(self.bg)
 
         # Foreground (green/full)
         self.fg = mcrfpy.Frame(0, 0, width, height)
         self.fg.fill_color = mcrfpy.Color(0, 200, 0)
-        ui.append(self.fg)
+        scene.children.append(self.fg)
 
         self.update()
 
@@ -316,10 +314,10 @@ class HealthBar:
 
     def remove(self):
         """Remove health bar from UI."""
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
         try:
-            ui.remove(self.bg)
-            ui.remove(self.fg)
+            for i, elem in enumerate(self.scene.children):
+                if elem is self.bg or elem is self.fg:
+                    self.scene.children.remove(i)
         except:
             pass
 ```
@@ -332,7 +330,8 @@ Keep a scrolling log of combat events:
 class CombatLog:
     """Scrolling combat message log."""
 
-    def __init__(self, x, y, width, height, max_messages=10):
+    def __init__(self, scene, x, y, width, height, max_messages=10):
+        self.scene = scene
         self.x = x
         self.y = y
         self.width = width
@@ -341,12 +340,10 @@ class CombatLog:
         self.messages = []
         self.captions = []
 
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
         # Background
         self.frame = mcrfpy.Frame(x, y, width, height)
         self.frame.fill_color = mcrfpy.Color(0, 0, 0, 180)
-        ui.append(self.frame)
+        scene.children.append(self.frame)
 
     def add_message(self, text, color=None):
         """Add a message to the log."""
@@ -363,12 +360,13 @@ class CombatLog:
 
     def _refresh_display(self):
         """Redraw all messages."""
-        ui = mcrfpy.sceneUI(mcrfpy.currentScene())
-
         # Remove old captions
         for caption in self.captions:
             try:
-                ui.remove(caption)
+                for i, elem in enumerate(self.scene.children):
+                    if elem is caption:
+                        self.scene.children.remove(i)
+                        break
             except:
                 pass
         self.captions.clear()
@@ -376,9 +374,9 @@ class CombatLog:
         # Create new captions
         line_height = 18
         for i, (text, color) in enumerate(self.messages):
-            caption = mcrfpy.Caption(text, self.x + 5, self.y + 5 + i * line_height)
+            caption = mcrfpy.Caption(text=text, x=self.x + 5, y=self.y + 5 + i * line_height)
             caption.fill_color = color
-            ui.append(caption)
+            self.scene.children.append(caption)
             self.captions.append(caption)
 
     def log_attack(self, attacker_name, defender_name, damage, killed=False, critical=False):
@@ -399,9 +397,9 @@ class CombatLog:
 # Global combat log
 combat_log = None
 
-def init_combat_log():
+def init_combat_log(scene):
     global combat_log
-    combat_log = CombatLog(10, 500, 400, 200)
+    combat_log = CombatLog(scene, 10, 500, 400, 200)
 ```
 
 ## Complete Combat Resolution
@@ -409,7 +407,7 @@ def init_combat_log():
 Tying it all together:
 
 ```python
-def resolve_combat(attacker: CombatEntity, defender: CombatEntity, grid):
+def resolve_combat(scene, attacker: CombatEntity, defender: CombatEntity, grid):
     """Full combat resolution with effects."""
     # Perform attack
     result = attack_with_variance(attacker.fighter, defender.fighter)
@@ -418,11 +416,11 @@ def resolve_combat(attacker: CombatEntity, defender: CombatEntity, grid):
     screen_x = defender.x * 16 + grid.x + 8
     screen_y = defender.y * 16 + grid.y
 
-    show_damage_number(screen_x, screen_y, result["damage"], result["is_critical"])
+    show_damage_number(scene, screen_x, screen_y, result["damage"], result["is_critical"])
     flash_entity(defender.entity, mcrfpy.Color(255, 0, 0))
 
     if result["is_critical"]:
-        shake_screen(intensity=8)
+        shake_screen(grid, intensity=8)
 
     # Log it
     if combat_log:
@@ -464,7 +462,7 @@ def on_enemy_killed(enemy):
        anim = mcrfpy.Animation("opacity", 0.0, 0.5, "linear")
        anim.start(entity)
        # Remove after animation
-       mcrfpy.setTimer("remove", lambda dt: remove_entity(entity), 500)
+       mcrfpy.Timer("remove", lambda timer, runtime: remove_entity(entity), 500)
    ```
 
 5. **Armor Types**: For more depth, add damage types and resistances:
