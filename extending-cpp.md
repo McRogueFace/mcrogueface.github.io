@@ -511,55 +511,54 @@ import sys
 
 def test_progress_bar():
     """Test the custom progress bar implementation"""
-    
+
     # Create a test scene
-    mcrfpy.createScene("test")
-    
+    scene = mcrfpy.Scene("test")
+
     # Create a frame to hold our progress bar
     frame = Frame(100, 100, 400, 300)
     frame.fill_color = Color(20, 20, 20, 255)
-    
+
     # Create progress bars
     progress1 = ProgressBar(50, 50, 300, 30)
     progress1.progress = 0.0
     progress1.setFillColor(Color(0, 255, 0, 255))
-    
+
     progress2 = ProgressBar(50, 100, 300, 30)
     progress2.progress = 0.5
     progress2.setFillColor(Color(255, 255, 0, 255))
-    
+
     progress3 = ProgressBar(50, 150, 300, 30)
     progress3.progress = 1.0
     progress3.setFillColor(Color(255, 0, 0, 255))
-    
+
     # Add to frame
     frame.children.append(progress1)
     frame.children.append(progress2)
     frame.children.append(progress3)
-    
+
     # Add frame to scene
-    ui = mcrfpy.sceneUI("test")
-    ui.append(frame)
-    
+    scene.children.append(frame)
+
     # Animate progress bars
-    def update_progress(elapsed):
+    def update_progress(timer, elapsed):
         # Increment first progress bar
         progress1.progress = min(1.0, progress1.progress + 0.01)
-        
+
         # Pulse second progress bar
         import math
         progress2.progress = abs(math.sin(elapsed * 2))
-        
+
         # Check if done
         if progress1.progress >= 1.0:
             print("PASS: Progress bar animation completed")
             sys.exit(0)
-    
+
     # Set timer for animation
-    mcrfpy.setTimer("animate", update_progress, 16)  # ~60 FPS
-    
-    # Switch to test scene
-    mcrfpy.setScene("test")
+    anim_timer = mcrfpy.Timer("animate", update_progress, 0.016)  # ~60 FPS
+
+    # Activate test scene
+    scene.activate()
 
 # Run test
 test_progress_bar()
@@ -1004,7 +1003,7 @@ def run_all_tests():
     sys.exit(0)
 
 # Schedule tests to run after game loop starts
-mcrfpy.setTimer("test", run_all_tests, 100)
+test_timer = mcrfpy.Timer("test", lambda t, rt: run_all_tests(), 0.1)
 ```
 
 ## Conclusion
