@@ -61,7 +61,7 @@ grid.entities.append(entity)  # Add entities
 
 ### Entity
 ```python
-entity = mcrfpy.Entity(pos=(grid_x, grid_y), texture=texture, sprite_index=84)
+entity = mcrfpy.Entity(grid_pos=(10, 7), texture=texture, sprite_index=84)
 entity.x, entity.y = new_x, new_y  # Move entity
 grid.entities.append(entity)
 ```
