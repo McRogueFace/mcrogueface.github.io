@@ -39,8 +39,8 @@ import mcrfpy
 import random
 
 # Create and activate a new scene
-mcrfpy.createScene("tutorial")
-mcrfpy.setScene("tutorial")
+scene = mcrfpy.Scene("tutorial")
+scene.activate()
 
 # Load the texture (4x3 tiles, 64x48 pixels total, 16x16 per tile)
 texture = mcrfpy.Texture("assets/tutorial2.png", 16, 16)
@@ -87,14 +87,14 @@ for y in range(grid_height):
             point.tilesprite = tile_index
 
 # Add the grid to the scene
-mcrfpy.sceneUI("tutorial").append(grid)
+scene.children.append(grid)
 
 # Add a title caption
 title = mcrfpy.Caption((320, 10),
     text="McRogueFace Tutorial - Part 0",
 )
 title.fill_color = mcrfpy.Color(255, 255, 255, 255)
-mcrfpy.sceneUI("tutorial").append(title)
+scene.children.append(title)
 
 # Add instructions
 instructions = mcrfpy.Caption((280, 750),
@@ -102,7 +102,7 @@ instructions = mcrfpy.Caption((280, 750),
 )
 instructions.font_size=18
 instructions.fill_color = mcrfpy.Color(200, 200, 200, 255)
-mcrfpy.sceneUI("tutorial").append(instructions)
+scene.children.append(instructions)
 
 print("Tutorial Part 0 loaded!")
 print(f"Created a {grid.grid_size[0]}x{grid.grid_size[1]} grid")
@@ -144,8 +144,8 @@ import mcrfpy
 import random
 
 # Create and activate a new scene
-mcrfpy.createScene("tutorial")
-mcrfpy.setScene("tutorial")
+scene = mcrfpy.Scene("tutorial")
+scene.activate()
 
 # Load the texture (4x3 tiles, 64x48 pixels total, 16x16 per tile)
 texture = mcrfpy.Texture("assets/tutorial2.png", 16, 16)
@@ -193,11 +193,11 @@ for y in range(grid_height):
             point.tilesprite = tile_index
 
 # Add the grid to the scene
-mcrfpy.sceneUI("tutorial").append(grid)
+scene.children.append(grid)
 
 # Create a player entity at position (4, 4)
 player = mcrfpy.Entity(
-    (4, 4),  # Entity positions are tile coordinates
+    grid_pos=(4, 4),  # Entity positions are tile coordinates
     texture=hero_texture,
     sprite_index=0  # Use the first sprite in the texture
 )
@@ -227,21 +227,21 @@ def handle_keys(key, state):
         player.y = py
 
 # Register the keyboard handler
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
 
 # Add UI elements
 title = mcrfpy.Caption((320, 10),
     text="McRogueFace Tutorial - Part 1",
 )
 title.fill_color = mcrfpy.Color(255, 255, 255, 255)
-mcrfpy.sceneUI("tutorial").append(title)
+scene.children.append(title)
 
 instructions = mcrfpy.Caption((200, 750),
     text="Use WASD or Arrow Keys to move the hero!",
 )
 instructions.font_size=18
 instructions.fill_color = mcrfpy.Color(200, 200, 200, 255)
-mcrfpy.sceneUI("tutorial").append(instructions)
+scene.children.append(instructions)
 
 print("Tutorial Part 1 loaded!")
 print(f"Player entity created at grid position (4, 4)")
@@ -258,7 +258,7 @@ print("Use WASD or Arrow keys to move!")
 **2. Keyboard Input** uses a callback function:
    - `key`: The key pressed (e.g., "W", "Up", "Space")
    - `state`: Either "start" (key pressed) or "end" (key released)
-   - Register with `mcrfpy.keypressScene(callback)`
+   - Register with `scene.on_key = callback`
 
 **3. Entity Movement** is simple in this example:
    - Read current position with `entity.x` and `entity.y`
@@ -301,8 +301,8 @@ import mcrfpy
 import random
 
 # Create and activate a new scene
-mcrfpy.createScene("tutorial")
-mcrfpy.setScene("tutorial")
+scene = mcrfpy.Scene("tutorial")
+scene.activate()
 
 # Load textures
 texture = mcrfpy.Texture("assets/tutorial2.png", 16, 16)
@@ -339,11 +339,11 @@ for y in range(grid_height):
             point.tilesprite = tile_index
 
 # Add grid to scene
-mcrfpy.sceneUI("tutorial").append(grid)
+scene.children.append(grid)
 
 # Create player entity
 player = mcrfpy.Entity(
-    (4, 4),
+    grid_pos=(4, 4),
     texture=hero_texture,
     sprite_index=0
 )
@@ -369,7 +369,7 @@ debug_caption = mcrfpy.Caption((10, 40),
 )
 debug_caption.font_size = 16
 debug_caption.fill_color = mcrfpy.Color(255, 255, 0, 255)
-mcrfpy.sceneUI("tutorial").append(debug_caption)
+scene.children.append(debug_caption)
 
 # Movement state debug caption
 move_debug_caption = mcrfpy.Caption((10, 60),
@@ -377,7 +377,7 @@ move_debug_caption = mcrfpy.Caption((10, 60),
 )
 move_debug_caption.font_size = 16
 move_debug_caption.fill_color = mcrfpy.Color(255, 200, 0, 255)
-mcrfpy.sceneUI("tutorial").append(move_debug_caption)
+scene.children.append(move_debug_caption)
 
 def key_to_direction(key):
     """Convert key to direction string"""
@@ -488,21 +488,21 @@ def handle_keys(key, state):
             process_move(key)
 
 # Register the keyboard handler
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
 
 # Add UI elements
 title = mcrfpy.Caption((320, 10),
     text="McRogueFace Tutorial - Part 2 Enhanced",
 )
 title.fill_color = mcrfpy.Color(255, 255, 255, 255)
-mcrfpy.sceneUI("tutorial").append(title)
+scene.children.append(title)
 
 instructions = mcrfpy.Caption((150, 750),
     text="One-move queue system with animation callbacks!",
 )
 instructions.font_size=18
 instructions.fill_color = mcrfpy.Color(200, 200, 200, 255)
-mcrfpy.sceneUI("tutorial").append(instructions)
+scene.children.append(instructions)
 
 print("Tutorial Part 2 Enhanced loaded!")
 print(f"Player entity created at grid position (4, 4)")
@@ -587,24 +587,20 @@ class GameState:
 game_state = GameState()
 
 # Create scene
-mcrfpy.createScene("game")
-mcrfpy.setScene("game")
+scene = mcrfpy.Scene("game")
+scene.activate()
 
 # Load assets
 tile_texture = mcrfpy.Texture("assets/sokoban_tiles.png", TILE_SIZE, TILE_SIZE)
 entity_texture = mcrfpy.Texture("assets/sokoban_entities.png", TILE_SIZE, TILE_SIZE)
 
-# Create sound effects
-mcrfpy.createSoundBuffer("move", "assets/sounds/step.wav")
-mcrfpy.createSoundBuffer("push", "assets/sounds/push.wav")
-mcrfpy.createSoundBuffer("goal", "assets/sounds/success.wav")
-mcrfpy.createSoundBuffer("win", "assets/sounds/victory.wav")
-
-# Set volume
-mcrfpy.setVolume("move", 0.5)
-mcrfpy.setVolume("push", 0.7)
-mcrfpy.setVolume("goal", 0.8)
-mcrfpy.setVolume("win", 1.0)
+# Create sound effects (Sound API - see API Reference for current syntax)
+# mcrfpy.createSoundBuffer("move", "assets/sounds/step.wav")
+# mcrfpy.createSoundBuffer("push", "assets/sounds/push.wav")
+# mcrfpy.createSoundBuffer("goal", "assets/sounds/success.wav")
+# mcrfpy.createSoundBuffer("win", "assets/sounds/victory.wav")
+# mcrfpy.setVolume("move", 0.5)
+# ... sound effects omitted - this example focuses on game logic
 
 # Create grid
 grid_size = GRID_WIDTH * ZOOM * TILE_SIZE, GRID_HEIGHT * ZOOM * TILE_SIZE
@@ -654,16 +650,16 @@ for y, row in enumerate(level):
         if char == '@':
             # Player
             game_state.player = mcrfpy.Entity(
-                (x, y),
+                grid_pos=(x, y),
                 texture=entity_texture,
                 sprite_index=PLAYER_SPRITE
             )
             grid.entities.append(game_state.player)
-        
+
         elif char == '$':
             # Box
             box = mcrfpy.Entity(
-                (x, y),
+                grid_pos=(x, y),
                 texture=entity_texture,
                 sprite_index=BOX_SPRITE
             )
@@ -671,7 +667,7 @@ for y, row in enumerate(level):
             game_state.boxes.append(box)
 
 # Add grid to scene
-mcrfpy.sceneUI("game").append(grid)
+scene.children.append(grid)
 
 # Center camera on level
 grid.center = (GRID_WIDTH/2.0) * TILE_SIZE, (GRID_HEIGHT/2.0) * TILE_SIZE
@@ -680,30 +676,30 @@ grid.center = (GRID_WIDTH/2.0) * TILE_SIZE, (GRID_HEIGHT/2.0) * TILE_SIZE
 title = mcrfpy.Caption((350, 20), text="Sokoban Tutorial")
 title.font_size = 24
 title.fill_color = mcrfpy.Color(255, 255, 255, 255)
-mcrfpy.sceneUI("game").append(title)
+scene.children.append(title)
 
 moves_text = mcrfpy.Caption((20, 60), text="Moves: 0")
 moves_text.font_size = 18
 moves_text.fill_color = mcrfpy.Color(200, 200, 200, 255)
-mcrfpy.sceneUI("game").append(moves_text)
+scene.children.append(moves_text)
 
 goals_text = mcrfpy.Caption((20, 90), text=f"Goals: 0/{game_state.total_goals}")
 goals_text.font_size = 18
 goals_text.fill_color = mcrfpy.Color(200, 200, 200, 255)
-mcrfpy.sceneUI("game").append(goals_text)
+scene.children.append(goals_text)
 
 instructions = mcrfpy.Caption((512, 750), text="Push all boxes onto the goals!")
 instructions.font_size = 20
 instructions.fill_color = mcrfpy.Color(200, 200, 200, 255)
 instructions.centered = True
-mcrfpy.sceneUI("game").append(instructions)
+scene.children.append(instructions)
 
 win_text = mcrfpy.Caption((512, 400), text="Level Complete!")
 win_text.font_size = 48
 win_text.fill_color = mcrfpy.Color(255, 215, 0, 255)
 win_text.centered = True
 win_text.visible = False
-mcrfpy.sceneUI("game").append(win_text)
+scene.children.append(win_text)
 
 def get_tile_at(x, y):
     """Get the tile type at grid position"""
@@ -745,7 +741,7 @@ def update_box_sprites():
     if boxes_on_goals == game_state.total_goals and not game_state.level_complete:
         game_state.level_complete = True
         win_text.visible = True
-        mcrfpy.playSound("win")
+        # mcrfpy.playSound("win")  # Sound API - see API Reference
         instructions.text = "Congratulations! Press R to restart."
 
 def move_entity(entity, dx, dy):
@@ -820,13 +816,15 @@ def handle_input(key, state):
                     break
             
             if pushed_box:
-                mcrfpy.playSound("push")
+                # mcrfpy.playSound("push")  # Sound API
                 # Check if box is now on goal
                 update_box_sprites()
-                if game_state.boxes_on_goals > 0:
-                    mcrfpy.playSound("goal")
+                # if game_state.boxes_on_goals > 0:
+                #     mcrfpy.playSound("goal")
+                pass
             else:
-                mcrfpy.playSound("move")
+                # mcrfpy.playSound("move")  # Sound API
+                pass
 
 def restart_level():
     """Reset the level to initial state"""
@@ -856,7 +854,7 @@ def restart_level():
                     entity_index += 1
 
 # Register input handler
-mcrfpy.keypressScene(handle_input)
+scene.on_key = handle_input
 
 # Initial sprite update
 update_box_sprites()
@@ -883,10 +881,10 @@ print("Use WASD or Arrow keys to move, R to restart")
    - Recursive movement for pushing
    - Update visual state based on game logic
 
-**4. Sound Effects**:
-   - Create buffers with `mcrfpy.createSoundBuffer()`
-   - Play with `mcrfpy.playSound()`
+**4. Sound Effects** (not shown in code - see API Reference):
+   - Sound API allows loading and playing audio
    - Use different sounds for different actions
+   - Check API Reference for current sound syntax
 
 **5. Level Design**:
    - Parse level from string data
@@ -916,13 +914,13 @@ Now that you understand the basics, you can:
 
 **Game Loop with Timer**:
 ```python
-def game_update(runtime):
+def game_update(timer, runtime):
     # Update game logic
     update_enemies()
     update_particles()
     check_collisions()
 
-mcrfpy.setTimer("gameloop", game_update, 16)  # ~60 FPS
+timer = mcrfpy.Timer("gameloop", game_update, 0.016)  # ~60 FPS (seconds)
 ```
 
 **State Machine**:
@@ -946,8 +944,9 @@ def handle_input(key, state):
 **Entity Component Pattern**:
 ```python
 class Entity:
-    def __init__(self, x, y):
-        self.sprite = mcrfpy.Entity((x, y))
+    def __init__(self, x, y, grid, texture):
+        self.sprite = mcrfpy.Entity(grid_pos=(x, y), texture=texture, sprite_index=0)
+        grid.entities.append(self.sprite)
         self.components = {}
     
     def add_component(self, name, component):
