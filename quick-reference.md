@@ -22,6 +22,7 @@ scene.on_key = on_key
 ### Caption (Text)
 ```python
 caption = mcrfpy.Caption(text="Hello World", pos=(x, y))
+caption.font = mcrfpy.default_font
 caption.font_size = 24
 caption.fill_color = mcrfpy.Color(255, 255, 255)
 caption.pos = (new_x, new_y)  # Reposition
