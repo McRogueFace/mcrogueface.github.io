@@ -1,29 +1,8 @@
 # Scene Management
 
-Scenes are containers for your game's UI elements and entities. McRogueFace supports both a procedural API and an object-oriented approach with lifecycle callbacks.
+Scenes are containers for your game's UI elements and entities. McRogueFace provides an object-oriented Scene class with lifecycle callbacks.
 
-## Two Approaches
-
-### Procedural API (Simple)
-
-```python
-import mcrfpy
-
-# Create and switch scenes
-mcrfpy.createScene("menu")
-mcrfpy.createScene("game")
-
-mcrfpy.setScene("menu")
-
-# Access scene UI
-ui = mcrfpy.sceneUI("menu")
-ui.append(mcrfpy.Caption(pos=(400, 300), text="Main Menu"))
-
-# Set input handler for current scene
-mcrfpy.keypressScene(my_handler)
-```
-
-### Scene Class (Preferred OOP)
+## Scene Class API
 
 ```python
 import mcrfpy
@@ -109,7 +88,7 @@ class GameScene(mcrfpy.Scene):
 ### Lifecycle Order
 
 1. `__init__` - Scene creation
-2. `on_enter` - Scene activated (setScene or activate)
+2. `on_enter` - Scene activated (via activate())
 3. `update` - Every frame while active
 4. `on_keypress` - Keyboard events while active
 5. `on_exit` - Another scene becomes active
@@ -153,9 +132,6 @@ def handle_key(key, action):
         print(f"Key pressed: {key}")
 
 scene.on_key = handle_key
-
-# Procedural (only works on current scene)
-mcrfpy.keypressScene(handle_key)
 ```
 
 ### Key Handler Signature
@@ -188,26 +164,15 @@ def handle_key(key, action):
 
 ## Scene Transitions
 
-Switch between scenes with optional transition effects:
+Switch between scenes:
 
 ```python
-# Simple switch
-mcrfpy.setScene("game")
+# Simple switch - use scene.activate()
+game_scene.activate()
 
-# With transition effect
-mcrfpy.setScene("game", transition="fade", duration=0.5)
-mcrfpy.setScene("menu", transition="slide_left", duration=0.3)
+# If you have a scene reference, activate it directly
+menu_scene.activate()
 ```
-
-### Available Transitions
-
-| Transition | Description |
-|------------|-------------|
-| `"fade"` | Crossfade between scenes |
-| `"slide_left"` | New scene slides in from right |
-| `"slide_right"` | New scene slides in from left |
-| `"slide_up"` | New scene slides in from bottom |
-| `"slide_down"` | New scene slides in from top |
 
 ## Multi-Scene Architecture
 
@@ -264,10 +229,10 @@ class MenuScene(mcrfpy.Scene):
         option = self.options[self.selected]
         if option == "New Game":
             game_scene.start_new_game()
-            mcrfpy.setScene("game", transition="fade", duration=0.5)
+            game_scene.activate()
         elif option == "Continue":
             game_scene.load_game()
-            mcrfpy.setScene("game", transition="fade", duration=0.5)
+            game_scene.activate()
         elif option == "Quit":
             mcrfpy.exit()
 
@@ -290,7 +255,7 @@ class GameScene(mcrfpy.Scene):
 
         key = key.lower()
         if key == "escape":
-            mcrfpy.setScene("menu", transition="fade", duration=0.3)
+            menu_scene.activate()
         elif key in ("up", "w"):
             self.move_player(0, -1)
         # ... more controls
@@ -335,13 +300,13 @@ class PauseScene(mcrfpy.Scene):
 
     def on_keypress(self, key, action):
         if action == "start" and key.lower() == "escape":
-            mcrfpy.setScene("game")
+            game_scene.activate()
 
 
-# In game scene
+# In game scene, switch to pause
 def on_keypress(self, key, action):
     if action == "start" and key.lower() == "escape":
-        mcrfpy.setScene("pause")
+        pause_scene.activate()
 ```
 
 ## Scene State Management
@@ -378,12 +343,12 @@ class InventoryScene(mcrfpy.Scene):
 ### Querying Current Scene
 
 ```python
-# Get current scene name
-current = mcrfpy.currentScene()
-print(f"Currently in: {current}")
+# Get current scene (returns Scene object)
+current = mcrfpy.current_scene
+print(f"Currently in: {current.name}")
 
 # Conditional logic
-if mcrfpy.currentScene() == "game":
+if mcrfpy.current_scene.name == "game":
     # Game-specific logic
     pass
 ```
@@ -419,7 +384,7 @@ class TitleScene(mcrfpy.Scene):
 
     def on_keypress(self, key, action):
         if action == "start" and key.lower() == "space":
-            mcrfpy.setScene("game", transition="fade", duration=1.0)
+            game.activate()
 
 
 class GameScene(mcrfpy.Scene):
@@ -472,7 +437,7 @@ class GameScene(mcrfpy.Scene):
         key = key.lower()
 
         if key == "escape":
-            mcrfpy.setScene("title", transition="fade", duration=0.5)
+            title.activate()
             return
 
         dx, dy = 0, 0
@@ -505,7 +470,7 @@ title.activate()
 - Scene names must be unique
 - Scenes persist in memory when not active
 - Only one scene can be active at a time
-- `on_key` can be set on any scene; `keypressScene()` only affects current scene
+- `on_key` can be set on any scene, not just the active one
 - Scene transitions run asynchronously
 - UI elements stay in their scene when switching
 - Timers continue running across scene changes (stop them in `on_exit` if needed)
