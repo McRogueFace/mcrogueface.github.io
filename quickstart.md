@@ -48,29 +48,28 @@ To see a simpler example, you can replace `scripts/game.py` with:
 ```python
 import mcrfpy
 
-# Create a simple test scene
-mcrfpy.createScene("test")
+# Create a scene
+scene = mcrfpy.Scene("test")
 
-# Load a texture (sprite sheet) and font
+# Load a texture (sprite sheet)
 texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
-font = mcrfpy.Font("assets/JetbrainsMono.ttf")
 
 # Create a grid for tile-based graphics
-grid = mcrfpy.Grid(20, 15, texture, (10, 10), (800, 600))
+grid = mcrfpy.Grid(grid_size=(20, 15), texture=texture,
+                   pos=(10, 10), size=(800, 600))
 
-# Add it to the scene's UI
-ui = mcrfpy.sceneUI("test")
-ui.append(grid)
-
-# Switch to our scene
-mcrfpy.setScene("test")
+# Add the grid to the scene
+scene.children.append(grid)
 
 # Add keyboard controls
 def move_around(key, state):
     if state == "start":
         print(f"You pressed {key}")
 
-mcrfpy.keypressScene(move_around)
+scene.on_key = move_around
+
+# Activate the scene
+scene.activate()
 ```
 
 Save and run McRogueFace again to see your simple scene!
@@ -83,45 +82,43 @@ Let's create a custom main menu with buttons. Open `scripts/game.py` and replace
 import mcrfpy
 
 # Create a scene
-mcrfpy.createScene("main_menu")
+scene = mcrfpy.Scene("main_menu")
 
 # Load resources
 font = mcrfpy.Font("assets/JetbrainsMono.ttf")
-btn_tex = mcrfpy.Texture("assets/48px_ui_icons-KenneyNL.png", 48, 48)
-
-# Get the scene's UI collection
-ui = mcrfpy.sceneUI("main_menu")
 
 # Add a background
-bg = mcrfpy.Frame(0, 0, 1024, 768, fill_color=(20, 20, 40))
-ui.append(bg)
+bg = mcrfpy.Frame(pos=(0, 0), size=(1024, 768),
+                  fill_color=mcrfpy.Color(20, 20, 40))
+scene.children.append(bg)
 
 # Add a title
-title = mcrfpy.Caption((312, 100), "My Awesome Game", font, fill_color=(255, 255, 100))
+title = mcrfpy.Caption(pos=(312, 100), text="My Awesome Game",
+                       fill_color=mcrfpy.Color(255, 255, 100))
 title.font_size = 48
 title.outline = 2
-title.outline_color = (0, 0, 0)
-ui.append(title)
+title.outline_color = mcrfpy.Color(0, 0, 0)
+scene.children.append(title)
 
 # Create a button using Frame + Caption + click handler
-button_frame = mcrfpy.Frame(362, 300, 300, 80, fill_color=(50, 150, 50))
-button_caption = mcrfpy.Caption((150, 25), "Start Game", font, fill_color=(255, 255, 255))
+button_frame = mcrfpy.Frame(pos=(362, 300), size=(300, 80),
+                            fill_color=mcrfpy.Color(50, 150, 50))
+button_caption = mcrfpy.Caption(pos=(90, 25), text="Start Game",
+                                fill_color=mcrfpy.Color(255, 255, 255))
 button_caption.font_size = 24
 button_frame.children.append(button_caption)
 
-# Add click handler
-def start_game(x, y, button, event):
-    if event == "end":  # Mouse button release
-        print("Starting the game!")
-        # Create and switch to game scene
-        mcrfpy.createScene("game")
-        mcrfpy.setScene("game")
+# Add click handler (3 arguments: x, y, button)
+def start_game(x, y, button):
+    print("Starting the game!")
+    game_scene = mcrfpy.Scene("game")
+    game_scene.activate()
 
-button_frame.click = start_game
-ui.append(button_frame)
+button_frame.on_click = start_game
+scene.children.append(button_frame)
 
-# Switch to our menu scene
-mcrfpy.setScene("main_menu")
+# Activate the menu scene
+scene.activate()
 ```
 
 Save and run - you now have a custom main menu with a working button!
@@ -134,37 +131,37 @@ Let's create a custom entity for a game. Entities in McRogueFace can be NPCs, en
 import mcrfpy
 
 # Create a scene and load resources
-mcrfpy.createScene("game")
+scene = mcrfpy.Scene("game")
 texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
-font = mcrfpy.Font("assets/JetbrainsMono.ttf")
 
 # Create a grid
-grid = mcrfpy.Grid(20, 15, texture, (10, 10), (640, 480))
-ui = mcrfpy.sceneUI("game")
-ui.append(grid)
+grid = mcrfpy.Grid(grid_size=(20, 15), texture=texture,
+                   pos=(10, 10), size=(640, 480))
+scene.children.append(grid)
 
 # Add the player entity
-player = mcrfpy.Entity((10, 7), texture, 85)  # Sprite 85 is a character
+player = mcrfpy.Entity(grid_pos=(10, 7), texture=texture, sprite_index=85)
 grid.entities.append(player)
 
 # Add an NPC entity
-npc = mcrfpy.Entity((5, 5), texture, 109)  # Sprite 109 is a monster
+npc = mcrfpy.Entity(grid_pos=(5, 5), texture=texture, sprite_index=109)
 grid.entities.append(npc)
 
 # Add a treasure chest
-treasure = mcrfpy.Entity((15, 10), texture, 89)  # Sprite 89 is a chest
+treasure = mcrfpy.Entity(grid_pos=(15, 10), texture=texture, sprite_index=89)
 grid.entities.append(treasure)
 
 # Basic movement with keyboard
 def handle_keys(key, state):
     if state == "start":
-        if key == "W": player.pos = (player.pos.x, player.pos.y - 1)
-        elif key == "S": player.pos = (player.pos.x, player.pos.y + 1)
-        elif key == "A": player.pos = (player.pos.x - 1, player.pos.y)
-        elif key == "D": player.pos = (player.pos.x + 1, player.pos.y)
+        x, y = player.pos[0], player.pos[1]
+        if key == "W": player.pos = (x, y - 1)
+        elif key == "S": player.pos = (x, y + 1)
+        elif key == "A": player.pos = (x - 1, y)
+        elif key == "D": player.pos = (x + 1, y)
 
-mcrfpy.keypressScene(handle_keys)
-mcrfpy.setScene("game")
+scene.on_key = handle_keys
+scene.activate()
 ```
 
 For more complex entity behavior, look at the Crypt of Sokoban source in `src/scripts/cos_entities.py`!
@@ -177,27 +174,27 @@ Want to use your own graphics? Here's how:
 import mcrfpy
 
 # Create a scene
-mcrfpy.createScene("game")
+scene = mcrfpy.Scene("game")
 
 # Load your sprite sheet (tile width, tile height)
 my_texture = mcrfpy.Texture("assets/my_sprites.png", 32, 32)
 
 # Create a grid using your texture
-grid = mcrfpy.Grid(20, 15, my_texture, (10, 10), (640, 480))
+grid = mcrfpy.Grid(grid_size=(20, 15), texture=my_texture,
+                   pos=(10, 10), size=(640, 480))
 
 # Set specific tiles - grid.at() returns a grid point
-grid.at(5, 5).sprite = 10  # Tree sprite at index 10
-grid.at(6, 5).sprite = 11  # Rock sprite at index 11
+grid.at((5, 5)).tilesprite = 10  # Tree sprite at index 10
+grid.at((6, 5)).tilesprite = 11  # Rock sprite at index 11
 
 # You can also set walkability
-grid.at(6, 5).walkable = False  # Make the rock solid
+grid.at((6, 5)).walkable = False  # Make the rock solid
 
 # Add the grid to the scene
-ui = mcrfpy.sceneUI("game")
-ui.append(grid)
+scene.children.append(grid)
 
-# Switch to the scene
-mcrfpy.setScene("game")
+# Activate the scene
+scene.activate()
 ```
 
 Tips for sprite sheets:
