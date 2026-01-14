@@ -8,7 +8,7 @@ A handy cheat sheet for common McRogueFace operations.
 # Create and activate scenes (modern API)
 scene = mcrfpy.Scene("menu")
 scene.activate()
-current = mcrfpy.currentScene()
+current = mcrfpy.current_scene  # property, not function
 
 # Access scene UI elements
 scene.children.append(element)

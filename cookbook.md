@@ -22,28 +22,25 @@ A simple text input field that captures keyboard input. Perfect for player names
 import mcrfpy
 
 # Create scene
-mcrfpy.createScene("text_demo")
-mcrfpy.setScene("text_demo")
-
-# Create UI elements
-ui = mcrfpy.sceneUI("text_demo")
+scene = mcrfpy.Scene("text_demo")
+scene.activate()
 
 # Background frame for the input field
 input_frame = mcrfpy.Frame(50, 100, 300, 30)
 input_frame.fill_color = (255, 255, 255, 255)
 input_frame.outline_color = (100, 100, 100, 255)
 input_frame.outline = 2
-ui.append(input_frame)
+scene.children.append(input_frame)
 
 # Text display
 text_display = mcrfpy.Caption("", 55, 107)
 text_display.fill_color = (0, 0, 0, 255)
-ui.append(text_display)
+scene.children.append(text_display)
 
 # Cursor (blinking underscore)
 cursor = mcrfpy.Caption("_", 55, 107)
 cursor.fill_color = (0, 0, 0, 255)
-ui.append(cursor)
+scene.children.append(cursor)
 
 # Input state
 text_content = ""
@@ -56,14 +53,14 @@ def update_display():
     cursor_x = 55 + len(text_content) * 8
     cursor.x = cursor_x
 
-def toggle_cursor(timer_name):
+def toggle_cursor():
     """Blink the cursor"""
     global cursor_visible
     cursor_visible = not cursor_visible
     cursor.visible = cursor_visible
 
 # Set up cursor blinking
-mcrfpy.setTimer("cursor_blink", toggle_cursor, 500)
+cursor_timer = mcrfpy.Timer("cursor_blink", lambda t, rt: toggle_cursor(), 0.5)
 
 def handle_input(key, state):
     """Handle keyboard input"""
@@ -90,7 +87,7 @@ def handle_input(key, state):
         update_display()
 
 # Register keyboard handler
-mcrfpy.keypressScene(handle_input)
+scene.on_key = handle_input
 
 # Initial display update
 update_display()
@@ -139,10 +136,10 @@ class TextInput:
     
     def add_to_scene(self, ui):
         """Add widget to scene UI"""
-        ui.append(self.frame)
-        ui.append(self.placeholder_display)
-        ui.append(self.text_display)
-        ui.append(self.cursor)
+        scene.children.append(self.frame)
+        scene.children.append(self.placeholder_display)
+        scene.children.append(self.text_display)
+        scene.children.append(self.cursor)
     
     def focus(self):
         """Give focus to this input"""
@@ -199,9 +196,8 @@ class TextInput:
         return True
 
 # Example usage
-mcrfpy.createScene("form_demo")
-mcrfpy.setScene("form_demo")
-ui = mcrfpy.sceneUI("form_demo")
+scene = mcrfpy.Scene("form_demo")
+scene.activate()
 
 # Create multiple input fields
 name_input = TextInput(50, 50, 300, placeholder="Enter your name",
@@ -209,8 +205,8 @@ name_input = TextInput(50, 50, 300, placeholder="Enter your name",
 email_input = TextInput(50, 100, 300, placeholder="Enter your email",
                        on_submit=lambda text: print(f"Email: {text}"))
 
-name_input.add_to_scene(ui)
-email_input.add_to_scene(ui)
+name_input.add_to_scene(scene.children)
+email_input.add_to_scene(scene.children)
 
 # Track focused input
 current_input = None
@@ -236,7 +232,7 @@ def handle_keys(key, state):
         current_input.handle_key(key)
 
 # Register keyboard handler
-mcrfpy.keypressScene(handle_keys)
+scene.on_key = handle_keys
 
 # Focus first input by default
 name_input.focus()

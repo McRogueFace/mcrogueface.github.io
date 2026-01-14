@@ -111,7 +111,7 @@ Create a new file `scripts/game.py` with the following content:
 import mcrfpy
 
 # Create a scene - scenes are containers for all UI elements
-mcrfpy.createScene("hello")
+scene = mcrfpy.Scene("hello")
 
 # Add a caption (text display)
 caption = mcrfpy.Caption(
@@ -121,8 +121,8 @@ caption = mcrfpy.Caption(
 caption.fill_color = mcrfpy.Color(255, 255, 100)  # Yellow text
 caption.font_size = 32
 
-# Add the caption to the scene's UI collection
-mcrfpy.sceneUI("hello").append(caption)
+# Add the caption to the scene's children collection
+scene.children.append(caption)
 
 # Add instructions
 instructions = mcrfpy.Caption(
@@ -131,7 +131,7 @@ instructions = mcrfpy.Caption(
 )
 instructions.fill_color = mcrfpy.Color(200, 200, 200)
 instructions.font_size = 16
-mcrfpy.sceneUI("hello").append(instructions)
+scene.children.append(instructions)
 
 # Input handler - receives (key, action) where action is "start" or "end"
 def on_key(key, action):
@@ -142,10 +142,10 @@ def on_key(key, action):
     print(f"Key pressed: {key}")
 
 # Register the keyboard handler for this scene
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 
 # Activate the scene (make it visible)
-mcrfpy.setScene("hello")
+scene.activate()
 ```
 
 Run McRogueFace to see your game:
@@ -173,12 +173,12 @@ Scenes are containers for your game states (menu, gameplay, inventory, etc.):
 
 ```python
 # Create scenes
-mcrfpy.createScene("menu")
-mcrfpy.createScene("game")
-mcrfpy.createScene("game_over")
+menu = mcrfpy.Scene("menu")
+game = mcrfpy.Scene("game")
+game_over = mcrfpy.Scene("game_over")
 
-# Switch between scenes
-mcrfpy.setScene("menu")
+# Activate a scene
+menu.activate()
 ```
 
 ### UI Elements
@@ -263,7 +263,7 @@ def on_key(key, action):
     elif key == "D" or key == "Right":
         player.x += 1
 
-mcrfpy.keypressScene(on_key)
+scene.on_key = on_key
 ```
 
 ### Timers
@@ -271,16 +271,16 @@ mcrfpy.keypressScene(on_key)
 For animations and game updates, use timers:
 
 ```python
-def game_update(runtime):
+def game_update(timer, runtime):
     # This runs every 100ms
     update_enemies()
     check_collisions()
 
-# Create a recurring timer
-mcrfpy.setTimer("gameloop", game_update, 100)
+# Create a recurring timer (duration in seconds)
+game_timer = mcrfpy.Timer("gameloop", game_update, 0.1)
 
 # Stop the timer when done
-mcrfpy.delTimer("gameloop")
+game_timer.cancel()
 ```
 
 ## A More Complete Example
@@ -291,7 +291,7 @@ Here is a working example with a movable character on a grid:
 import mcrfpy
 
 # Create and set up the scene
-mcrfpy.createScene("game")
+scene = mcrfpy.Scene("game")
 
 # Load the tileset texture
 texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
@@ -320,7 +320,7 @@ for y in range(15):
             point.walkable = True
 
 # Add the grid to the scene
-mcrfpy.sceneUI("game").append(grid)
+scene.children.append(grid)
 
 # Create the player entity
 player = mcrfpy.Entity(
@@ -336,7 +336,7 @@ title = mcrfpy.Caption(
     text="Use WASD or Arrow Keys to Move"
 )
 title.fill_color = mcrfpy.Color(255, 255, 255)
-mcrfpy.sceneUI("game").append(title)
+scene.children.append(title)
 
 # Input handler with collision detection
 def on_key(key, action):
@@ -364,8 +364,8 @@ def on_key(key, action):
         player.x = new_x
         player.y = new_y
 
-mcrfpy.keypressScene(on_key)
-mcrfpy.setScene("game")
+scene.on_key = on_key
+scene.activate()
 
 print("Game started! Use WASD or arrow keys to move.")
 ```
@@ -395,8 +395,8 @@ You are running `python scripts/game.py` directly. McRogueFace embeds Python - r
 
 - Verify your texture paths are correct (relative to the executable)
 - Check that sprite indices are within the texture bounds
-- Make sure you called `ui.append()` to add elements to the scene
-- Confirm you called `mcrfpy.setScene()` to activate the scene
+- Make sure you called `scene.children.append()` to add elements to the scene
+- Confirm you called `scene.activate()` to activate the scene
 
 ### Game crashes on start
 
