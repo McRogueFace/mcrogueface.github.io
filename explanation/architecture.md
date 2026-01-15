@@ -1,6 +1,6 @@
 # McRogueFace Architecture
 
-*Understanding why McRogueFace is designed the way it is.*
+I built McRogueFace with the intention of writing games entirely in Python, and without accepting the shortcomings like difficult installation, performance impacts, or the boilerplate that games call for. The McRogueFace philosophy is "C++ every frame, Python every tick": once you define your objects, McRogueFace handles rendering them, and your animations play while Python doesn't run at all. When user input occurs, your code modifies your objects. I imagine that means moving sprites around to play a game, but really it's just a Python environment: I hope you'll be enticed by the fun, but stay for the full-blown powers of programming in the same language used by web developers, AI researchers, and system administrators worldwide.
 
 ## Design Philosophy: Foundation First
 
@@ -16,19 +16,21 @@ The goal is a beginner-friendly roguelike engine that "just works" for the commo
 
 The Grid is McRogueFace's central abstraction. But what *is* a Grid?
 
-It's not just a tilemap renderer with algorithms attached. It's not just an algorithm engine with rendering bolted on. **Grid is a unified roguelike "world view" abstraction**—the container for your game's level data that handles rendering, pathfinding, and visibility as integrated concerns.
+A Grid is both a **`Drawable`**, a McRogueFace object with a position and size that can be drawn on screen, and a container for map data, with flexible presentation. Grids can be much larger on the inside, and will be rendered to screen centered on its camera position.
 
-A Grid represents "something mostly everywhere"—the visible tiles that make up terrain. Its partner class, Entity, represents "discrete, moveable objects" that interact with the grid through:
+A Grid represents a fixed array of tiles that make up a game world or level. Its partner class, Entity, represents discrete, moveable objects that interact with the grid through:
 
 - **Display**: Entities render via FOV calculations
 - **Movement**: Entities check the `walkable` flag on tiles
 - **Interaction**: Entities query other entities in the Grid's collection
 
+Grids can be used to pan and zoom on different points of interest, visualize terrain, place user interface elements adjacent to entities, and draw partially transparent overlays on top of the tiles. The 2D array of tiles inside a Grid is like a classic roguelike's console output, but you can place many of them on-screen at once, or not render it at all to simply use it as a container for pathfinding and visibility data.
+
 ## Entity-Grid Coupling: Intentional Design
 
-EntityCollection is tightly coupled to Grid by design. An entity can exist on zero or one grids—adding to a new grid automatically removes from the old one.
+EntityCollection is a C++ class exposed via Python for entity management. An entity can exist on zero or one grids — adding to a new grid automatically removes from the old one, i.e. the entity is "moved" between grids. This makes the Entity a natural container for characters even as they move between multiple screens or areas of the world.
 
-This isn't a limitation; it's a feature. The tight coupling enables:
+The tight coupling enables:
 
 - **Automatic spatial indexing** via SpatialHash (37x speedup for radius queries)
 - **Efficient FOV updates** that stay on the C++ side
@@ -46,16 +48,18 @@ Layers are central to any *visible* Grid. While a Grid could theoretically be a 
 
 Layers also support **C++ data binding** for FOV updates—when `entity.update_visibility()` is called, bound ColorLayers update automatically with minimal Python/C++ boundary crossing.
 
-## Algorithm Integration: libtcod vs Grid Methods
+## Algorithm Integration: libtcod under the hood
 
-McRogueFace exposes libtcod algorithms through two interfaces:
+McRogueFace exposes libtcod algorithms through its own objects:
 
-- **`mcrfpy.libtcod`**: Dijkstra pathfinding, lower-level algorithm access
-- **Grid methods**: A* via `find_path()`, integrated with Grid's walkable data
+- **Grid Path Finding methods**: A* and Djikstra maps integrated with Grid's walkable data
+- **Grid + Entity Field of View methods**: Entity perspectives integrated with Grid's transparency data and GridLayer for rendering
+- **mcrfpy.HeightMap**: libtcod's heightmap class is a first-class McRogueFace object for handling terrain, path, walkability data
+- **mcrfpy.BSP**: libtcod's binary space partitioning tree is a first-class McRogueFace object
+- **mcrfpy.NoiseSource**: libtcod's noise generator is a first-class McRogueFace object
+- **`mcrfpy.libtcod`**: For utilities that don't directly relate to McRogueFace's objects
 
-The distinction exists for libtcod familiarity, but the practical guidance is:
-- Use Grid methods when working with a specific Grid's terrain
-- Use `mcrfpy.libtcod` for standalone algorithm calls
+*What's a "First Class" McRogueFace object?* Things that relate to what your game renders follow McRogueFace's data model: manipulation of arrays of values stays in C++, and Python requests manipulations to take place. You shouldn't set the visible/discovered/unknown value of every cell for an Entity's perspective, you manage their FOV. You shouldn't copy individual tile values from Grids or Layers or HeightMaps, you call a method to copy a region. Just a few Python commands can instruct libtcod to copy, combine, modify, and generate tens of thousands of tiles for your maps. This is fundamentally what libtcod always enabled, and rendered via its console view - McRogueFace makes the same algorithms and data structures available in a way that supports arbitrary on-screen positioning, scaling, and animation.
 
 ## Three Target Audiences
 
