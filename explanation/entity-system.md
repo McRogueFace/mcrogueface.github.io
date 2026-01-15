@@ -9,19 +9,15 @@ An Entity is a "discrete, moveable object" that lives on a Grid. This relationsh
 - Entities reference their grid via `entity.grid`
 - Grids track entities via `grid.entities` (an EntityCollection)
 
-**Key constraint:** An entity can only exist on 0 or 1 grids at a time. Adding an entity to a new grid automatically removes it from the old one.
+An entity can only exist on 0 or 1 grids at a time. Adding an entity to a new grid automatically removes it from the old one. I want you to think of an Entity as "the" character, item, or object being interacted with. If you have a villain or companion that leaves the map and will return again, setting `villain.grid = None` will move that entity to "nowhere" - not visible on screen in any Grid. You can still interact with their object with that variable, though, and add them to a different Grid later on. In fact, `villain.die()` will also remove the villain from the Grid: but death's permanence is up to you.
 
-This isn't a limitation—it's a design choice that enables automatic spatial indexing and clean ownership semantics.
-
-## Why Tight Coupling?
-
-EntityCollection is intentionally coupled to Grid. The benefits:
+## Technologies Under the Hood
 
 1. **Automatic SpatialHash updates**: When an entity moves, the spatial index updates automatically
 2. **Efficient C++ iteration**: The collection lives in C++, avoiding Python overhead for bulk operations
 3. **Clean subclassing**: Python users subclass Entity; render-relevant properties stay in C++
 
-If you need entities that aren't on a grid, you probably want UI elements (Sprites, Captions) instead.
+Emphasis on subclassing: if you create a new Python class that inherits from `mcrfpy.Entity`, that entity can be placed on a grid. This means all of your custom behavior can be entrusted to McRogueFace's object handling, and your custom `GoblinEntity` or `HeroEntity` can carry all the data related to their health bars or inventory.
 
 ## Spatial Indexing: SpatialHash
 
@@ -35,8 +31,8 @@ For games with many entities, linear scanning becomes a bottleneck. McRogueFace 
 | 5,000 | 10.5ms | 0.28ms | 37x |
 
 **Key operations:**
-- `grid.entities_at(x, y)` — entities at exact position
-- `grid.entities_in_radius(x, y, r)` — entities within radius (ideal for AI)
+- `grid.at(x, y).entities` — entities at exact position
+- `grid.entities_in_radius((x, y), r)` — entities within radius (ideal for AI)
 
 The spatial index updates automatically when entity positions change.
 
@@ -53,6 +49,8 @@ Call `entity.update_visibility()` to recompute FOV. This:
 3. Auto-updates any bound ColorLayers
 
 **Why bind layers?** ColorLayers can visualize FOV without Python iteration. The binding happens in C++, so updating thousands of cells is fast.
+
+When using the FOV system, entities can retrieve other entities from their grid with `entity.visible_entities()`. This makes it easy to program Entity variants which respect line of sight.
 
 ## Movement and Collision
 
