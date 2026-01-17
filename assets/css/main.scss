@@ -1,10 +1,10 @@
 ---
 ---
 
-@use "variables" as *;
-@use "base";
-@use "layout";
-@use "sidebar";
-@use "home";
-@use "content";
-@use "code";
+@import "variables";
+@import "base";
+@import "layout";
+@import "sidebar";
+@import "home";
+@import "content";
+@import "code";
