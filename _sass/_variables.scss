@@ -1,0 +1,49 @@
+// Colors
+$color-primary: #2563eb;      // Blue - primary actions
+$color-secondary: #10b981;    // Green - success states
+$color-accent: #f59e0b;       // Amber - highlights
+$color-danger: #ef4444;       // Red - errors/warnings
+
+$color-bg: #0f172a;           // Dark blue-gray background
+$color-bg-light: #1e293b;     // Slightly lighter background
+$color-bg-card: #334155;      // Card background
+
+$color-text: #e2e8f0;         // Light gray text
+$color-text-muted: #94a3b8;   // Muted text
+$color-text-dim: #64748b;     // Very muted text
+
+$color-border: #475569;       // Border color
+$color-border-light: #334155; // Light border
+
+// Typography
+$font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-mono: 'Fira Code', 'JetBrains Mono', Consolas, Monaco, 'Andale Mono', monospace;
+
+$font-size-sm: 0.875rem;
+$font-size-base: 1rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.25rem;
+$font-size-2xl: 1.5rem;
+$font-size-3xl: 1.875rem;
+$font-size-4xl: 2.25rem;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-2xl: 3rem;
+$spacing-3xl: 4rem;
+
+// Layout
+$sidebar-width: 280px;
+$max-content-width: 900px;
+$border-radius: 8px;
+$border-radius-lg: 12px;
+
+// Breakpoints
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;

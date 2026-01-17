@@ -1,12 +1,11 @@
-# McRogueFace Quickstart Guide
-
-**Make 2D games with Python** - No C++ required!
-
+---
+layout: default
+title: Quickstart
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • **[Quickstart](https://mcrogueface.github.io/quickstart)** • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api-reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
+# Quickstart Guide
 
----
+Get McRogueFace running and make your first changes in minutes.
 
 ## Get Started in 5 Minutes
 

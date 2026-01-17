@@ -1,12 +1,9 @@
-# McRogueFace API Reference
-
-**Make 2D games with Python** - No C++ required!
-
+---
+layout: default
+title: API Reference
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • **[API Reference](https://mcrogueface.github.io/api-reference)** • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
-
----
+# API Reference
 
 This is the complete API reference for the McRogueFace game engine. All functionality is accessed through the `mcrfpy` module.
 

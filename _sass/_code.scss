@@ -1,0 +1,112 @@
+@use "variables" as *;
+@use "sass:color";
+
+// Code and syntax highlighting
+
+// Inline code
+code {
+  font-family: $font-mono;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background-color: $color-bg-light;
+  border-radius: 3px;
+  color: $color-secondary;
+}
+
+// Code blocks
+pre {
+  margin: $spacing-lg 0;
+  padding: $spacing-lg;
+  background-color: $color-bg-light;
+  border: 1px solid $color-border;
+  border-radius: $border-radius;
+  overflow-x: auto;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+
+  code {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    color: $color-text;
+  }
+}
+
+// Rouge syntax highlighting (GitHub-style dark theme)
+// Only apply block styling to div wrappers, not inline code
+div.highlighter-rouge {
+  margin: $spacing-lg 0;
+  border-radius: $border-radius;
+  overflow: hidden;
+  background-color: $color-bg-light;
+  border: 1px solid $color-border;
+}
+
+.highlight {
+  pre {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+  }
+
+  // Comments
+  .c, .c1, .cm, .cs { color: #6b7280; font-style: italic; }
+
+  // Keywords
+  .k, .kc, .kd, .kn, .kp, .kr, .kt { color: #c792ea; }
+
+  // Strings
+  .s, .s1, .s2, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr { color: #c3e88d; }
+
+  // Numbers
+  .m, .mf, .mh, .mi, .mo, .il { color: #f78c6c; }
+
+  // Names/Functions
+  .n { color: $color-text; }
+  .na { color: #ffcb6b; } // Attributes
+  .nb { color: #82aaff; } // Builtins
+  .nc { color: #ffcb6b; } // Class names
+  .nf { color: #82aaff; } // Function names
+  .nn { color: #ffcb6b; } // Namespace
+  .nv { color: #f07178; } // Variables
+
+  // Operators
+  .o, .ow { color: #89ddff; }
+
+  // Punctuation
+  .p { color: #89ddff; }
+
+  // Generic
+  .gd { color: #f07178; background-color: rgba(#f07178, 0.1); } // Deleted
+  .gi { color: #c3e88d; background-color: rgba(#c3e88d, 0.1); } // Inserted
+  .gh { color: $color-text; font-weight: bold; } // Heading
+  .gu { color: #89ddff; font-weight: bold; } // Subheading
+
+  // Special
+  .bp { color: #82aaff; } // Builtin pseudo
+  .nt { color: #f07178; } // Tags
+  .w { color: $color-text; } // Whitespace
+}
+
+// Language label for code blocks - only on block-level wrappers (not inline code)
+div.highlighter-rouge::before {
+  content: attr(data-lang);
+  display: block;
+  padding: $spacing-xs $spacing-md;
+  background-color: color.adjust($color-bg-light, $lightness: -5%);
+  border-bottom: 1px solid $color-border;
+  font-size: $font-size-sm;
+  color: $color-text-dim;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// Language-specific labels (only for div wrappers)
+div.language-python::before { content: "Python"; }
+div.language-cpp::before { content: "C++"; }
+div.language-bash::before { content: "Bash"; }
+div.language-json::before { content: "JSON"; }
+div.language-yaml::before { content: "YAML"; }
+div.language-html::before { content: "HTML"; }
+div.language-css::before { content: "CSS"; }
+div.language-javascript::before, div.language-js::before { content: "JavaScript"; }

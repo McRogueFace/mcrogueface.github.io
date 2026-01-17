@@ -1,12 +1,9 @@
-# McRogueFace Tutorials
-
-**Make 2D games with Python** - No C++ required!
-
+---
+layout: default
+title: Tutorials
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • **[Tutorials](https://mcrogueface.github.io/tutorials)** • [**API Reference**](https://mcrogueface.github.io/api) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • [**C++ Extensions**](https://mcrogueface.github.io/extending-cpp)
-
----
+# Tutorials
 
 These tutorials will guide you through the core concepts of McRogueFace by building real, working examples. Each tutorial builds on the previous one, introducing new concepts step by step.
 

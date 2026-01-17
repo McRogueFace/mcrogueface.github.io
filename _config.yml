@@ -1,0 +1,46 @@
+title: McRogueFace
+description: A Python game engine for roguelikes and tile-based games
+url: "https://mcrogueface.github.io"
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Sass/SCSS
+sass:
+  sass_dir: _sass
+  style: compressed
+
+# Exclude from processing
+exclude:
+  - .git
+  - .gitignore
+  - .jekyll-cache
+  - .claude
+  - foundation
+  - marketing
+  - markdown
+  - templates
+  - README.md
+  - _site
+
+# Default layout
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+  - scope:
+      path: "index.md"
+    values:
+      layout: home
+
+# Collections (for organized content)
+collections:
+  systems:
+    output: true
+    permalink: /systems/:name/
+  objects:
+    output: true
+    permalink: /objects/:name/

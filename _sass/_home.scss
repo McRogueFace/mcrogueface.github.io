@@ -1,0 +1,116 @@
+@use "variables" as *;
+
+// Home page specific styles
+.home-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: $spacing-3xl;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: $spacing-3xl;
+
+  h1 {
+    margin: 0 0 $spacing-md;
+    font-size: $font-size-4xl;
+    color: $color-text;
+
+    @media (min-width: $breakpoint-md) {
+      font-size: 3rem;
+    }
+  }
+
+  .tagline {
+    margin: 0 0 $spacing-sm;
+    font-size: $font-size-xl;
+    color: $color-text-muted;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: $font-size-base;
+    color: $color-text-dim;
+  }
+}
+
+// 2x2 navigation grid
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-lg;
+  max-width: 800px;
+  margin: 0 auto $spacing-3xl;
+  padding: 0 $spacing-md;
+
+  @media (min-width: $breakpoint-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-2xl $spacing-xl;
+  background-color: $color-bg-light;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    background-color: $color-bg-card;
+    border-color: $color-primary;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  h2 {
+    margin: 0 0 $spacing-sm;
+    font-size: $font-size-2xl;
+    color: $color-text;
+  }
+
+  p {
+    margin: 0;
+    font-size: $font-size-base;
+    color: $color-text-muted;
+  }
+
+  // Card accent colors
+  &:nth-child(1) {
+    border-top: 3px solid $color-secondary;
+    &:hover { border-color: $color-secondary; }
+  }
+
+  &:nth-child(2) {
+    border-top: 3px solid $color-primary;
+    &:hover { border-color: $color-primary; }
+  }
+
+  &:nth-child(3) {
+    border-top: 3px solid $color-accent;
+    &:hover { border-color: $color-accent; }
+  }
+
+  &:nth-child(4) {
+    border-top: 3px solid #8b5cf6; // Purple for reference
+    &:hover { border-color: #8b5cf6; }
+  }
+}
+
+// Extra content below the grid
+.home-extra {
+  max-width: $max-content-width;
+  margin: 0 auto;
+  padding: 0 $spacing-md;
+
+  // Hide default content on home page (it goes below the grid)
+  > h1:first-child {
+    display: none;
+  }
+}
