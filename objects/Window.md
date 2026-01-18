@@ -179,14 +179,11 @@ class Settings:
 
 ```python
 class GameScene(mcrfpy.Scene):
-    def on_resize(self, width, height):
+    def on_resize(self, new_size):
+        # new_size is a Vector with .x and .y properties
         # Reposition UI elements based on new size
-        window = mcrfpy.Window.get()
-        res = window.resolution
-
-        # Center a panel
         panel_width = 400
-        panel_x = (res[0] - panel_width) // 2
+        panel_x = (new_size.x - panel_width) // 2
         self.panel.x = panel_x
 ```
 

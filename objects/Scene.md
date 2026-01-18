@@ -50,8 +50,8 @@ class GameScene(mcrfpy.Scene):
         # Called every frame with delta time
         self.update_entities(dt)
 
-    def on_resize(self, width, height):
-        # Window resize handling
+    def on_resize(self, new_size):
+        # Window resize handling - new_size is a Vector(width, height)
         self.realign()
 ```
 
@@ -84,7 +84,6 @@ Creates a new scene with the given name. If a scene with that name already exist
 | Method | Description |
 |--------|-------------|
 | `activate(transition=None, duration=None)` | Make this scene active |
-| `register_keyboard(callback)` | Legacy method to set keyboard handler |
 | `realign()` | Recompute layout for all child elements |
 
 ### activate()
@@ -110,7 +109,7 @@ When subclassing Scene, override these methods for custom behavior:
 | `on_exit()` | `def on_exit(self)` | Called when scene is deactivated |
 | `on_key(key, action)` | `def on_key(self, key, action)` | Called on keyboard events |
 | `update(dt)` | `def update(self, dt)` | Called every frame with delta time |
-| `on_resize(width, height)` | `def on_resize(self, w, h)` | Called when window resizes |
+| `on_resize(new_size)` | `def on_resize(self, new_size)` | Called when window resizes (new_size is Vector) |
 
 ### Key Handler Arguments
 
