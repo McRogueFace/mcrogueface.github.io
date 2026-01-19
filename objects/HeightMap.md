@@ -110,7 +110,55 @@ Methods that add procedural terrain features. All return self for chaining.
 | `rain_erosion(drops, erosion=0.1, sedimentation=0.05, seed=None)` | Simulate erosion |
 | `dig_bezier(points, start_radius, end_radius, start_height, end_height)` | Dig canal along Bezier curve |
 | `smooth(iterations=1)` | Average neighboring cells |
-| `kernel_transform(weights, *, min=0.0, max=1e6)` | Apply convolution kernel |
+
+## Convolution Operations
+
+Convolution kernels for image processing and analysis. Return NEW HeightMap objects.
+
+| Method | Description |
+|--------|-------------|
+| `sparse_kernel(weights, *, min_level=-inf, max_level=inf)` | Sparse convolution with dict weights `{(dx, dy): weight}`. Returns new HeightMap. |
+| `sparse_kernel_from(source, weights, *, min_level=-inf, max_level=inf)` | Sparse convolution from source into self (in-place). |
+| `kernel3(weights, *, normalize=True)` | Optimized 3×3 dense convolution with 9-element sequence. Returns new HeightMap. |
+| `kernel3_from(source, weights, *, normalize=True)` | 3×3 convolution from source into self (in-place). |
+
+**Kernel layout for kernel3:** `[0,1,2]` = top row, `[3,4,5]` = middle, `[6,7,8]` = bottom.
+
+```python
+# Edge detection with sparse kernel
+edges = hmap.sparse_kernel({(-1, 0): -1, (1, 0): -1, (0, -1): -1, (0, 1): -1, (0, 0): 4})
+
+# Gaussian blur with 3x3 kernel
+blur_weights = [1, 2, 1, 2, 4, 2, 1, 2, 1]
+blurred = hmap.kernel3(blur_weights)
+
+# Reuse buffer in hot loop
+buffer = mcrfpy.HeightMap(hmap.size)
+for _ in range(10):
+    buffer.kernel3_from(hmap, blur_weights)
+    hmap, buffer = buffer, hmap  # Swap
+```
+
+## Gradient Analysis
+
+| Method | Description |
+|--------|-------------|
+| `gradients(dx=True, dy=True)` | Compute partial derivatives. Returns (dx, dy) tuple, single HeightMap, or None depending on args. |
+
+Pass existing HeightMaps for `dx`/`dy` to reuse buffers in performance-critical loops.
+
+```python
+# Get both gradients
+dx, dy = hmap.gradients()
+
+# Get only horizontal gradient
+dx = hmap.gradients(dy=False)
+
+# Reuse buffers
+dx_buf = mcrfpy.HeightMap(hmap.size)
+dy_buf = mcrfpy.HeightMap(hmap.size)
+hmap.gradients(dx=dx_buf, dy=dy_buf)  # Writes into existing buffers
+```
 
 ## Direct Source Sampling
 

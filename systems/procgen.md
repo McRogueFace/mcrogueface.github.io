@@ -114,18 +114,21 @@ combined = heightmap1.add(heightmap2)
 combined = heightmap1.multiply(heightmap2)
 ```
 
-### Kernel Operations
+### Convolution Operations
 
 Apply convolution kernels for effects like blur and edge detection:
 
 ```python
-# Smooth the heightmap
-blur_kernel = [
-    [1, 2, 1],
-    [2, 4, 2],
-    [1, 2, 1]
-]
-heightmap.apply_kernel(blur_kernel, normalize=True)
+# Smooth the heightmap (Gaussian blur with kernel3)
+blur_weights = [1, 2, 1, 2, 4, 2, 1, 2, 1]  # Flattened 3x3 kernel
+blurred = heightmap.kernel3(blur_weights)  # Returns new HeightMap
+
+# Edge detection with sparse_kernel (arbitrary offsets)
+edges = heightmap.sparse_kernel({
+    (-1, 0): -1, (1, 0): -1,
+    (0, -1): -1, (0, 1): -1,
+    (0, 0): 4
+})
 ```
 
 ### Cellular Automata
