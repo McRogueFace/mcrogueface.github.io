@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McRogueFace Playground</title>
+
+    <!-- LZ-String for URL compression -->
+    <script src="https://unpkg.com/lz-string@1.5.0/libs/lz-string.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #eee;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 0 10px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        h1 {
+            margin: 0;
+            color: #e94560;
+        }
+        h1 a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .tagline {
+            color: #666;
+            font-size: 14px;
+        }
+        #status {
+            color: #888;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+        }
+        .game-panel {
+            flex: 0 0 1024px;
+            position: relative;
+        }
+        #canvas {
+            background: #000;
+            display: block;
+            width: 1024px;
+            height: 768px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+            outline: none;
+        }
+        .repl-panel {
+            flex: 1 1 350px;
+            min-width: 300px;
+            max-width: 450px;
+            max-height: 768px;
+            display: flex;
+            flex-direction: column;
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        /* Responsive: stack vertically on smaller screens */
+        @media (max-width: 1400px) {
+            .main-content {
+                flex-wrap: wrap;
+            }
+            .game-panel {
+                flex: 1 1 100%;
+                max-width: 1024px;
+            }
+            #canvas {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1024 / 768;
+            }
+            .repl-panel {
+                flex: 1 1 100%;
+                max-width: 100%;
+                max-height: none;
+            }
+        }
+        #canvas:focus {
+            box-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+        }
+
+        /* Click-to-start overlay */
+        .click-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .click-overlay.hidden {
+            display: none;
+        }
+        .click-overlay h2 {
+            color: #e94560;
+            margin: 0 0 10px 0;
+            font-size: 32px;
+        }
+        .click-overlay p {
+            color: #888;
+            margin: 5px 0;
+        }
+        .click-overlay .start-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .click-overlay .start-btn:hover {
+            background: #3db892;
+            transform: scale(1.05);
+        }
+
+        .repl-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #0f3460;
+            border-bottom: 1px solid #e94560;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .repl-header h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #e94560;
+        }
+        .repl-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .repl-buttons button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        #runBtn {
+            background: #4ecca3;
+            color: #1a1a2e;
+        }
+        #runBtn:hover {
+            background: #3db892;
+        }
+        #shareBtn {
+            background: #667eea;
+            color: white;
+        }
+        #shareBtn:hover {
+            background: #5a6fd6;
+        }
+        #resetBtn {
+            background: #e94560;
+            color: white;
+        }
+        #resetBtn:hover {
+            background: #d63050;
+        }
+        #clearBtn {
+            background: #666;
+            color: white;
+        }
+        #clearBtn:hover {
+            background: #555;
+        }
+        .repl-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #codeEditor {
+            width: 100%;
+            height: 280px;
+            padding: 12px;
+            border: none;
+            background: #0f0f23;
+            color: #4ecca3;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+        #codeEditor::placeholder {
+            color: #555;
+        }
+        .repl-output-header {
+            padding: 8px 15px;
+            background: #0f3460;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #333;
+        }
+        #replOutput {
+            flex: 1;
+            min-height: 150px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 12px;
+            background: #0a0a15;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: #ccc;
+        }
+        #replOutput .error {
+            color: #e94560;
+        }
+        #replOutput .success {
+            color: #4ecca3;
+        }
+        #output {
+            margin-top: 20px;
+            width: 100%;
+            max-height: 150px;
+            overflow-y: auto;
+            background: #0f0f23;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .spinner {
+            margin: 20px auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Share modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-overlay.hidden {
+            display: none;
+        }
+        .modal {
+            background: #16213e;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #e94560;
+        }
+        .modal h2 {
+            margin: 0 0 15px 0;
+            color: #e94560;
+        }
+        .modal p {
+            color: #888;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .modal input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: #0f0f23;
+            border: 1px solid #333;
+            color: #4ecca3;
+            font-family: monospace;
+            font-size: 13px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .modal .copy-btn {
+            background: #4ecca3;
+            color: #1a1a2e;
+        }
+        .modal .close-btn {
+            background: #666;
+            color: white;
+        }
+
+        /* Footer with bookmarklet */
+        .footer {
+            margin-top: 30px;
+            padding: 20px;
+            background: #16213e;
+            border-radius: 8px;
+        }
+        .footer h3 {
+            color: #e94560;
+            margin: 0 0 15px 0;
+        }
+        .footer p {
+            color: #888;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .bookmarklet {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: grab;
+            user-select: none;
+        }
+        .bookmarklet:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .source-indicator {
+            padding: 5px 10px;
+            background: #0f3460;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #4ecca3;
+        }
+        .source-indicator a {
+            color: #667eea;
+        }
+
+        .shortcut-hint {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Loading state for gist */
+        .loading-gist {
+            color: #667eea;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1><a href="/">McRogueFace</a></h1>
+                <span class="tagline">Playground</span>
+                <span id="sourceIndicator" class="source-indicator hidden"></span>
+            </div>
+            <div id="status">Downloading...</div>
+        </header>
+
+        <div id="spinner" class="spinner"></div>
+
+        <div class="main-content">
+            <div class="game-panel">
+                <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+                <!-- Click-to-start overlay (required for audio) -->
+                <div id="clickOverlay" class="click-overlay">
+                    <h2>McRogueFace Playground</h2>
+                    <p>Code snippets in this browser demo will also run unmodified in <a href="https://github.com/jmccardle/McRogueFace" target="_blank">McRogueFace for Linux or Windows Desktop</a></p>
+                    <p id="overlaySource"></p>
+                    <button class="start-btn" id="startBtn">Click to Run</button>
+                </div>
+            </div>
+
+            <div class="repl-panel" id="replPanel">
+                <div class="repl-header">
+                    <h3>Python REPL</h3>
+                    <div class="repl-buttons">
+                        <button id="runBtn" disabled>Run</button>
+                        <button id="shareBtn">Share</button>
+                        <button id="resetBtn" disabled>Reset</button>
+                        <button id="clearBtn">Clear</button>
+                    </div>
+                </div>
+                <textarea id="codeEditor" placeholder="Write Python code here...
+
+import mcrfpy
+
+# Create a scene
+scene = mcrfpy.Scene('demo')
+frame = mcrfpy.Frame(100, 100, 300, 200)
+frame.fill_color = (50, 50, 80)
+scene.ui.append(frame)
+
+caption = mcrfpy.Caption('Hello, World!', 120, 150)
+caption.fill_color = (255, 255, 255)
+scene.ui.append(caption)
+
+mcrfpy.setScene('demo')
+"></textarea>
+                <div class="repl-output-header">
+                    Output
+                    <span class="shortcut-hint" style="float: right;">Ctrl+Enter to run</span>
+                </div>
+                <div id="replOutput"></div>
+            </div>
+        </div>
+
+        <div id="output" ></div>
+
+        <!-- Footer with bookmarklet -->
+        <div class="footer">
+            <h3>Run Gists Instantly</h3>
+            <p>Drag this bookmarklet to your bookmarks bar, then click it on any GitHub Gist to run it here:</p>
+            <p>
+                <a id="bookmarklet" class="bookmarklet" href="#" onclick="alert('Drag this to your bookmarks bar!'); return false;">
+                    &#9654; Run in McRogueFace
+                </a>
+            </p>
+            <p style="font-size: 12px; color: #555;">
+                Works with public gists containing Python files.
+                <a href="https://gist.github.com" target="_blank" style="color: #667eea;">Create a Gist</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Share Your Code</h2>
+            <p>Copy this URL to share your playground:</p>
+            <input type="text" id="shareUrl" readonly onclick="this.select()">
+            <p id="shareSize" style="font-size: 12px;"></p>
+            <div class="modal-buttons">
+                <button class="copy-btn" id="copyBtn">Copy to Clipboard</button>
+                <button class="close-btn" id="closeModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type='text/javascript'>
+        // ===========================================
+        // CONFIGURATION - Change these for your setup
+        // ===========================================
+        const CONFIG = {
+            // Base URL for the playground (no trailing slash)
+            // Examples: 'https://mcrogueface.ffwf.net', 'https://mcrogueface.github.io'
+            playgroundUrl: window.location.origin,
+
+            // Short URL domain (set to same as playgroundUrl if not using separate short domain)
+            // Examples: 'https://r.ffwf.net', 'https://mcrogueface.github.io'
+            shortUrl: window.location.origin,
+
+            // Path prefix for playground URLs
+            // Use '' for root, '/playground' for subdirectory
+            playgroundPath: '/playground',
+
+            // Maximum code size in bytes (for UI feedback)
+            maxCodeSize: 16 * 1024,
+
+            // GitHub API base (usually doesn't need changing)
+            githubApiBase: 'https://api.github.com'
+        };
+
+        // Build the bookmarklet with current config
+        function generateBookmarklet() {
+            const shortBase = CONFIG.shortUrl + CONFIG.playgroundPath;
+            // Minified bookmarklet code
+            const code = `javascript:(function(){var m=location.href.match(/gist\\.github\\.com\\/([^\\/]+)\\/([a-f0-9]+)/i);if(m)location.href='${shortBase}#gist='+m[1]+'/'+m[2];else alert('Not a GitHub Gist page');})();`;
+            document.getElementById('bookmarklet').href = code;
+        }
+
+        // ===========================================
+        // URL Fragment Handling
+        // ===========================================
+
+        async function parseUrlFragment() {
+            const hash = window.location.hash.slice(1);
+            if (!hash) return null;
+
+            const params = new URLSearchParams(hash);
+
+            // Handle #src=<lz-compressed>
+            if (params.has('src')) {
+                try {
+                    const compressed = params.get('src');
+                    const code = LZString.decompressFromEncodedURIComponent(compressed);
+                    if (code) {
+                        return { type: 'inline', code: code };
+                    }
+                } catch (e) {
+                    console.error('Failed to decompress code:', e);
+                }
+            }
+
+            // Handle #gist=user/id or #gist=id
+            if (params.has('gist')) {
+                const gistParam = params.get('gist');
+                const file = params.get('file'); // Optional specific file
+                return { type: 'gist', gistId: gistParam, file: file };
+            }
+
+            return null;
+        }
+
+        async function loadGist(gistId, preferredFile) {
+            // Handle both "user/id" and just "id" formats
+            const id = gistId.includes('/') ? gistId.split('/').pop() : gistId;
+
+            try {
+                const resp = await fetch(`${CONFIG.githubApiBase}/gists/${id}`);
+                if (!resp.ok) {
+                    throw new Error(`Gist not found (${resp.status})`);
+                }
+
+                const data = await resp.json();
+                const files = Object.values(data.files);
+
+                // Find preferred file, or first Python file, or first file
+                let targetFile = null;
+                if (preferredFile) {
+                    targetFile = files.find(f => f.filename === preferredFile);
+                }
+                if (!targetFile) {
+                    targetFile = files.find(f => f.filename.endsWith('.py'));
+                }
+                if (!targetFile) {
+                    targetFile = files[0];
+                }
+
+                return {
+                    code: targetFile.content,
+                    filename: targetFile.filename,
+                    gistUrl: data.html_url,
+                    owner: data.owner?.login || 'anonymous',
+                    description: data.description
+                };
+            } catch (e) {
+                console.error('Failed to load gist:', e);
+                throw e;
+            }
+        }
+
+        function generateShareUrl(code) {
+            const compressed = LZString.compressToEncodedURIComponent(code);
+            const url = `${CONFIG.shortUrl}${CONFIG.playgroundPath}#src=${compressed}`;
+            return {
+                url: url,
+                originalSize: code.length,
+                compressedSize: compressed.length,
+                ratio: ((compressed.length / code.length) * 100).toFixed(1)
+            };
+        }
+
+        // ===========================================
+        // DOM Elements
+        // ===========================================
+
+        var statusElement = document.getElementById('status');
+        var spinnerElement = document.getElementById('spinner');
+        var outputElement = document.getElementById('output');
+        var canvasElement = document.getElementById('canvas');
+        var codeEditor = document.getElementById('codeEditor');
+        var replOutput = document.getElementById('replOutput');
+        var runBtn = document.getElementById('runBtn');
+        var shareBtn = document.getElementById('shareBtn');
+        var resetBtn = document.getElementById('resetBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var clickOverlay = document.getElementById('clickOverlay');
+        var startBtn = document.getElementById('startBtn');
+        var sourceIndicator = document.getElementById('sourceIndicator');
+        var overlaySource = document.getElementById('overlaySource');
+        var shareModal = document.getElementById('shareModal');
+        var shareUrlInput = document.getElementById('shareUrl');
+        var shareSizeEl = document.getElementById('shareSize');
+        var copyBtn = document.getElementById('copyBtn');
+        var closeModalBtn = document.getElementById('closeModalBtn');
+
+        // Pre-set canvas size
+        canvasElement.width = 1024;
+        canvasElement.height = 768;
+
+        // Track if we've started (for audio permissions)
+        var hasStarted = false;
+        var pendingCode = null;
+
+        // ===========================================
+        // Initialization
+        // ===========================================
+
+        async function init() {
+            generateBookmarklet();
+
+            const source = await parseUrlFragment();
+
+            if (source) {
+                if (source.type === 'inline') {
+                    codeEditor.value = source.code;
+                    overlaySource.textContent = 'Code loaded from shared URL';
+                } else if (source.type === 'gist') {
+                    codeEditor.value = '# Loading gist...';
+                    codeEditor.classList.add('loading-gist');
+                    overlaySource.textContent = 'Loading from GitHub Gist...';
+
+                    try {
+                        const gist = await loadGist(source.gistId, source.file);
+                        codeEditor.value = gist.code;
+                        codeEditor.classList.remove('loading-gist');
+
+                        // Show source indicator
+                        sourceIndicator.innerHTML = `From: <a href="${gist.gistUrl}" target="_blank">${gist.owner}/${gist.filename}</a>`;
+                        sourceIndicator.classList.remove('hidden');
+
+                        overlaySource.textContent = `Gist: ${gist.owner}/${gist.filename}`;
+                        if (gist.description) {
+                            overlaySource.textContent += ` - ${gist.description}`;
+                        }
+                    } catch (e) {
+                        codeEditor.value = `# Failed to load gist: ${e.message}\n# Check the console for details.`;
+                        codeEditor.classList.remove('loading-gist');
+                        overlaySource.textContent = 'Failed to load gist';
+                    }
+                }
+            }
+        }
+
+        // Start button handler - also auto-runs the code
+        startBtn.addEventListener('click', function() {
+            hasStarted = true;
+            clickOverlay.classList.add('hidden');
+            canvasElement.focus();
+
+            // Resume audio context if needed (browser requirement)
+            if (window.AudioContext || window.webkitAudioContext) {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                ctx.resume();
+            }
+
+            // Auto-run the code in the editor after a brief delay
+            // to ensure the runtime is fully ready
+            setTimeout(function() {
+                if (codeEditor.value.trim() && !runBtn.disabled) {
+                    runCode();
+                }
+            }, 100);
+        });
+
+        // ===========================================
+        // Emscripten Module
+        // ===========================================
+
+        var Module = {
+            print: (function() {
+                return function(text) {
+                    if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                    console.log(text);
+                    outputElement.textContent += text + '\n';
+                    outputElement.scrollTop = outputElement.scrollHeight;
+                };
+            })(),
+            printErr: function(text) {
+                if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                console.error(text);
+                outputElement.textContent += '[ERR] ' + text + '\n';
+                outputElement.scrollTop = outputElement.scrollHeight;
+            },
+            canvas: canvasElement,
+            setStatus: function(text) {
+                if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+                if (text === Module.setStatus.last.text) return;
+                var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+                var now = Date.now();
+                if (m && now - Module.setStatus.last.time < 30) return;
+                Module.setStatus.last.time = now;
+                Module.setStatus.last.text = text;
+                if (m) {
+                    text = m[1];
+                }
+                statusElement.innerHTML = text;
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+            },
+            onRuntimeInitialized: function() {
+                console.log('Emscripten runtime initialized');
+                spinnerElement.style.display = 'none';
+
+                // Enable REPL buttons
+                runBtn.disabled = false;
+                resetBtn.disabled = false;
+
+                // Make FS available globally for console access
+                window.FS = Module.FS;
+
+                // Create convenient Python execution functions
+                window.runPython = function(code) {
+                    return Module.ccall('run_python_string_with_output', 'string', ['string'], [code]);
+                };
+                window.resetGame = function() {
+                    return Module.ccall('reset_python_environment', 'number', [], []);
+                };
+
+                replOutput.innerHTML = '<span class="success">Python REPL ready. Click "Start" then use Run (or Ctrl+Enter).</span>\n';
+            }
+        };
+
+        Module.setStatus('Downloading...');
+
+        window.onerror = function(event) {
+            Module.setStatus('Error! See console for details.');
+            spinnerElement.style.display = 'none';
+        };
+
+        // Stub for resolveGlobalSymbol
+        if (typeof resolveGlobalSymbol === 'undefined') {
+            window.resolveGlobalSymbol = function(name, direct) {
+                return {
+                    sym: Module['_' + name] || Module[name],
+                    type: 'function'
+                };
+            };
+        }
+
+        // Prevent browser zoom on canvas
+        document.addEventListener('wheel', function(e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }, { passive: false, capture: true });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '_')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        }, { capture: true });
+
+        // Click on canvas to focus it
+        canvasElement.addEventListener('click', function() {
+            canvasElement.focus();
+        });
+
+        canvasElement.addEventListener('mousedown', function() {
+            if (document.activeElement !== canvasElement) {
+                canvasElement.focus();
+            }
+        });
+
+        // ===========================================
+        // REPL Functionality
+        // ===========================================
+
+        function runCode() {
+            if (!hasStarted) {
+                replOutput.innerHTML += '<span class="error">Please click "Start" first to enable the runtime.</span>\n';
+                return;
+            }
+
+            var code = codeEditor.value;
+            if (!code.trim()) return;
+
+            var preview = code.split('\n')[0];
+            if (preview.length > 50) preview = preview.substring(0, 47) + '...';
+            replOutput.innerHTML += '<span style="color:#666">>>> </span><span style="color:#888">' + escapeHtml(preview) + (code.includes('\n') ? ' ...' : '') + '</span>\n';
+
+            try {
+                var result = window.runPython(code);
+                if (result && result.trim()) {
+                    if (result.includes('Traceback') || result.includes('Error:') || result.includes('Exception:')) {
+                        replOutput.innerHTML += '<span class="error">' + escapeHtml(result) + '</span>\n';
+                    } else {
+                        replOutput.innerHTML += '<span class="success">' + escapeHtml(result) + '</span>\n';
+                    }
+                } else {
+                    // No output - statement executed without return value
+                    replOutput.innerHTML += '<span style="color:#555">(ok)</span>\n';
+                }
+            } catch (e) {
+                replOutput.innerHTML += '<span class="error">Runtime Error: ' + escapeHtml(e.toString()) + '</span>\n';
+            }
+
+            replOutput.scrollTop = replOutput.scrollHeight;
+        }
+
+        function resetEnvironment() {
+            replOutput.innerHTML += '<span style="color:#888">>>> Resetting environment...</span>\n';
+            try {
+                window.resetGame();
+                replOutput.innerHTML += '<span class="success">Environment reset.</span>\n';
+            } catch (e) {
+                replOutput.innerHTML += '<span class="error">Reset error: ' + escapeHtml(e.toString()) + '</span>\n';
+            }
+            replOutput.scrollTop = replOutput.scrollHeight;
+        }
+
+        function clearOutput() {
+            replOutput.innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===========================================
+        // Share Functionality
+        // ===========================================
+
+        function showShareModal() {
+            const code = codeEditor.value;
+
+            if (code.length > CONFIG.maxCodeSize) {
+                alert(`Code is too large (${(code.length / 1024).toFixed(1)} KB). Maximum is ${CONFIG.maxCodeSize / 1024} KB.\n\nConsider using a GitHub Gist for larger code.`);
+                return;
+            }
+
+            const result = generateShareUrl(code);
+            shareUrlInput.value = result.url;
+            shareSizeEl.textContent = `${result.originalSize} bytes → ${result.compressedSize} chars (${result.ratio}% of original)`;
+
+            if (result.url.length > 2000) {
+                shareSizeEl.textContent += ' ⚠️ URL is long - may not work in all browsers/apps';
+            }
+
+            shareModal.classList.remove('hidden');
+        }
+
+        copyBtn.addEventListener('click', function() {
+            shareUrlInput.select();
+            navigator.clipboard.writeText(shareUrlInput.value).then(function() {
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function() {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
+            }).catch(function() {
+                // Fallback
+                document.execCommand('copy');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(function() {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
+            });
+        });
+
+        closeModalBtn.addEventListener('click', function() {
+            shareModal.classList.add('hidden');
+        });
+
+        shareModal.addEventListener('click', function(e) {
+            if (e.target === shareModal) {
+                shareModal.classList.add('hidden');
+            }
+        });
+
+        // ===========================================
+        // Button Handlers
+        // ===========================================
+
+        runBtn.addEventListener('click', runCode);
+        shareBtn.addEventListener('click', showShareModal);
+        resetBtn.addEventListener('click', resetEnvironment);
+        clearBtn.addEventListener('click', clearOutput);
+
+        // Keyboard shortcut: Ctrl+Enter to run
+        codeEditor.addEventListener('keydown', function(e) {
+            e.stopPropagation();
+
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                if (!runBtn.disabled) {
+                    runCode();
+                }
+            }
+            // Tab key inserts spaces
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                var start = this.selectionStart;
+                var end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+            }
+        });
+
+        codeEditor.addEventListener('keyup', function(e) {
+            e.stopPropagation();
+        });
+        codeEditor.addEventListener('keypress', function(e) {
+            e.stopPropagation();
+        });
+
+        // Escape closes modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !shareModal.classList.contains('hidden')) {
+                shareModal.classList.add('hidden');
+            }
+        });
+
+        // ===========================================
+        // Initialize on load
+        // ===========================================
+
+        init();
+    </script>
+    <script async type="text/javascript" src="mcrogueface.js"></script>
+</body>
+</html>
