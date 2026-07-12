@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Grid, Entity, ColorLayer, TileLayer, Texture, Color]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Grid System
 
 The Grid is the foundation of tile-based games in McRogueFace. It provides efficient rendering, camera controls, and serves as the container for game entities.

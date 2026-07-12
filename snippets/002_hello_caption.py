@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Scene] verified=0.2.8@b6720f6 status=ok
 # Hello Caption - Display text on screen
 import mcrfpy
 

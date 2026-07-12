@@ -1,6 +1,10 @@
 ---
 layout: default
 title: ColorLayer
+mcrf:
+  objects: [ColorLayer, Color, Grid]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # ColorLayer

@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,Scene,Sprite,Timer] verified=0.2.8@b6720f6 status=ran
 # Animation Sprite Index - Sprite animation
 import mcrfpy
 

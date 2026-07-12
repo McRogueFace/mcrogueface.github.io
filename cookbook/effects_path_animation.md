@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Grid, Timer, Animation, Behavior, AStarPath]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Path Animation (Multi-Step Movement)
 
 Animate an entity along a path with chained animations, useful for smooth multi-tile movement, patrol routes, or cinematic sequences.

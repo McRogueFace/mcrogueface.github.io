@@ -1,6 +1,10 @@
 ---
 layout: default
 title: GridPoint
+mcrf:
+  objects: [Grid, ColorLayer, TileLayer]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # GridPoint
@@ -64,8 +68,8 @@ When a Grid has named layers (ColorLayer or TileLayer), you can access layer val
 
 ```python
 # Add named layers to grid
-grid.add_layer('color', 'terrain_tint', z_index=-1)
-grid.add_layer('tile', 'decorations', z_index=1, texture=deco_tex)
+grid.add_layer(mcrfpy.ColorLayer(name='terrain_tint', z_index=-1))
+grid.add_layer(mcrfpy.TileLayer(name='decorations', z_index=1, texture=deco_tex))
 
 # Access through GridPoint
 point = grid.at(5, 5)
@@ -153,7 +157,6 @@ class Door:
 <div class="related-objects">
 <div class="object-links">
 <a href="Grid" class="object-link">Grid</a>
-<a href="GridPointState" class="object-link">GridPointState</a>
 <a href="Entity" class="object-link">Entity</a>
 <a href="ColorLayer" class="object-link">ColorLayer</a>
 <a href="TileLayer" class="object-link">TileLayer</a>

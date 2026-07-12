@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Mouse
+mcrf:
+  objects: [Mouse, MouseButton, InputState]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Mouse
@@ -15,18 +19,18 @@ Mouse state singleton for position and button state.
 
 ```python
 # Check mouse position
-x, y = mcrfpy.Mouse.pos
+x, y = mcrfpy.mouse.pos
 print(f"Mouse at ({x}, {y})")
 
 # Check button states
-if mcrfpy.Mouse.left:
+if mcrfpy.mouse.left:
     print("Left button is held")
 
 # Hide cursor for custom cursor sprite
-mcrfpy.Mouse.visible = False
+mcrfpy.mouse.visible = False
 
 # Grab mouse for camera control
-mcrfpy.Mouse.grabbed = True
+mcrfpy.mouse.grabbed = True
 ```
 
 ## Properties
@@ -35,7 +39,7 @@ mcrfpy.Mouse.grabbed = True
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `pos` | tuple[int, int] | Current mouse position (x, y) (read-only) |
+| `pos` | Vector | Current mouse position as Vector (read-only) |
 | `x` | int | Current mouse X position (read-only) |
 | `y` | int | Current mouse Y position (read-only) |
 
@@ -64,38 +68,11 @@ cursor = mcrfpy.Sprite(texture=cursor_texture)
 scene.children.append(cursor)
 
 # Hide system cursor
-mcrfpy.Mouse.visible = False
+mcrfpy.mouse.visible = False
 
 # Update cursor position each frame
 def update(dt):
-    cursor.x, cursor.y = mcrfpy.Mouse.pos
-```
-
-### First-Person Camera
-
-```python
-# Grab mouse for FPS-style camera
-mcrfpy.Mouse.grabbed = True
-mcrfpy.Mouse.visible = False
-
-def handle_mouse_move(x, y, dx, dy):
-    camera.rotate(dx * sensitivity, dy * sensitivity)
-```
-
-### Drag Detection
-
-```python
-drag_start = None
-
-def on_mouse(button, state, x, y):
-    global drag_start
-    if button == mcrfpy.MouseButton.LEFT:
-        if state == mcrfpy.InputState.PRESSED:
-            drag_start = (x, y)
-        else:
-            if drag_start:
-                print(f"Dragged from {drag_start} to ({x}, {y})")
-            drag_start = None
+    cursor.x, cursor.y = mcrfpy.mouse.pos
 ```
 
 ## Related

@@ -1,0 +1,47 @@
+// API lifecycle badges
+//
+// Used by _includes/api_badge.html to mark added/changed/deprecated APIs
+// with the version they changed in, e.g.:
+//   <span class="mcrf-badge mcrf-badge--added">added 0.2.9</span>
+//
+// `.mcrf-api-badge` is styled as an alias so the include works whether it
+// emits the short or the long class name. Kind colors intentionally match
+// the fallback inline styles in _includes/api_badge.html.
+
+.mcrf-badge,
+.mcrf-api-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.4em;
+  padding: 0.1em 0.55em;
+  border-radius: 999px;
+  background-color: $color-text-dim; // neutral fallback for unknown kinds
+  color: #ffffff;
+  font-family: $font-sans;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.mcrf-badge--added,
+.mcrf-api-badge--added {
+  background-color: #2c8a4a; // green - new API
+}
+
+.mcrf-badge--changed,
+.mcrf-api-badge--changed {
+  background-color: #2563c9; // blue - behavior/signature change
+}
+
+.mcrf-badge--deprecated,
+.mcrf-api-badge--deprecated {
+  background-color: #b0770a; // amber - scheduled for removal
+}
+
+.mcrf-badge--removed,
+.mcrf-api-badge--removed {
+  background-color: #c1362f; // red - no longer available
+}

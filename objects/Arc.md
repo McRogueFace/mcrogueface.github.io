@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Arc
+mcrf:
+  objects: [Arc]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Arc
@@ -54,13 +60,17 @@ mcrfpy.Arc(center=None, radius=0, start_angle=0, end_angle=90, color=None, thick
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `center` | tuple | Center point as (x, y) |
-| `pos` | tuple | Alias for center |
+| `center` | Vector | Center point as (x, y) |
+| `pos` | Vector | Alias for center |
 | `radius` | float | Radius of the arc |
 | `start_angle` | float | Starting angle in degrees |
 | `end_angle` | float | Ending angle in degrees |
 | `color` | Color | Arc stroke color |
 | `thickness` | float | Line thickness |
+| `rotation` | float | Rotation in degrees, clockwise (animatable) |
+| `origin` | Vector | Pivot point |
+| `align` | Alignment or None | Alignment mode |
+| `bounds` | tuple | (pos, size) as Vectors, read-only |
 | `visible` | bool | Visibility toggle |
 | `opacity` | float | Transparency (0.0-1.0) |
 | `z_index` | int | Draw order |

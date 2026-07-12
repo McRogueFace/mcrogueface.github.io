@@ -3,6 +3,10 @@ layout: default
 title: Multi-Layer Tiles
 parent: Cookbook
 nav_order: 5
+mcrf:
+  objects: [Grid, TileLayer, ColorLayer, Color, Timer]
+  diataxis: howto
+  disposition: rewrite-pending
 ---
 
 # Multi-Layer Tiles

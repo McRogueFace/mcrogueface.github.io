@@ -1,13 +1,25 @@
+---
+mcrf:
+  objects: []
+  diataxis: meta
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # McRogueFace Documentation
 
-This repository contains the documentation for the McRogueFace Game Engine - a powerful roguelike engine that combines C++ performance with Python flexibility.
+This repository contains the documentation for the McRogueFace Game Engine - A Python game engine for roguelikes and tile-based games that combines C++ performance with Python flexibility.
 
 ## Documentation Structure
 
 - **[index.md](index.md)** - Main landing page with overview and quick examples
-- **[getting-started.md](getting-started.md)** - Installation guide and first game tutorial
-- **[api-reference.md](api-reference.md)** - Complete API documentation for all `mcrfpy` types and functions
+- **[quickstart.md](quickstart.md)** - Quickstart guide
 - **[tutorials.md](tutorials.md)** - In-depth tutorials for building complete roguelike features
+- **[cookbook.md](cookbook.md)** - Cookbook of practical recipes
+- **[reference.md](reference.md)** - Complete API documentation hub for all `mcrfpy` types and functions
+- **[about.md](about.md)** - About the project
+- **[about.md](about.md)** - About the project
 
 ## Key Features Documented
 

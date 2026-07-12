@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Frame
+mcrf:
+  objects: [Frame]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Frame
@@ -48,7 +52,7 @@ mcrfpy.Frame(pos=None, size=None, **kwargs)
 - `fill_color` (Color): Background fill color. Default: (0, 0, 0, 128)
 - `outline_color` (Color): Border outline color. Default: (255, 255, 255, 255)
 - `outline` (float): Border thickness. Default: 0
-- `click` (callable): Click event handler
+- `on_click` (callable): Click event handler
 - `children` (list): Initial child elements
 - `visible` (bool): Visibility state. Default: True
 - `opacity` (float): Opacity (0.0-1.0). Default: 1.0
@@ -64,7 +68,6 @@ mcrfpy.Frame(pos=None, size=None, **kwargs)
 | `x`, `y` | float | Position coordinates |
 | `w`, `h` | float | Size dimensions |
 | `pos` | Vector | Position as a Vector |
-| `size` | tuple | Size as (w, h) |
 | `fill_color` | Color | Background color |
 | `outline_color` | Color | Border color |
 | `outline` | float | Border thickness |
@@ -90,7 +93,8 @@ mcrfpy.Frame(pos=None, size=None, **kwargs)
 | `move(dx, dy)` | Move by relative offset |
 | `resize(width, height)` | Resize to new dimensions |
 | `realign()` | Reapply alignment relative to parent |
-| `get_bounds()` | Get bounding rectangle (x, y, w, h) |
+
+The read-only `bounds` property returns a `(pos, size)` pair of Vectors.
 
 ## Related
 

@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Caption, Color, Scene, Key, InputState, MouseButton]
+  diataxis: howto
+  disposition: needs-review
+---
+
 # Modal Dialog Widget
 
 Modal dialogs are popup windows that require user interaction before continuing. They're used for confirmations, alerts, and simple forms. This recipe shows how to create centered modal dialogs with buttons.
@@ -49,12 +56,12 @@ class ModalDialog:
     def _create_elements(self):
         """Create all UI elements for the dialog."""
         # Full-screen overlay
-        self.overlay = mcrfpy.Frame(0, 0, 1024, 768)
+        self.overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
         self.overlay.fill_color = mcrfpy.Color(0, 0, 0, 150)
         self.overlay.visible = False
 
         # Prevent clicks from passing through overlay
-        self.overlay.click = lambda x, y, b, a: None
+        self.overlay.on_click = lambda pos, b, a: None
 
         # Center the dialog
         dialog_x = (1024 - self.dialog_width) // 2
@@ -62,8 +69,8 @@ class ModalDialog:
 
         # Dialog frame
         self.dialog = mcrfpy.Frame(
-            dialog_x, dialog_y,
-            self.dialog_width, self.dialog_height
+            pos=(dialog_x, dialog_y),
+            size=(self.dialog_width, self.dialog_height)
         )
         self.dialog.fill_color = mcrfpy.Color(45, 45, 60)
         self.dialog.outline = 2
@@ -99,7 +106,7 @@ class ModalDialog:
         for i, label in enumerate(self.buttons):
             btn_x = start_x + i * (self.button_width + 15)
 
-            btn_frame = mcrfpy.Frame(btn_x, button_y, self.button_width, self.button_height)
+            btn_frame = mcrfpy.Frame(pos=(btn_x, button_y), size=(self.button_width, self.button_height))
             btn_frame.fill_color = mcrfpy.Color(70, 70, 90)
             btn_frame.outline = 1
             btn_frame.outline_color = mcrfpy.Color(100, 100, 120)
@@ -107,12 +114,12 @@ class ModalDialog:
 
             # Click handler
             def make_handler(index, text):
-                def handler(x, y, button, action):
-                    if action == "start":
+                def handler(pos, button, action):
+                    if action == mcrfpy.InputState.PRESSED:
                         self._on_button_click(index, text)
                 return handler
 
-            btn_frame.click = make_handler(i, label)
+            btn_frame.on_click = make_handler(i, label)
             self.button_frames.append(btn_frame)
 
             # Button label (centered)
@@ -160,7 +167,7 @@ class ModalDialog:
 scene = mcrfpy.Scene("modal_demo")
 
 # Background content
-bg = mcrfpy.Frame(0, 0, 1024, 768)
+bg = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
 bg.fill_color = mcrfpy.Color(30, 30, 45)
 scene.children.append(bg)
 
@@ -186,11 +193,11 @@ dialog.add_to_scene(scene.children)
 
 # Show dialog on keypress
 def on_key(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
-    if key == "Space" and not dialog.visible:
+    if key == mcrfpy.Key.SPACE and not dialog.visible:
         dialog.show()
-    elif key == "Escape" and dialog.visible:
+    elif key == mcrfpy.Key.ESCAPE and dialog.visible:
         dialog.hide()
 
 scene.on_key = on_key
@@ -266,23 +273,23 @@ class EnhancedDialog:
     def _create_elements(self):
         """Build dialog UI."""
         # Overlay
-        self.overlay = mcrfpy.Frame(0, 0, 1024, 768)
+        self.overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
         self.overlay.fill_color = mcrfpy.Color(0, 0, 0, 180)
         self.overlay.visible = False
-        self.overlay.click = lambda x, y, b, a: None
+        self.overlay.on_click = lambda pos, b, a: None
 
         # Dialog
         dx = (1024 - self.dialog_width) // 2
         dy = (768 - self.dialog_height) // 2
 
-        self.dialog = mcrfpy.Frame(dx, dy, self.dialog_width, self.dialog_height)
+        self.dialog = mcrfpy.Frame(pos=(dx, dy), size=(self.dialog_width, self.dialog_height))
         self.dialog.fill_color = self.style['bg']
         self.dialog.outline = 3
         self.dialog.outline_color = self.style['border']
         self.dialog.visible = False
 
         # Title bar
-        self.title_bar = mcrfpy.Frame(dx + 2, dy + 2, self.dialog_width - 4, 35)
+        self.title_bar = mcrfpy.Frame(pos=(dx + 2, dy + 2), size=(self.dialog_width - 4, 35))
         self.title_bar.fill_color = mcrfpy.Color(
             self.style['border'].r,
             self.style['border'].g,
@@ -323,19 +330,19 @@ class EnhancedDialog:
         for i, label in enumerate(self.buttons):
             bx = start_x + i * (btn_width + 15)
 
-            btn = mcrfpy.Frame(bx, btn_y, btn_width, btn_height)
+            btn = mcrfpy.Frame(pos=(bx, btn_y), size=(btn_width, btn_height))
             btn.fill_color = self.style['btn_bg']
             btn.outline = 2
             btn.outline_color = mcrfpy.Color(150, 150, 170)
             btn.visible = False
 
             def make_handler(idx, txt):
-                def handler(x, y, button, action):
-                    if action == "start":
+                def handler(pos, button, action):
+                    if action == mcrfpy.InputState.PRESSED:
                         self._select_button(idx, txt)
                 return handler
 
-            btn.click = make_handler(i, label)
+            btn.on_click = make_handler(i, label)
             self.button_frames.append(btn)
 
             # Center label
@@ -433,16 +440,16 @@ class EnhancedDialog:
         if not self.visible:
             return False
 
-        if key == "Left" or key == "A":
+        if key == mcrfpy.Key.LEFT or key == mcrfpy.Key.A:
             self.navigate_left()
             return True
-        elif key == "Right" or key == "D":
+        elif key == mcrfpy.Key.RIGHT or key == mcrfpy.Key.D:
             self.navigate_right()
             return True
-        elif key == "Return" or key == "Space":
+        elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.SPACE:
             self.confirm()
             return True
-        elif key == "Escape":
+        elif key == mcrfpy.Key.ESCAPE:
             # Close with last button (usually Cancel)
             self._select_button(len(self.buttons) - 1, self.buttons[-1])
             return True
@@ -453,7 +460,7 @@ class EnhancedDialog:
 # Usage with different styles
 scene = mcrfpy.Scene("styled_dialogs")
 
-bg = mcrfpy.Frame(0, 0, 1024, 768)
+bg = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
 bg.fill_color = mcrfpy.Color(35, 35, 45)
 scene.children.append(bg)
 
@@ -515,20 +522,20 @@ scene.children.append(help_text)
 
 def on_key(key, state):
     global current_dialog
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
 
     # Let dialog handle input first
     if current_dialog and current_dialog.handle_key(key):
         return
 
-    if key == "Num1" or key == "1":
+    if key == mcrfpy.Key.Num1:
         show_info()
-    elif key == "Num2" or key == "2":
+    elif key == mcrfpy.Key.Num2:
         show_warning()
-    elif key == "Num3" or key == "3":
+    elif key == mcrfpy.Key.Num3:
         show_error()
-    elif key == "Num4" or key == "4":
+    elif key == mcrfpy.Key.Num4:
         show_success()
 
 scene.on_key = on_key
@@ -615,7 +622,7 @@ manager.show("Third", "And this is last", ["Done"])
 
 1. **Z-Order**: Add modal elements last to ensure they render on top. The overlay must capture clicks to prevent interaction with background.
 
-2. **Click Blocking**: Setting `overlay.click = lambda x, y, b, a: None` prevents clicks from reaching elements behind the overlay.
+2. **Click Blocking**: Setting `overlay.on_click = lambda pos, b, a: None` prevents clicks from reaching elements behind the overlay.
 
 3. **Visibility Control**: Use the `visible` property rather than removing/re-adding elements for better performance.
 
@@ -634,7 +641,7 @@ import mcrfpy
 scene = mcrfpy.Scene("game")
 
 # Game background
-bg = mcrfpy.Frame(0, 0, 1024, 768)
+bg = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
 bg.fill_color = mcrfpy.Color(25, 35, 45)
 scene.children.append(bg)
 
@@ -643,7 +650,7 @@ title.fill_color = mcrfpy.Color(255, 255, 255)
 scene.children.append(title)
 
 # Quit button
-quit_btn = mcrfpy.Frame(430, 400, 160, 50)
+quit_btn = mcrfpy.Frame(pos=(430, 400), size=(160, 50))
 quit_btn.fill_color = mcrfpy.Color(150, 50, 50)
 quit_btn.outline = 2
 quit_btn.outline_color = mcrfpy.Color(200, 100, 100)
@@ -673,16 +680,16 @@ def show_quit_confirm():
     confirm_dialog.add_to_scene(scene.children)
     confirm_dialog.show()
 
-quit_btn.click = lambda x, y, b, a: show_quit_confirm() if a == "start" else None
+quit_btn.on_click = lambda pos, b, a: show_quit_confirm() if a == mcrfpy.InputState.PRESSED else None
 
 def on_key(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
 
     if confirm_dialog and confirm_dialog.handle_key(key):
         return
 
-    if key == "Escape":
+    if key == mcrfpy.Key.ESCAPE:
         show_quit_confirm()
 
 scene.on_key = on_key

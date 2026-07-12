@@ -9,14 +9,41 @@
       <ul>
         <li><a href="{{ '/quickstart' | relative_url }}">Quickstart</a></li>
         <li><a href="{{ '/about' | relative_url }}">About</a></li>
-        <li><a href="{{ '/cookbook' | relative_url }}">Cookbook</a></li>
-        <li><a href="{{ '/reference' | relative_url }}">Reference</a></li>
+        <li><a href="{{ '/playground/' | relative_url }}">Playground</a></li>
       </ul>
     </section>
 
     <section class="nav-section">
-      <h3>Systems</h3>
+      <h3>Learn</h3>
       <ul>
+        <li>
+          <a href="{{ '/tutorial/part_00_setup' | relative_url }}">Tutorial: Make a Roguelike</a>
+          <ul class="nav-objects">
+            <li><a href="{{ '/tutorial/part_00_setup' | relative_url }}">Part 0: Setup</a></li>
+            <li><a href="{{ '/tutorial/part_01_grid_movement' | relative_url }}">Part 1: The '@' and the Grid</a></li>
+            <li><a href="{{ '/tutorial/part_02_tiles_collision' | relative_url }}">Part 2: Walls &amp; Collision</a></li>
+            <li><a href="{{ '/tutorial/part_03_dungeon_generation' | relative_url }}">Part 3: Dungeon Generation</a></li>
+            <li><a href="{{ '/tutorial/part_04_fov' | relative_url }}">Part 4: Field of View</a></li>
+            <li><a href="{{ '/tutorial/part_05_enemies' | relative_url }}">Part 5: Placing Enemies</a></li>
+            <li><a href="{{ '/tutorial/part_06_combat' | relative_url }}">Part 6: Combat System</a></li>
+            <li><a href="{{ '/tutorial/part_07_ui' | relative_url }}">Part 7: User Interface</a></li>
+            <li><a href="{{ '/tutorial/part_08_items' | relative_url }}">Part 8: Items &amp; Inventory</a></li>
+            <li><a href="{{ '/tutorial/part_09_ranged' | relative_url }}">Part 9: Ranged Combat</a></li>
+            <li><a href="{{ '/tutorial/part_10_save_load' | relative_url }}">Part 10: Saving &amp; Loading</a></li>
+            <li><a href="{{ '/tutorial/part_11_levels' | relative_url }}">Part 11: Dungeon Levels</a></li>
+            <li><a href="{{ '/tutorial/part_12_experience' | relative_url }}">Part 12: Experience &amp; Leveling</a></li>
+            <li><a href="{{ '/tutorial/part_13_equipment' | relative_url }}">Part 13: Equipment</a></li>
+          </ul>
+        </li>
+        <li><a href="{{ '/cookbook/' | relative_url }}">Cookbook</a></li>
+        <li><a href="{{ '/library/' | relative_url }}">Library</a></li>
+      </ul>
+    </section>
+
+    <section class="nav-section">
+      <h3>Reference</h3>
+      <ul>
+        <li><a href="{{ '/reference' | relative_url }}">Overview</a></li>
         <li>
           <a href="{{ '/systems/scene' | relative_url }}">Scene System</a>
           <ul class="nav-objects">
@@ -37,12 +64,11 @@
           <ul class="nav-objects">
             <li><a href="{{ '/objects/Grid' | relative_url }}">Grid</a></li>
             <li><a href="{{ '/objects/GridPoint' | relative_url }}">GridPoint</a></li>
-            <li><a href="{{ '/objects/GridPointState' | relative_url }}">GridPointState</a></li>
             <li><a href="{{ '/objects/Entity' | relative_url }}">Entity</a></li>
           </ul>
         </li>
         <li>
-          <a href="{{ '/systems/input' | relative_url }}">Input & Callbacks</a>
+          <a href="{{ '/systems/input' | relative_url }}">Input &amp; Callbacks</a>
           <ul class="nav-objects">
             <li><a href="{{ '/objects/Timer' | relative_url }}">Timer</a></li>
           </ul>
@@ -67,9 +93,9 @@
     <section class="nav-section">
       <h3>Resources</h3>
       <ul>
-        <li><a href="{{ '/tutorials' | relative_url }}">Tutorials</a></li>
-        <li><a href="{{ '/api-reference' | relative_url }}">API Reference</a></li>
+        <li><a href="{{ '/extending-cpp' | relative_url }}">C++ Extensions</a></li>
         <li><a href="https://github.com/jmccardle/McRogueFace">GitHub</a></li>
+        <li><a href="https://github.com/jmccardle/McRogueFace/releases">Downloads</a></li>
       </ul>
     </section>
   </nav>

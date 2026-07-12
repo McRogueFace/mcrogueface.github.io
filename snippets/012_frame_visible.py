@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Frame,Color,Caption] verified=0.2.8@b6720f6 status=ok
 # Frame Visibility - Show and hide elements
 import mcrfpy
 

@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Scene,Sprite] verified=0.2.8@b6720f6 status=ok
 # Hello Sprite - Display a textured sprite
 import mcrfpy
 

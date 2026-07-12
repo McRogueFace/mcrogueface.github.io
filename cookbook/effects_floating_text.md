@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Caption, Color, Scene, Grid, Timer, Animation, Easing]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Floating Damage Numbers
 
 ![Floating Text Recipe](/images/cookbook/effects_floating_text.png)

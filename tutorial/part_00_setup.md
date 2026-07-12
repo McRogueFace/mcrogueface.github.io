@@ -1,6 +1,15 @@
+---
+mcrf:
+  objects: [Scene, Caption, Color]
+  diataxis: tutorial
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # Part 0: Setting Up McRogueFace
 
-Welcome to the McRogueFace roguelike tutorial! In this 13-part series, you will build a complete roguelike game from scratch using Python and the McRogueFace game engine.
+Welcome to the McRogueFace roguelike tutorial! In this 14-part series, you will build a complete roguelike game from scratch using Python and the McRogueFace game engine.
 
 ## What is McRogueFace?
 

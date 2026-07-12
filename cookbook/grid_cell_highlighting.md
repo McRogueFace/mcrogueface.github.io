@@ -3,6 +3,10 @@ layout: default
 title: Cell Highlighting
 parent: Cookbook
 nav_order: 3
+mcrf:
+  objects: [Grid, ColorLayer, Color, FOV]
+  diataxis: howto
+  disposition: needs-review
 ---
 
 # Cell Highlighting (Targeting)
@@ -27,17 +31,18 @@ Cell highlighting is essential for:
 import mcrfpy
 
 # Create a highlight layer (above tiles, below entities)
-highlight_layer = grid.add_layer("color", z_index=1)
+highlight_layer = mcrfpy.ColorLayer(name="highlight", z_index=1)
+grid.add_layer(highlight_layer)
 
 def highlight_cells(cells, color):
     """Highlight a list of (x, y) coordinates."""
-    highlight_layer.clear()
+    highlight_layer.fill(mcrfpy.Color(0, 0, 0, 0))
     for x, y in cells:
-        highlight_layer.set(x, y, color)
+        highlight_layer.set((x, y), color)
 
 def clear_highlights():
     """Remove all highlighting."""
-    highlight_layer.clear()
+    highlight_layer.fill(mcrfpy.Color(0, 0, 0, 0))
 ```
 
 ---
@@ -77,7 +82,7 @@ def get_movement_range(start_x, start_y, max_distance):
 
 def show_movement_range():
     """Display valid movement destinations."""
-    px, py = player.pos
+    px, py = int(player.cell_x), int(player.cell_y)
     movement_points = 5  # Player can move 5 tiles
 
     reachable = get_movement_range(px, py, movement_points)
@@ -102,6 +107,9 @@ def get_line_range(start_x, start_y, max_range):
             x = start_x + dx * dist
             y = start_y + dy * dist
 
+            # NOTE: grid.at(x, y) can go out of bounds here before the
+            # transparent check runs - add an explicit bounds guard for
+            # production use.
             # Stop if wall blocks line of sight
             if not grid.at(x, y).transparent:
                 break
@@ -181,7 +189,8 @@ class HighlightManager:
 
     def __init__(self, grid):
         self.grid = grid
-        self.layer = grid.add_layer("color", z_index=1)
+        self.layer = mcrfpy.ColorLayer(name="highlight", z_index=1)
+        grid.add_layer(self.layer)
         self.highlights = {}  # category -> set of cells
 
     def add(self, category, cells):
@@ -198,11 +207,11 @@ class HighlightManager:
     def clear(self):
         """Clear all highlights."""
         self.highlights = {}
-        self.layer.clear()
+        self.layer.fill(mcrfpy.Color(0, 0, 0, 0))
 
     def _refresh(self):
         """Redraw all highlights with proper layering."""
-        self.layer.clear()
+        self.layer.fill(mcrfpy.Color(0, 0, 0, 0))
 
         # Draw in priority order (later categories draw on top)
         priority = ['move', 'attack', 'heal', 'danger', 'path', 'select']
@@ -211,7 +220,7 @@ class HighlightManager:
             if category in self.highlights:
                 color = self.COLORS.get(category, mcrfpy.Color(128, 128, 128, 100))
                 for x, y in self.highlights[category]:
-                    self.layer.set(x, y, color)
+                    self.layer.set((x, y), color)
 
 
 # Usage example
@@ -221,7 +230,7 @@ def on_ability_select(ability):
     """Show range when ability is selected."""
     highlights.clear()
 
-    px, py = player.pos
+    px, py = int(player.cell_x), int(player.cell_y)
 
     if ability == 'move':
         cells = get_movement_range(px, py, 5)
@@ -282,7 +291,8 @@ class AnimatedHighlight:
 
     def __init__(self, grid, layer_z=1):
         self.grid = grid
-        self.layer = grid.add_layer("color", z_index=layer_z)
+        self.layer = mcrfpy.ColorLayer(name="highlight", z_index=layer_z)
+        grid.add_layer(self.layer)
         self.animated_cells = {}  # (x, y) -> base_color
         self.phase = 0
 
@@ -294,7 +304,7 @@ class AnimatedHighlight:
     def clear(self):
         """Stop all animations."""
         self.animated_cells = {}
-        self.layer.clear()
+        self.layer.fill(mcrfpy.Color(0, 0, 0, 0))
 
     def update(self, dt):
         """Update animation state."""
@@ -313,7 +323,7 @@ class AnimatedHighlight:
                 base_color.b,
                 int(base_color.a * pulse)
             )
-            self.layer.set(x, y, animated_color)
+            self.layer.set((x, y), animated_color)
 
 
 # Update in game loop
@@ -346,7 +356,7 @@ class TargetingSystem:
     def start_targeting(self, ability):
         """Begin targeting for an ability."""
         self.current_ability = ability
-        px, py = self.player.pos
+        px, py = int(self.player.cell_x), int(self.player.cell_y)
 
         # Get valid targets based on ability
         if ability.target_type == 'self':

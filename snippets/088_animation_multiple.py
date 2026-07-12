@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Animation Multiple - Several animations at once
 import mcrfpy
 

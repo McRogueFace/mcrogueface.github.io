@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Sprite
+mcrf:
+  objects: [Sprite, Texture]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Sprite
@@ -49,7 +53,6 @@ mcrfpy.Sprite(pos=None, texture=None, sprite_index=0, **kwargs)
 - `scale` (float): Uniform scale factor. Default: 1.0
 - `scale_x` (float): Horizontal scale factor. Default: 1.0
 - `scale_y` (float): Vertical scale factor. Default: 1.0
-- `click` (callable): Click event handler
 - `visible` (bool): Visibility state. Default: True
 - `opacity` (float): Opacity (0.0-1.0). Default: 1.0
 - `z_index` (int): Rendering order. Default: 0
@@ -66,8 +69,8 @@ mcrfpy.Sprite(pos=None, texture=None, sprite_index=0, **kwargs)
 | `scale` | float | Uniform scale factor |
 | `scale_x` | float | Horizontal scale factor |
 | `scale_y` | float | Vertical scale factor |
-| `w` | float | Computed width (read-only) |
-| `h` | float | Computed height (read-only) |
+| `bounds` | (Vector, Vector) | Local (pos, size) bounds (read-only) |
+| `global_bounds` | (Vector, Vector) | Global (pos, size) bounds (read-only) |
 | `visible` | bool | Visibility toggle |
 | `opacity` | float | Transparency (0.0-1.0) |
 | `z_index` | int | Rendering order (lower = first) |
@@ -87,7 +90,6 @@ mcrfpy.Sprite(pos=None, texture=None, sprite_index=0, **kwargs)
 | `move(dx, dy)` | Move by relative offset |
 | `resize(width, height)` | Resize to new dimensions |
 | `realign()` | Reapply alignment relative to parent |
-| `get_bounds()` | Get bounding rectangle (x, y, w, h) |
 
 ## Related
 

@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Timer Basic - Periodic callback
 import mcrfpy
 

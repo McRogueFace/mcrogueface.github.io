@@ -1,6 +1,10 @@
 ---
 layout: default
 title: AStarPath
+mcrf:
+  objects: [AStarPath]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # AStarPath
@@ -45,8 +49,8 @@ path = grid.find_path(start_pos, end_pos)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `origin` | tuple | Starting position (x, y), read-only |
-| `destination` | tuple | Target position (x, y), read-only |
+| `origin` | Vector | Starting position (x, y), read-only |
+| `destination` | Vector | Target position (x, y), read-only |
 | `remaining` | int | Number of steps remaining, read-only |
 
 ## Methods
@@ -73,13 +77,13 @@ if path:
 ```python
 path = grid.find_path(player.pos, target)
 
-def move_step(timer):
+def move_step(timer, runtime_ms):
     if path.remaining > 0:
         x, y = path.walk()
         player.animate("x", x, duration=0.15)
         player.animate("y", y, duration=0.15)
     else:
-        timer.cancel()
+        timer.stop()
 
 mcrfpy.Timer("move", move_step, 200)  # Move every 200ms
 ```

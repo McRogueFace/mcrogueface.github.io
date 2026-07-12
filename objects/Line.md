@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Line
+mcrf:
+  objects: [Line]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Line
@@ -48,9 +54,9 @@ mcrfpy.Line(start=None, end=None, thickness=1.0, color=None, **kwargs)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `start` | tuple | Starting point as (x, y) |
-| `end` | tuple | Ending point as (x, y) |
-| `pos` | tuple | Midpoint of the line |
+| `start` | Vector | Starting point of the line as a Vector |
+| `end` | Vector | Ending point of the line as a Vector |
+| `pos` | Vector | Midpoint of the line |
 | `thickness` | float | Line thickness |
 | `color` | Color | Line color |
 | `visible` | bool | Visibility toggle |
@@ -65,7 +71,7 @@ mcrfpy.Line(start=None, end=None, thickness=1.0, color=None, **kwargs)
 |--------|-------------|
 | `animate(property, target, duration, easing)` | Animate a property over time |
 | `move(dx, dy)` | Move by relative offset |
-| `resize(dw, dh)` | Resize by relative amount |
+| `resize(width, height) or (size)` | Resize to new dimensions |
 | `realign()` | Recalculate position based on alignment |
 
 ## Events

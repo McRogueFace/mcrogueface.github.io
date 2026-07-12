@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,InputState,Key,Scene] verified=0.2.8@b6720f6 status=ok
 # UI Health Bar - Animated health display
 import mcrfpy
 

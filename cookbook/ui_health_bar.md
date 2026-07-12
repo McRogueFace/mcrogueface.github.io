@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Caption, Color, Timer, Scene]
+  diataxis: howto
+  disposition: needs-review
+---
+
 # Health Bar Widget
 
 ![Health Bar Recipe](/images/cookbook/ui_health_bar.png)
@@ -39,13 +46,13 @@ class HealthBar:
         self.maximum = maximum
 
         # Background (empty bar)
-        self.background = mcrfpy.Frame(x, y, w, h)
+        self.background = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.background.fill_color = mcrfpy.Color(40, 40, 40)
         self.background.outline = 1
         self.background.outline_color = mcrfpy.Color(80, 80, 80)
 
         # Fill (current health)
-        self.fill = mcrfpy.Frame(x, y, w, h)
+        self.fill = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.fill.fill_color = mcrfpy.Color(220, 50, 50)
         self.fill.outline = 0
 
@@ -116,7 +123,7 @@ class EnhancedHealthBar:
         }
 
         # Background frame with dark fill
-        self.background = mcrfpy.Frame(x, y, w, h)
+        self.background = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.background.fill_color = mcrfpy.Color(30, 30, 30)
         self.background.outline = 2
         self.background.outline_color = mcrfpy.Color(100, 100, 100)
@@ -124,10 +131,8 @@ class EnhancedHealthBar:
         # Fill frame (nested inside background conceptually)
         padding = 2
         self.fill = mcrfpy.Frame(
-            x + padding,
-            y + padding,
-            w - padding * 2,
-            h - padding * 2
+            pos=(x + padding, y + padding),
+            size=(w - padding * 2, h - padding * 2)
         )
         self.fill.outline = 0
 
@@ -230,18 +235,18 @@ class AnimatedHealthBar:
         self.timer_name = f"hp_anim_{id(self)}"
 
         # Background
-        self.background = mcrfpy.Frame(x, y, w, h)
+        self.background = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.background.fill_color = mcrfpy.Color(40, 40, 40)
         self.background.outline = 2
         self.background.outline_color = mcrfpy.Color(60, 60, 60)
 
         # Damage preview (shows recent damage in different color)
-        self.damage_fill = mcrfpy.Frame(x + 2, y + 2, w - 4, h - 4)
+        self.damage_fill = mcrfpy.Frame(pos=(x + 2, y + 2), size=(w - 4, h - 4))
         self.damage_fill.fill_color = mcrfpy.Color(180, 50, 50)
         self.damage_fill.outline = 0
 
         # Main fill
-        self.fill = mcrfpy.Frame(x + 2, y + 2, w - 4, h - 4)
+        self.fill = mcrfpy.Frame(pos=(x + 2, y + 2), size=(w - 4, h - 4))
         self.fill.fill_color = mcrfpy.Color(50, 200, 50)
         self.fill.outline = 0
 
@@ -325,7 +330,7 @@ class AnimatedHealthBar:
 
 # Usage
 hp_bar = AnimatedHealthBar(50, 50, 300, 30, current=100, maximum=100)
-hp_bar.add_to_scene(ui)
+hp_bar.add_to_scene(scene.children)
 
 # Damage will animate smoothly
 hp_bar.damage(40)
@@ -355,13 +360,13 @@ class ResourceBar:
             bg_color = mcrfpy.Color(30, 30, 30)
 
         # Background
-        self.background = mcrfpy.Frame(x, y, w, h)
+        self.background = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.background.fill_color = bg_color
         self.background.outline = 1
         self.background.outline_color = mcrfpy.Color(60, 60, 60)
 
         # Fill
-        self.fill = mcrfpy.Frame(x + 1, y + 1, w - 2, h - 2)
+        self.fill = mcrfpy.Frame(pos=(x + 1, y + 1), size=(w - 2, h - 2))
         self.fill.fill_color = fill_color
         self.fill.outline = 0
 
@@ -449,6 +454,8 @@ scene.activate()
 
 5. **Performance**: For many entities with health bars (like enemies), consider only updating visible health bars or using a pooling system.
 
+6. **Alignment**: Rather than hand-positioning bars, consider using [UI Alignment](ui_alignment.md) with `align=Alignment.TOP_LEFT` and a `margin` to anchor health bars relative to their parent.
+
 ## Complete Example
 
 ```python
@@ -476,11 +483,11 @@ combat_timer = mcrfpy.Timer("combat", combat_tick, 1000)
 
 # Keyboard controls for testing
 def on_key(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
-    if key == "H":
+    if key == mcrfpy.Key.H:
         player_hp.heal(20)
-    elif key == "D":
+    elif key == mcrfpy.Key.D:
         player_hp.damage(10)
 
 scene.on_key = on_key

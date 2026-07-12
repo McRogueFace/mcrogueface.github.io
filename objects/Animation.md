@@ -1,269 +1,410 @@
 ---
 layout: default
 title: Animation
+mcrf:
+  objects: [Animation]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.9-dev"
+  verified_commit: b6720f6
 ---
 
 # Animation
 
-Interpolates property values over time with easing functions.
+Property interpolation over time, created with the `animate()` method.
 
 ## Overview
 
-The `Animation` class provides smooth property transitions for UI elements and entities. Animations interpolate numeric values over a specified duration using configurable easing functions. Use the `animate()` method on any drawable object for the simplest approach, or create Animation objects directly for more control.
+There is **no constructible `mcrfpy.Animation` class**. Animations are created by calling `animate()` on the object you want to animate: every drawable (`Frame`, `Caption`, `Sprite`, `Grid`, `Line`, `Circle`, `Arc`) and `Entity` exposes it. The call creates the animation, starts it, and registers it with the engine's animation manager in one step, then returns an `Animation` handle you can use to monitor or cancel it.
+
+The handle's type displays as `mcrfpy.Animation`, but the class is not exported from the module — the only way to obtain one is as the return value of `animate()`.
 
 ## Quick Reference
 
 ```python
 import mcrfpy
 
-# Preferred: Use the animate() method on any drawable
-frame = mcrfpy.Frame(pos=(0, 0), size=(100, 100))
-frame.animate("x", 500, duration=2.0, easing=mcrfpy.Easing.EASE_OUT_QUAD)
-
-# With completion callback
-def on_done():
-    print("Animation complete!")
-
-sprite.animate("opacity", 0.0, duration=1.0, callback=on_done)
-
-# Delta mode (relative change)
-frame.animate("y", 50, duration=0.5, delta=True)  # Move 50 pixels down
-
-# Direct Animation object (advanced)
-anim = mcrfpy.Animation(
-    "x", 200.0, 1.5,
-    easing="easeInOutQuad",
-    delta=False,
-    callback=my_callback
-)
-anim.start(target_object)
-```
-
-## Constructor
-
-```python
-mcrfpy.Animation(
-    property: str,
-    target: float,
-    duration: float,
-    easing: str = "linear",
-    delta: bool = False,
-    callback: callable = None
-)
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `property` | str | required | Property name to animate |
-| `target` | float | required | Target value (or delta if delta=True) |
-| `duration` | float | required | Animation duration in seconds |
-| `easing` | str | "linear" | Easing function name |
-| `delta` | bool | False | If True, target is relative change |
-| `callback` | callable | None | Called when animation completes |
-
-## Properties
-
-| Property | Type | Access | Description |
-|----------|------|--------|-------------|
-| `duration` | float | read-only | Total duration in seconds |
-| `elapsed` | float | read-only | Time elapsed since start |
-| `is_complete` | bool | read-only | True when animation finished |
-| `is_delta` | bool | read-only | Whether using delta mode |
-| `property` | str | read-only | Name of animated property |
-
-## Methods
-
-| Method | Description |
-|--------|-------------|
-| `start(target, conflict_mode='replace')` | Begin animating the target object |
-| `complete()` | Immediately finish the animation |
-| `update(delta_time)` | Advance animation by delta time |
-| `get_current_value()` | Get the current interpolated value |
-| `hasValidTarget()` | Check if target object still exists |
-
-### start()
-
-```python
-anim.start(target, conflict_mode='replace')
-```
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `target` | drawable | required | Object to animate |
-| `conflict_mode` | str | 'replace' | How to handle existing animations: 'replace', 'cancel', 'parallel' |
-
-## Animatable Properties
-
-These properties can be animated on UI elements:
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `x`, `y` | float | Position coordinates |
-| `w`, `h` | float | Size dimensions |
-| `pos` | tuple | Position as (x, y) |
-| `size` | tuple | Size as (w, h) |
-| `fill_color` | Color | Background color |
-| `outline_color` | Color | Border color |
-| `outline` | float | Border thickness |
-| `opacity` | float | Transparency (0.0-1.0) |
-| `scale` | float | Scale factor |
-
-### Grid-Specific Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `center` | tuple | Camera center position (pixels) |
-| `zoom` | float | Camera zoom level |
-
-### Sprite/Entity Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `sprite_index` | int | Current sprite frame |
-
-### Caption Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `text` | str | Caption text content |
-
-## Easing Functions
-
-Access easing functions via the `mcrfpy.Easing` enum:
-
-### Linear
-- `Easing.LINEAR` - Constant speed
-
-### Quadratic
-- `Easing.EASE_IN_QUAD` - Accelerate from zero
-- `Easing.EASE_OUT_QUAD` - Decelerate to zero
-- `Easing.EASE_IN_OUT_QUAD` - Accelerate then decelerate
-
-### Cubic
-- `Easing.EASE_IN_CUBIC` - Stronger acceleration
-- `Easing.EASE_OUT_CUBIC` - Stronger deceleration
-- `Easing.EASE_IN_OUT_CUBIC` - Stronger ease in/out
-
-### Quartic
-- `Easing.EASE_IN_QUART`
-- `Easing.EASE_OUT_QUART`
-- `Easing.EASE_IN_OUT_QUART`
-
-### Exponential
-- `Easing.EASE_IN_EXPO` - Exponential acceleration
-- `Easing.EASE_OUT_EXPO` - Exponential deceleration
-- `Easing.EASE_IN_OUT_EXPO`
-
-### Back (Overshoot)
-- `Easing.EASE_IN_BACK` - Pull back then accelerate
-- `Easing.EASE_OUT_BACK` - Overshoot then settle
-- `Easing.EASE_IN_OUT_BACK`
-
-### Bounce
-- `Easing.EASE_OUT_BOUNCE` - Bounce effect at end
-
-### Elastic
-- `Easing.EASE_IN_ELASTIC` - Elastic snap at start
-- `Easing.EASE_OUT_ELASTIC` - Elastic snap at end
-- `Easing.EASE_IN_OUT_ELASTIC`
-
-## Examples
-
-### Basic Position Animation
-
-```python
-import mcrfpy
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
 
 frame = mcrfpy.Frame(pos=(0, 0), size=(100, 100))
 scene.children.append(frame)
 
-# Slide to the right
-frame.animate("x", 500, duration=1.0, easing=mcrfpy.Easing.EASE_OUT_QUAD)
+# Animate a property: creates, starts, and registers the animation
+frame.animate("x", 500.0, 2.0, mcrfpy.Easing.EASE_OUT_QUAD)
+
+# With a completion callback
+def on_done(target, prop, value):
+    print(f"{prop} finished at {value}")
+
+frame.animate("opacity", 0.0, 1.0, callback=on_done)
+
+# The returned Animation handle can be inspected and controlled
+anim = frame.animate("w", 300.0, 1.5)
+print(anim.property, anim.duration, anim.is_complete)
+anim.stop()  # cancel without applying the final value
 ```
 
-### Fade Out Effect
+## The animate() Method
 
 ```python
-def fade_and_remove():
-    def on_fade_complete():
-        scene.children.remove(frame)
-
-    frame.animate("opacity", 0.0, duration=0.5, callback=on_fade_complete)
+obj.animate(property, target, duration, easing=None, delta=False,
+            loop=False, callback=None, conflict_mode='replace') -> Animation
 ```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `property` | str | required | Name of the property to animate (see [Animatable Properties](#animatable-properties)) |
+| `target` | varies | required | Target value; type depends on the property (see [Target Value Types](#target-value-types)) |
+| `duration` | float | required | Animation duration in seconds |
+| `easing` | Easing / str | None | `mcrfpy.Easing` enum value, legacy string name (e.g. `'easeInOut'`), or None for linear |
+| `delta` | bool | False | If True, `target` is relative to the current value instead of absolute |
+| `loop` | bool | False | If True, the animation repeats from the start when it reaches the end |
+| `callback` | callable | None | Called once when the animation completes (never called for looping animations) |
+| `conflict_mode` | str | 'replace' | `'replace'`, `'queue'`, or `'error'` — behavior when the property is already animating |
+
+**Raises:**
+
+- `ValueError` — the property name is not animatable on this object type, the easing string is unknown, or `conflict_mode` is not one of the three accepted values.
+- `RuntimeError` — `conflict_mode='error'` and the property is already being animated.
+- `TypeError` — `callback` is not callable.
+
+`Entity.animate()` takes the same arguments; only its set of valid property names differs (see below).
+
+### Callback Signature
+
+The completion callback receives three arguments:
+
+```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+frame = mcrfpy.Frame(pos=(0, 0), size=(100, 100))
+scene.children.append(frame)
+
+def on_arrival(target, prop, value):
+    # target: the Frame that was animated
+    # prop:   "x"
+    # value:  500.0
+    print(f"{type(target).__name__}.{prop} reached {value}")
+
+frame.animate("x", 500.0, 2.0, mcrfpy.Easing.EASE_OUT_CUBIC, callback=on_arrival)
+```
+
+The callback fires when the animation finishes naturally or when `complete()` is called on the handle. It does **not** fire when the animation is cancelled with `stop()`, and looping animations never fire it (they never complete).
+
+### Conflict Handling
+
+Each (object, property) pair can have only one active animation. `conflict_mode` controls what happens when you call `animate()` for a property that is already animating:
+
+| Mode | Behavior |
+|------|----------|
+| `'replace'` (default) | The existing animation ends immediately (jumping to its final value) and the new one starts |
+| `'queue'` | The new animation waits and starts when the current one finishes |
+| `'error'` | Raises `RuntimeError` |
+
+```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+frame = mcrfpy.Frame(pos=(0, 0), size=(100, 100))
+scene.children.append(frame)
+
+frame.animate("x", 100.0, 1.0)
+
+# replace (default): the running animation jumps to its final value,
+# then the new animation starts
+frame.animate("x", 200.0, 1.0)
+
+# queue: run after the current animation on "x" finishes
+frame.animate("x", 300.0, 1.0, conflict_mode="queue")
+
+# error: raise RuntimeError if "x" is already animating
+try:
+    frame.animate("x", 400.0, 1.0, conflict_mode="error")
+except RuntimeError as e:
+    print(e)
+```
+
+Notes:
+
+- When `animate()` is called from inside an animation callback, a replaced animation is cancelled in place rather than jumped to its final value.
+- The per-property lock is released when the finished `Animation` object is destroyed, not at the moment it completes. If you hold a reference to a completed animation, a queued animation on the same property will not start until you drop that reference. When using `conflict_mode='queue'`, discard handles you don't need.
+- Sub-properties are locked independently of their parent: `"fill_color"` and `"fill_color.a"` are separate keys and can animate simultaneously.
+
+## The Animation Handle
+
+`animate()` returns an `Animation` object. All of its data attributes are read-only.
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `property` | str | Name of the property being animated |
+| `duration` | float | Total duration in seconds |
+| `elapsed` | float | Seconds since the animation started (clamped to `duration`) |
+| `is_complete` | bool | True when `elapsed >= duration` or `complete()` was called |
+| `is_delta` | bool | Whether the animation uses delta (relative) mode |
+| `is_looping` | bool | Whether the animation repeats when it reaches the end |
+
+### Methods
+
+| Method | Description |
+|--------|-------------|
+| `complete()` | Jump to the final value immediately; fires the callback if one was set |
+| `stop()` | Cancel without applying the final value; the callback is NOT fired |
+| `get_current_value()` | Current interpolated value (type matches the property) |
+| `hasValidTarget()` | True if the animated object still exists; animations self-clean when their target is destroyed |
+| `start(target, conflict_mode='replace')` | Attach and start on a target object (used internally by `animate()`; rarely needed) |
+| `update(delta_time)` | Advance by `delta_time` seconds; returns True while running (called automatically by the engine) |
+
+```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+frame = mcrfpy.Frame(pos=(0, 0), size=(100, 100))
+scene.children.append(frame)
+
+anim = frame.animate("x", 500.0, 2.0)
+
+print(anim.property)      # "x"
+print(anim.duration)      # 2.0
+print(anim.elapsed)       # seconds since start
+print(anim.is_complete)   # False until finished (or complete() called)
+print(anim.get_current_value())  # current interpolated value
+
+anim.complete()   # jump to x=500 immediately; fires the callback if set
+print(frame.x)    # 500.0
+```
+
+## Animatable Properties
+
+`animate()` raises `ValueError` for property names the object doesn't support. The lists below were verified against the engine (each name accepted or rejected at runtime).
+
+### Frame
+
+| Property | Value type | Description |
+|----------|------------|-------------|
+| `x`, `y`, `w`, `h` | float | Position and size |
+| `pos`, `position` | (x, y) | Position as a pair |
+| `size` | (w, h) | Size as a pair |
+| `fill_color`, `outline_color` | (r, g, b[, a]) | Colors (all channels interpolate) |
+| `fill_color.r/.g/.b/.a`, `outline_color.r/.g/.b/.a` | float | Individual color channels |
+| `outline` | float | Outline thickness |
+| `opacity` | float | 0.0 (transparent) to 1.0 (opaque) |
+| `rotation` | float | Rotation in degrees |
+| `origin`, `origin_x`, `origin_y` | (x, y) / float | Transform origin (rotation pivot) |
+
+### Caption
+
+Same as Frame, minus `w`/`h`/`size`-as-a-pair, plus:
+
+| Property | Value type | Description |
+|----------|------------|-------------|
+| `text` | str | Typewriter-style text transition (see [Typewriter Text](#typewriter-text)) |
+| `font_size` | float | Font size in points |
+| `size` | float | Alias for `font_size` (a float here, unlike Frame's `size`) |
+
+### Sprite
+
+| Property | Value type | Description |
+|----------|------------|-------------|
+| `x`, `y`, `pos`, `position` | float / (x, y) | Position |
+| `sprite_index` | int or list[int] | Texture frame; a list plays a frame sequence |
+| `scale` | float | Uniform scale factor |
+| `scale_x`, `scale_y` | float | Per-axis scale |
+| `opacity` | float | 0.0 to 1.0 |
+| `rotation` | float | Rotation in degrees |
+| `origin`, `origin_x`, `origin_y` | (x, y) / float | Transform origin |
+| `z_index` | float | Render order |
+
+### Grid
+
+Only the **camera** properties of a Grid are animatable:
+
+| Property | Value type | Description |
+|----------|------------|-------------|
+| `center` | (x, y) | Camera center in **pixels** |
+| `center_x`, `center_y` | float | Camera center components (pixels) |
+| `zoom` | float | Camera zoom level |
+| `camera_rotation` | float | Camera rotation in degrees |
+
+A Grid's geometry (`x`, `y`, `w`, `h`, `pos`, `size`) and `fill_color` are not animatable — set them directly, or animate a parent Frame instead.
+
+### Line, Circle, Arc
+
+All three also accept `x`, `y`, `opacity`, `rotation`, `origin_x`, and `origin_y`. Whole-color animation is supported, but per-channel sub-properties (e.g. `color.r`) are not.
+
+| Type | Properties |
+|------|------------|
+| `Line` | `start`, `end`, `start_x`, `start_y`, `end_x`, `end_y`, `thickness`, `color`, `origin` |
+| `Circle` | `center`, `position`, `radius`, `outline`, `fill_color`, `outline_color`, `origin` |
+| `Arc` | `center`, `radius`, `start_angle`, `end_angle`, `thickness`, `color` |
+
+### Entity
+
+Entities animate their **draw position** in tile coordinates; the logical cell (`cell_pos`) is unchanged by animation.
+
+| Property | Value type | Description |
+|----------|------------|-------------|
+| `draw_x`, `draw_y` | float | Drawn position in tile coordinates (`x`/`y` accepted as aliases) |
+| `sprite_index` | int or list[int] | Texture frame or frame sequence |
+| `sprite_scale` | float | Sprite scale factor |
+| `sprite_offset_x`, `sprite_offset_y` | float | Pixel offset of the sprite within its cell |
+
+Uniforms exposed by a shader attached to a Sprite, Grid, or Entity are also accepted as animatable property names.
+
+## Target Value Types
+
+| Target type | Used for |
+|-------------|----------|
+| float | Numeric properties (`x`, `w`, `opacity`, `zoom`, `radius`, ...) |
+| int | `sprite_index` |
+| (r, g, b) or (r, g, b, a) | Color properties |
+| (x, y) | Vector properties (`pos`, `size`, `center`, `start`, `end`) |
+| list[int] | Sprite frame sequences (combine with `loop=True`) |
+| str | `text` on Caption |
+
+## Easing
+
+Pass a `mcrfpy.Easing` enum value (preferred) or a legacy string name (`'linear'`, `'easeIn'`, `'easeOut'`, `'easeInOut'`, `'easeInQuad'`, `'easeOutBounce'`, ...). `None` means linear. Unknown string names raise `ValueError`. See [Easing](Easing) for the full list of enum values and guidance on choosing one.
+
+## Examples
 
 ### Chained Animations
 
+Each callback starts the next leg of the sequence:
+
 ```python
-def animate_sequence(sprite):
-    def step2():
-        sprite.animate("y", 100, duration=0.3, callback=step3)
+import mcrfpy
 
-    def step3():
-        sprite.animate("x", 0, duration=0.3, callback=step4)
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
 
-    def step4():
-        sprite.animate("y", 0, duration=0.3)
+frame = mcrfpy.Frame(pos=(0, 0), size=(50, 50))
+scene.children.append(frame)
 
-    # Start the chain
-    sprite.animate("x", 100, duration=0.3, callback=step2)
+def step2(target, prop, value):
+    target.animate("y", 100.0, 0.3, callback=step3)
+
+def step3(target, prop, value):
+    target.animate("x", 0.0, 0.3, callback=step4)
+
+def step4(target, prop, value):
+    target.animate("y", 0.0, 0.3)
+
+# Trace a rectangle: each callback starts the next leg
+frame.animate("x", 100.0, 0.3, callback=step2)
 ```
 
-### Pulsing Effect
+### Looping Sprite Frames
+
+A list target with `loop=True` cycles through frames indefinitely:
 
 ```python
-def create_pulse(element):
-    def pulse_out():
-        element.animate("scale", 1.0, duration=0.5,
-                       easing=mcrfpy.Easing.EASE_IN_OUT_QUAD,
-                       callback=pulse_in)
+import mcrfpy
 
-    def pulse_in():
-        element.animate("scale", 1.2, duration=0.5,
-                       easing=mcrfpy.Easing.EASE_IN_OUT_QUAD,
-                       callback=pulse_out)
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
 
-    pulse_in()
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+sprite = mcrfpy.Sprite(texture=texture, sprite_index=84, pos=(100, 100))
+scene.children.append(sprite)
+
+# Cycle through frames 84-87 forever (0.6 seconds per cycle)
+walk = sprite.animate("sprite_index", [84, 85, 86, 87], 0.6, loop=True)
+
+# Later, to stop the loop:
+walk.stop()
 ```
 
-### Camera Pan
+### Camera Pan and Zoom
 
 ```python
-# Smoothly pan grid camera to player position
-def focus_on_player(grid, player):
-    target_x = player.x * grid.cell_width
-    target_y = player.y * grid.cell_height
+import mcrfpy
 
-    grid.animate("center", (target_x, target_y),
-                duration=0.3,
-                easing=mcrfpy.Easing.EASE_OUT_CUBIC)
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+grid = mcrfpy.Grid(grid_size=(30, 20), pos=(0, 0), size=(480, 320), texture=texture)
+scene.children.append(grid)
+
+# grid.center is in PIXELS. To pan to tile (14, 8) with 16x16 tiles,
+# target the middle of that tile:
+tile_x, tile_y = 14, 8
+target = (tile_x * 16 + 8, tile_y * 16 + 8)
+
+grid.animate("center", target, 0.4, mcrfpy.Easing.EASE_OUT_CUBIC)
+grid.animate("zoom", 2.0, 0.4, mcrfpy.Easing.EASE_IN_OUT)
 ```
 
-### Delta Mode (Relative Animation)
+For an instant (non-animated) camera move in tile coordinates, use `grid.center_camera((tx, ty))` instead.
+
+### Smooth Entity Movement
 
 ```python
-# Move 100 pixels right from current position
-frame.animate("x", 100, duration=0.5, delta=True)
+import mcrfpy
 
-# Useful for repeated movements
-def hop():
-    sprite.animate("y", -20, duration=0.2, delta=True, callback=land)
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
 
-def land():
-    sprite.animate("y", 20, duration=0.2, delta=True)
+texture = mcrfpy.Texture("assets/kenney_tinydungeon.png", 16, 16)
+grid = mcrfpy.Grid(grid_size=(10, 10), pos=(0, 0), size=(160, 160), texture=texture)
+scene.children.append(grid)
+
+player = mcrfpy.Entity(grid_pos=(1, 1), texture=texture, sprite_index=84)
+grid.entities.append(player)
+
+# Slide the drawn position across the grid in tile coordinates.
+# cell_pos (the logical cell) is NOT changed by this animation.
+player.animate("draw_x", 5.0, 0.5, mcrfpy.Easing.EASE_OUT_QUAD)
 ```
 
-### Color Animation
+Note: entities moved by the turn manager (`grid.step()` with behaviors) animate their draw position automatically over `entity.move_speed` seconds; manual `draw_x`/`draw_y` animation is for movement outside the turn system.
+
+### Colors and Delta Mode
 
 ```python
-# Animate fill color (animates all RGBA components)
-frame.animate("fill_color", mcrfpy.Color(255, 0, 0, 255),
-             duration=1.0)
+import mcrfpy
 
-# Flash effect
-def flash_red(element):
-    original = element.fill_color
-    element.fill_color = mcrfpy.Color(255, 0, 0)
-    element.animate("fill_color", original, duration=0.3)
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+frame = mcrfpy.Frame(pos=(100, 100), size=(200, 80))
+scene.children.append(frame)
+
+# Animate a whole color (interpolates R, G, B, and A together)
+frame.animate("fill_color", (255, 0, 0, 255), 1.0)
+
+# Animate a single channel
+frame.animate("fill_color.a", 0.0, 0.5)
+
+# Delta mode: move 50 pixels down from wherever the frame is now
+frame.animate("y", 50.0, 0.5, delta=True)
+```
+
+### Typewriter Text
+
+Animating `text` transitions between strings: the first half of the duration deletes the current text character by character, the second half types out the target. With `delta=True`, the target is appended character by character instead.
+
+```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+caption = mcrfpy.Caption(text="", pos=(20, 20))
+scene.children.append(caption)
+
+# Typewriter effect: reveals the target string over 2 seconds
+caption.animate("text", "You awaken in a dark cell.", 2.0)
 ```
 
 ## Related
@@ -272,6 +413,7 @@ def flash_red(element):
 <div class="object-links">
 <a href="Easing" class="object-link">Easing</a>
 <a href="Timer" class="object-link">Timer</a>
+<a href="Drawable" class="object-link">Drawable</a>
 <a href="Frame" class="object-link">Frame</a>
 <a href="Sprite" class="object-link">Sprite</a>
 <a href="Caption" class="object-link">Caption</a>

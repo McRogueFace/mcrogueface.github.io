@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Key
+mcrf:
+  objects: [Key]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Key
@@ -24,101 +28,96 @@ def handle_key(key, state):
             print("W pressed")
 
 scene.on_key = handle_key
-
-# Legacy string comparison still works
-if key == "Escape":  # Same as Key.ESCAPE
-    pass
 ```
 
 ## Values
 
 ### Letters
 
-| Value | Legacy String |
-|-------|---------------|
-| `A` - `Z` | `"A"` - `"Z"` |
+| Value |
+|-------|
+| `A` - `Z` |
 
 ### Numbers (Top Row)
 
-| Value | Legacy String |
-|-------|---------------|
-| `NUM_0` - `NUM_9` | `"Num0"` - `"Num9"` |
+| Value |
+|-------|
+| `NUM_0` - `NUM_9` |
 
 ### Numpad
 
-| Value | Legacy String |
-|-------|---------------|
-| `NUMPAD_0` - `NUMPAD_9` | `"Numpad0"` - `"Numpad9"` |
+| Value |
+|-------|
+| `NUMPAD_0` - `NUMPAD_9` |
+| `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE` |
 
 ### Function Keys
 
-| Value | Legacy String |
-|-------|---------------|
-| `F1` - `F15` | `"F1"` - `"F15"` |
+| Value |
+|-------|
+| `F1` - `F15` |
 
 ### Modifiers
 
-| Value | Legacy String | Description |
-|-------|---------------|-------------|
-| `LEFT_SHIFT` | `"LShift"` | Left shift key |
-| `RIGHT_SHIFT` | `"RShift"` | Right shift key |
-| `LEFT_CONTROL` | `"LControl"` | Left control key |
-| `RIGHT_CONTROL` | `"RControl"` | Right control key |
-| `LEFT_ALT` | `"LAlt"` | Left alt key |
-| `RIGHT_ALT` | `"RAlt"` | Right alt key |
-| `LEFT_SYSTEM` | `"LSystem"` | Left system key (Win/Cmd) |
-| `RIGHT_SYSTEM` | `"RSystem"` | Right system key |
+| Value | Description |
+|-------|-------------|
+| `LEFT_SHIFT` | Left shift key |
+| `RIGHT_SHIFT` | Right shift key |
+| `LEFT_CONTROL` | Left control key |
+| `RIGHT_CONTROL` | Right control key |
+| `LEFT_ALT` | Left alt key |
+| `RIGHT_ALT` | Right alt key |
+| `LEFT_SYSTEM` | Left system key (Win/Cmd) |
+| `RIGHT_SYSTEM` | Right system key |
 
 ### Navigation
 
-| Value | Legacy String | Description |
-|-------|---------------|-------------|
-| `LEFT` | `"Left"` | Left arrow |
-| `RIGHT` | `"Right"` | Right arrow |
-| `UP` | `"Up"` | Up arrow |
-| `DOWN` | `"Down"` | Down arrow |
-| `HOME` | `"Home"` | Home key |
-| `END` | `"End"` | End key |
-| `PAGE_UP` | `"PageUp"` | Page up |
-| `PAGE_DOWN` | `"PageDown"` | Page down |
+| Value | Description |
+|-------|-------------|
+| `LEFT` | Left arrow |
+| `RIGHT` | Right arrow |
+| `UP` | Up arrow |
+| `DOWN` | Down arrow |
+| `HOME` | Home key |
+| `END` | End key |
+| `PAGE_UP` | Page up |
+| `PAGE_DOWN` | Page down |
 
 ### Editing
 
-| Value | Legacy String | Description |
-|-------|---------------|-------------|
-| `ENTER` | `"Enter"` | Enter/Return key |
-| `BACKSPACE` | `"Backspace"` | Backspace key |
-| `DELETE` | `"Delete"` | Delete key |
-| `INSERT` | `"Insert"` | Insert key |
-| `TAB` | `"Tab"` | Tab key |
-| `SPACE` | `"Space"` | Spacebar |
-| `ESCAPE` | `"Escape"` | Escape key |
+| Value | Description |
+|-------|-------------|
+| `ENTER` | Enter/Return key |
+| `BACKSPACE` | Backspace key |
+| `DELETE` | Delete key |
+| `INSERT` | Insert key |
+| `TAB` | Tab key |
+| `SPACE` | Spacebar |
+| `ESCAPE` | Escape key |
 
 ### Symbols
 
-| Value | Legacy String | Description |
-|-------|---------------|-------------|
-| `COMMA` | `"Comma"` | `,` |
-| `PERIOD` | `"Period"` | `.` |
-| `SLASH` | `"Slash"` | `/` |
-| `BACKSLASH` | `"Backslash"` | `\` |
-| `SEMICOLON` | `"Semicolon"` | `;` |
-| `QUOTE` | `"Quote"` | `'` |
-| `LEFT_BRACKET` | `"LBracket"` | `[` |
-| `RIGHT_BRACKET` | `"RBracket"` | `]` |
-| `MINUS` | `"Hyphen"` | `-` |
-| `EQUAL` | `"Equal"` | `=` |
-| `GRAVE` | `"Grave"` | `` ` `` |
+| Value | Description |
+|-------|-------------|
+| `COMMA` | `,` |
+| `PERIOD` | `.` |
+| `SLASH` | `/` |
+| `BACKSLASH` | `\` |
+| `SEMICOLON` | `;` |
+| `APOSTROPHE` | `'` |
+| `LEFT_BRACKET` | `[` |
+| `RIGHT_BRACKET` | `]` |
+| `HYPHEN` | `-` |
+| `EQUAL` | `=` |
+| `GRAVE` | `` ` `` |
 
-## Legacy Compatibility
+### Other
 
-Key values compare equal to their legacy string equivalents:
-
-```python
-mcrfpy.Key.ESCAPE == "Escape"    # True
-mcrfpy.Key.SPACE == "Space"      # True
-mcrfpy.Key.A == "A"              # True
-```
+| Value | Description |
+|-------|-------------|
+| `MENU` | Menu key |
+| `PAUSE` | Pause key |
+| `UNKNOWN` | Unknown/unrecognized key |
 
 ## Related
 

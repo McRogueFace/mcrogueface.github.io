@@ -1,6 +1,12 @@
 ---
 layout: default
 title: NoiseSource
+mcrf:
+  objects: [NoiseSource, HeightMap]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # NoiseSource

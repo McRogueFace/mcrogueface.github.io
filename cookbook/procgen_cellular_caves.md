@@ -3,6 +3,10 @@ layout: default
 title: Cellular Automata Caves
 parent: Cookbook
 nav_order: 25
+mcrf:
+  objects: [Grid, Entity, Texture, Scene, DijkstraMap, HeightMap]
+  diataxis: howto
+  disposition: needs-review
 ---
 
 # Cellular Automata Caves
@@ -21,6 +25,8 @@ Cellular automata cave generation creates organic shapes by:
 3. Resulting in natural-looking cave formations
 
 Unlike BSP dungeons (rectangular rooms + corridors), cellular caves produce flowing, organic spaces perfect for natural caverns, underground lakes, or alien hives.
+
+> **Note:** `cell.tilesprite` (used throughout this recipe) is legacy. For new code, prefer drawing visuals through a `TileLayer` (e.g. `layer.set((x, y), 1)`) instead; `cell.walkable` assignments are unaffected and stay as-is.
 
 ---
 
@@ -307,9 +313,6 @@ Use Dijkstra maps to identify interesting cave features:
 ```python
 def find_cave_features(grid, spawn_point):
     """Find dead ends, wide areas, and chokepoints."""
-    dijkstra = grid.get_dijkstra_map(spawn_point)
-    hmap = dijkstra.to_heightmap(unreachable=-1.0)
-
     width, height = int(grid.grid_size[0]), int(grid.grid_size[1])
 
     dead_ends = []      # Cells with only one walkable neighbor
@@ -390,7 +393,7 @@ if features['wide_areas']:
     boss = mcrfpy.Entity(boss_pos, texture, sprite_index=80)
     grid.entities.append(boss)
 
-grid.center = spawn
+grid.center_camera(spawn)
 ```
 
 ---

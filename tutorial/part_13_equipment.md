@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, Frame, ColorLayer, FOV, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 13: Equipment System
 
 In Part 12, we added experience points and character leveling. Now we will implement the equipment system - weapons and armor that provide stat bonuses. This is the final part of our roguelike tutorial, bringing together everything you have learned.
@@ -972,7 +979,7 @@ def spawn_entities_for_level(target_grid: mcrfpy.Grid, tex: mcrfpy.Texture, leve
         if not floor_tiles:
             break
         x, y = random.choice(floor_tiles)
-        if (x, y) == (int(player.x), int(player.y)) or (x, y) == stairs_position:
+        if (x, y) == (player.grid_x, player.grid_y) or (x, y) == stairs_position:
             continue
         if is_position_occupied(target_grid, x, y):
             continue
@@ -993,7 +1000,7 @@ def spawn_entities_for_level(target_grid: mcrfpy.Grid, tex: mcrfpy.Texture, leve
         if not floor_tiles:
             break
         x, y = random.choice(floor_tiles)
-        if (x, y) == (int(player.x), int(player.y)) or (x, y) == stairs_position:
+        if (x, y) == (player.grid_x, player.grid_y) or (x, y) == stairs_position:
             continue
         if is_position_occupied(target_grid, x, y):
             continue
@@ -1008,13 +1015,13 @@ def spawn_entities_for_level(target_grid: mcrfpy.Grid, tex: mcrfpy.Texture, leve
 
 def is_position_occupied(target_grid: mcrfpy.Grid, x: int, y: int) -> bool:
     for entity in target_grid.entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             return True
     return False
 
 def get_item_at(target_grid: mcrfpy.Grid, x: int, y: int) -> Optional[mcrfpy.Entity]:
     for entity in target_grid.entities:
-        if entity in item_data and int(entity.x) == x and int(entity.y) == y:
+        if entity in item_data and entity.grid_x == x and entity.grid_y == y:
             return entity
     return None
 
@@ -1022,23 +1029,23 @@ def get_blocking_entity_at(target_grid: mcrfpy.Grid, x: int, y: int, exclude: mc
     for entity in target_grid.entities:
         if entity == exclude:
             continue
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             if entity in entity_data and entity_data[entity].is_alive:
                 return entity
     return None
 
 def remove_entity(target_grid: mcrfpy.Grid, entity: mcrfpy.Entity) -> None:
-    for i, e in enumerate(target_grid.entities):
+    for e in target_grid.entities:
         if e == entity:
-            target_grid.entities.remove(i)
+            target_grid.entities.remove(e)
             break
     if entity in entity_data:
         del entity_data[entity]
 
 def remove_item_entity(target_grid: mcrfpy.Grid, entity: mcrfpy.Entity) -> None:
-    for i, e in enumerate(target_grid.entities):
+    for e in target_grid.entities:
         if e == entity:
-            target_grid.entities.remove(i)
+            target_grid.entities.remove(e)
             break
     if entity in item_data:
         del item_data[entity]
@@ -1055,9 +1062,9 @@ def clear_entities_except_player(target_grid: mcrfpy.Grid) -> None:
             del entity_data[entity]
         if entity in item_data:
             del item_data[entity]
-        for i, e in enumerate(target_grid.entities):
+        for e in target_grid.entities:
             if e == entity:
-                target_grid.entities.remove(i)
+                target_grid.entities.remove(e)
                 break
 
 # =============================================================================
@@ -1117,7 +1124,7 @@ def drop_equipment(equipment: Equipment) -> None:
     """Drop equipment on the ground at player position."""
     global player, grid, texture
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
 
     # Find template for this equipment
     template = None
@@ -1180,7 +1187,7 @@ def award_xp(enemy_name: str) -> None:
 def descend_stairs() -> bool:
     global player, dungeon_level, grid, fov_layer, stairs_position
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     if (px, py) != stairs_position:
         message_log.add("There are no stairs here.", COLOR_INVALID)
         return False
@@ -1189,12 +1196,12 @@ def descend_stairs() -> bool:
     clear_entities_except_player(grid)
     init_explored()
     player_start = generate_dungeon(grid, dungeon_level)
-    player.x, player.y = player_start
+    player.grid_pos = player_start
     spawn_entities_for_level(grid, texture, dungeon_level)
 
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            fov_layer.set(x, y, COLOR_UNKNOWN)
+            fov_layer.set((x, y), COLOR_UNKNOWN)
     update_fov(grid, fov_layer, player_start[0], player_start[1])
 
     message_log.add(f"You descend to level {dungeon_level}...", COLOR_DESCEND)
@@ -1228,7 +1235,7 @@ def save_game() -> bool:
                 continue
             if entity in entity_data:
                 enemies.append({
-                    "x": int(entity.x), "y": int(entity.y),
+                    "x": entity.grid_x, "y": entity.grid_y,
                     "type": entity_data[entity].name.lower(),
                     "fighter": entity_data[entity].to_dict()
                 })
@@ -1237,7 +1244,7 @@ def save_game() -> bool:
         for entity in grid.entities:
             if entity in item_data:
                 items_on_ground.append({
-                    "x": int(entity.x), "y": int(entity.y),
+                    "x": entity.grid_x, "y": entity.grid_y,
                     "item": item_data[entity].to_dict()
                 })
 
@@ -1246,7 +1253,7 @@ def save_game() -> bool:
             "dungeon_level": dungeon_level,
             "stairs_position": list(stairs_position),
             "player": {
-                "x": int(player.x), "y": int(player.y),
+                "x": player.grid_x, "y": player.grid_y,
                 "fighter": entity_data[player].to_dict(),
                 "inventory": player_inventory.to_dict()
             },
@@ -1279,7 +1286,7 @@ def load_game() -> bool:
         entity_data.clear()
         item_data.clear()
         while len(grid.entities) > 0:
-            grid.entities.remove(0)
+            grid.entities.remove(grid.entities[0])
 
         dungeon_level = save_data.get("dungeon_level", 1)
         stairs_position = tuple(save_data.get("stairs_position", [0, 0]))
@@ -1336,8 +1343,8 @@ def load_game() -> bool:
 
         for y in range(GRID_HEIGHT):
             for x in range(GRID_WIDTH):
-                fov_layer.set(x, y, COLOR_UNKNOWN)
-        update_fov(grid, fov_layer, int(player.x), int(player.y))
+                fov_layer.set((x, y), COLOR_UNKNOWN)
+        update_fov(grid, fov_layer, player.grid_x, player.grid_y)
 
         game_over = False
         message_log.add("Game loaded!", COLOR_SAVE)
@@ -1365,7 +1372,7 @@ def has_save_file() -> bool:
 
 def enter_targeting_mode() -> None:
     global game_mode, target_cursor, target_x, target_y
-    target_x, target_y = int(player.x), int(player.y)
+    target_x, target_y = player.grid_x, player.grid_y
     target_cursor = mcrfpy.Entity(grid_pos=(target_x, target_y), texture=texture, sprite_index=SPRITE_CURSOR)
     grid.entities.append(target_cursor)
     game_mode = GameMode.TARGETING
@@ -1375,9 +1382,9 @@ def enter_targeting_mode() -> None:
 def exit_targeting_mode() -> None:
     global game_mode, target_cursor
     if target_cursor:
-        for i, e in enumerate(grid.entities):
+        for e in grid.entities:
             if e == target_cursor:
-                grid.entities.remove(i)
+                grid.entities.remove(e)
                 break
         target_cursor = None
     game_mode = GameMode.NORMAL
@@ -1391,19 +1398,19 @@ def move_cursor(dx: int, dy: int) -> None:
     if not grid.is_in_fov(new_x, new_y):
         message_log.add("Cannot see that location.", COLOR_INVALID)
         return
-    distance = abs(new_x - int(player.x)) + abs(new_y - int(player.y))
+    distance = abs(new_x - player.grid_x) + abs(new_y - player.grid_y)
     if distance > RANGED_ATTACK_RANGE:
         message_log.add(f"Out of range (max {RANGED_ATTACK_RANGE}).", COLOR_WARNING)
         return
     target_x, target_y = new_x, new_y
-    target_cursor.x, target_cursor.y = target_x, target_y
+    target_cursor.grid_pos = (target_x, target_y)
     enemy = get_blocking_entity_at(grid, target_x, target_y, exclude=player)
     if enemy and enemy in entity_data:
         f = entity_data[enemy]
         message_log.add(f"Target: {f.name} (HP: {f.hp}/{f.max_hp})", COLOR_RANGED)
 
 def confirm_target() -> None:
-    if target_x == int(player.x) and target_y == int(player.y):
+    if target_x == player.grid_x and target_y == player.grid_y:
         message_log.add("Cannot target yourself!", COLOR_INVALID)
         return
     target_enemy = get_blocking_entity_at(grid, target_x, target_y, exclude=player)
@@ -1475,7 +1482,7 @@ def handle_death(entity: mcrfpy.Entity, fighter: Fighter) -> None:
 # =============================================================================
 
 def pickup_item() -> bool:
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     item_entity = get_item_at(grid, px, py)
     if not item_entity:
         message_log.add("Nothing to pick up.", COLOR_INVALID)
@@ -1528,19 +1535,19 @@ def update_entity_visibility(target_grid: mcrfpy.Grid) -> None:
         if entity == player or entity == target_cursor:
             entity.visible = True
         else:
-            entity.visible = target_grid.is_in_fov(int(entity.x), int(entity.y))
+            entity.visible = target_grid.is_in_fov(entity.grid_x, entity.grid_y)
 
 def update_fov(target_grid: mcrfpy.Grid, target_fov_layer, player_x: int, player_y: int) -> None:
-    target_grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+    target_grid.compute_fov((player_x, player_y), FOV_RADIUS, True, mcrfpy.FOV.SHADOW)
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if target_grid.is_in_fov(x, y):
                 mark_explored(x, y)
-                target_fov_layer.set(x, y, COLOR_VISIBLE)
+                target_fov_layer.set((x, y), COLOR_VISIBLE)
             elif is_explored(x, y):
-                target_fov_layer.set(x, y, COLOR_DISCOVERED)
+                target_fov_layer.set((x, y), COLOR_DISCOVERED)
             else:
-                target_fov_layer.set(x, y, COLOR_UNKNOWN)
+                target_fov_layer.set((x, y), COLOR_UNKNOWN)
     update_entity_visibility(target_grid)
 
 # =============================================================================
@@ -1558,7 +1565,7 @@ def try_move_or_attack(dx: int, dy: int) -> None:
     global game_over
     if game_over:
         return
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     new_x, new_y = px + dx, py + dy
     if not (0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT):
         return
@@ -1568,7 +1575,7 @@ def try_move_or_attack(dx: int, dy: int) -> None:
         perform_attack(player, blocker)
         enemy_turn()
     elif grid.at(new_x, new_y).walkable:
-        player.x, player.y = new_x, new_y
+        player.grid_pos = (new_x, new_y)
         update_fov(grid, fov_layer, new_x, new_y)
         enemy_turn()
     update_ui()
@@ -1581,7 +1588,7 @@ def enemy_turn() -> None:
     global game_over
     if game_over:
         return
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
 
     for entity in list(grid.entities):
         if entity == player or entity not in entity_data:
@@ -1589,7 +1596,7 @@ def enemy_turn() -> None:
         fighter = entity_data[entity]
         if not fighter.is_alive:
             continue
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = entity.grid_x, entity.grid_y
         if not grid.is_in_fov(ex, ey):
             continue
 
@@ -1604,11 +1611,11 @@ def move_toward_player(enemy: mcrfpy.Entity, ex: int, ey: int, px: int, py: int)
     dy = 1 if py > ey else (-1 if py < ey else 0)
 
     if can_move_to(grid, ex + dx, ey + dy, enemy):
-        enemy.x, enemy.y = ex + dx, ey + dy
+        enemy.grid_pos = (ex + dx, ey + dy)
     elif dx and can_move_to(grid, ex + dx, ey, enemy):
-        enemy.x = ex + dx
+        enemy.grid_x = ex + dx
     elif dy and can_move_to(grid, ex, ey + dy, enemy):
-        enemy.y = ey + dy
+        enemy.grid_y = ey + dy
 
 # =============================================================================
 # UI Updates
@@ -1637,7 +1644,7 @@ def generate_new_game() -> None:
     entity_data.clear()
     item_data.clear()
     while len(grid.entities) > 0:
-        grid.entities.remove(0)
+        grid.entities.remove(grid.entities[0])
 
     init_explored()
     message_log.clear()
@@ -1657,7 +1664,7 @@ def generate_new_game() -> None:
 
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            fov_layer.set(x, y, COLOR_UNKNOWN)
+            fov_layer.set((x, y), COLOR_UNKNOWN)
     update_fov(grid, fov_layer, player_start[0], player_start[1])
 
     mode_display.update(game_mode)
@@ -1679,10 +1686,11 @@ grid = mcrfpy.Grid(
     zoom=1.0
 )
 
-fov_layer = grid.add_layer("color", z_index=-1)
+fov_layer = mcrfpy.ColorLayer(z_index=-1, name="fov")
+grid.add_layer(fov_layer)
 for y in range(GRID_HEIGHT):
     for x in range(GRID_WIDTH):
-        fov_layer.set(x, y, COLOR_UNKNOWN)
+        fov_layer.set((x, y), COLOR_UNKNOWN)
 
 scene.children.append(grid)
 
@@ -1735,19 +1743,19 @@ else:
 # Input Handling
 # =============================================================================
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     global game_over, game_mode
 
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    if key == "R":
+    if key == mcrfpy.Key.R:
         delete_save()
         generate_new_game()
         message_log.add("New adventure begins!", COLOR_INFO)
         return
 
-    if key == "Escape":
+    if key == mcrfpy.Key.ESCAPE:
         if game_mode == GameMode.TARGETING:
             exit_targeting_mode()
             message_log.add("Targeting cancelled.", COLOR_INFO)
@@ -1765,39 +1773,47 @@ def handle_keys(key: str, action: str) -> None:
     else:
         handle_normal_input(key)
 
-def handle_normal_input(key: str) -> None:
-    if key in ("W", "Up"):
+EQUIP_SLOT_KEYS = {
+    mcrfpy.Key.NUM_1: 0,
+    mcrfpy.Key.NUM_2: 1,
+    mcrfpy.Key.NUM_3: 2,
+    mcrfpy.Key.NUM_4: 3,
+    mcrfpy.Key.NUM_5: 4,
+}
+
+def handle_normal_input(key: mcrfpy.Key) -> None:
+    if key in (mcrfpy.Key.W, mcrfpy.Key.UP):
         try_move_or_attack(0, -1)
-    elif key in ("S", "Down"):
+    elif key in (mcrfpy.Key.S, mcrfpy.Key.DOWN):
         try_move_or_attack(0, 1)
-    elif key in ("A", "Left"):
+    elif key in (mcrfpy.Key.A, mcrfpy.Key.LEFT):
         try_move_or_attack(-1, 0)
-    elif key in ("D", "Right"):
+    elif key in (mcrfpy.Key.D, mcrfpy.Key.RIGHT):
         try_move_or_attack(1, 0)
-    elif key == "F":
+    elif key == mcrfpy.Key.F:
         enter_targeting_mode()
-    elif key in ("G", ","):
+    elif key in (mcrfpy.Key.G, mcrfpy.Key.COMMA):
         pickup_item()
-    elif key == "Period":
+    elif key == mcrfpy.Key.PERIOD:
         descend_stairs()
-    elif key == "E":
+    elif key == mcrfpy.Key.E:
         message_log.add("Press 1-5 to equip an item from inventory.", COLOR_INFO)
-    elif key in "12345":
-        index = int(key) - 1
+    elif key in EQUIP_SLOT_KEYS:
+        index = EQUIP_SLOT_KEYS[key]
         if use_item(index):
             enemy_turn()
             update_ui()
 
-def handle_targeting_input(key: str) -> None:
-    if key in ("Up", "W"):
+def handle_targeting_input(key: mcrfpy.Key) -> None:
+    if key in (mcrfpy.Key.UP, mcrfpy.Key.W):
         move_cursor(0, -1)
-    elif key in ("Down", "S"):
+    elif key in (mcrfpy.Key.DOWN, mcrfpy.Key.S):
         move_cursor(0, 1)
-    elif key in ("Left", "A"):
+    elif key in (mcrfpy.Key.LEFT, mcrfpy.Key.A):
         move_cursor(-1, 0)
-    elif key in ("Right", "D"):
+    elif key in (mcrfpy.Key.RIGHT, mcrfpy.Key.D):
         move_cursor(1, 0)
-    elif key in ("Return", "Space"):
+    elif key in (mcrfpy.Key.ENTER, mcrfpy.Key.SPACE):
         confirm_target()
 
 scene.on_key = handle_keys

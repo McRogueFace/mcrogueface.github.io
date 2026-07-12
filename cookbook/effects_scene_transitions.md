@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Frame, Color, Timer, Transition, Animation]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Scene Transition Effects
 
 Smooth transitions between scenes for a polished game feel. McRogueFace supports built-in transitions and custom overlay-based effects.

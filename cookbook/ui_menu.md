@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Caption, Color, Scene, Key, InputState]
+  diataxis: howto
+  disposition: needs-review
+---
+
 # Selection Menu Widget
 
 Keyboard-navigable menus are essential for any game. This recipe shows how to build a reusable menu system using Frame and Caption elements with keyboard input handling.
@@ -50,7 +57,7 @@ class Menu:
         height = self.padding * 2 + len(options) * self.line_height + title_offset
 
         # Create container frame
-        self.frame = mcrfpy.Frame(x, y, self.width, height)
+        self.frame = mcrfpy.Frame(pos=(x, y), size=(self.width, height))
         self.frame.fill_color = self.color_bg
         self.frame.outline = 2
         self.frame.outline_color = mcrfpy.Color(100, 100, 150)
@@ -123,13 +130,13 @@ class Menu:
         Returns:
             True if key was handled, False otherwise
         """
-        if key == "Up" or key == "W":
+        if key == mcrfpy.Key.UP or key == mcrfpy.Key.W:
             self.move_up()
             return True
-        elif key == "Down" or key == "S":
+        elif key == mcrfpy.Key.DOWN or key == mcrfpy.Key.S:
             self.move_down()
             return True
-        elif key == "Return" or key == "Space":
+        elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.SPACE:
             self.select()
             return True
         return False
@@ -160,7 +167,7 @@ menu = Menu(
 menu.add_to_scene(scene.children)
 
 def handle_keys(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
     menu.handle_key(key)
 
@@ -230,7 +237,7 @@ class EnhancedMenu:
         )
 
         # Main frame
-        self.frame = mcrfpy.Frame(self.x, self.y, self.width, height)
+        self.frame = mcrfpy.Frame(pos=(self.x, self.y), size=(self.width, height))
         self.frame.fill_color = self.colors['bg']
         self.frame.outline = 2
         self.frame.outline_color = self.colors['border']
@@ -247,10 +254,8 @@ class EnhancedMenu:
 
         # Selection highlight frame
         self.highlight = mcrfpy.Frame(
-            self.x + 5,
-            self.y + self.padding + title_offset,
-            self.width - 10,
-            self.line_height
+            pos=(self.x + 5, self.y + self.padding + title_offset),
+            size=(self.width - 10, self.line_height)
         )
         self.highlight.fill_color = self.colors['highlight_bg']
         self.highlight.outline = 0
@@ -438,18 +443,18 @@ def switch_menu(new_menu):
 
 def handle_keys(key, state):
     global current_menu
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
 
-    if key == "Up" or key == "W":
+    if key == mcrfpy.Key.UP or key == mcrfpy.Key.W:
         current_menu.move_up()
-    elif key == "Down" or key == "S":
+    elif key == mcrfpy.Key.DOWN or key == mcrfpy.Key.S:
         current_menu.move_down()
-    elif key == "Return" or key == "Space":
+    elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.SPACE:
         result = current_menu.select()
         if result:  # Submenu returned
             switch_menu(result)
-    elif key == "Escape":
+    elif key == mcrfpy.Key.ESCAPE:
         parent = current_menu.back()
         if parent:
             switch_menu(parent)
@@ -486,7 +491,7 @@ class MenuBar:
         self.height = 30
 
         # Main bar frame
-        self.bar = mcrfpy.Frame(0, y, 1024, self.height)
+        self.bar = mcrfpy.Frame(pos=(0, y), size=(1024, self.height))
         self.bar.fill_color = mcrfpy.Color(50, 50, 70)
         self.bar.outline = 0
 
@@ -529,7 +534,7 @@ class MenuBar:
         width = 150
         height = len(options) * 25 + 10
 
-        self.dropdown = mcrfpy.Frame(x, y, width, height)
+        self.dropdown = mcrfpy.Frame(pos=(x, y), size=(width, height))
         self.dropdown.fill_color = mcrfpy.Color(40, 40, 60, 250)
         self.dropdown.outline = 1
         self.dropdown.outline_color = mcrfpy.Color(80, 80, 100)
@@ -581,33 +586,33 @@ class MenuBar:
     def handle_key(self, key, ui):
         """Handle keyboard navigation."""
         if not self.dropdown_open:
-            if key == "Left":
+            if key == mcrfpy.Key.LEFT:
                 self.selected_item = (self.selected_item - 1) % len(self.items)
                 self._update_highlight()
-            elif key == "Right":
+            elif key == mcrfpy.Key.RIGHT:
                 self.selected_item = (self.selected_item + 1) % len(self.items)
                 self._update_highlight()
-            elif key == "Return" or key == "Down":
+            elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.DOWN:
                 self.dropdown_open = True
                 self._show_dropdown(ui)
                 self._update_highlight()
         else:
-            if key == "Up":
+            if key == mcrfpy.Key.UP:
                 options = self.items[self.selected_item].get('options', [])
                 self.dropdown_selected = (self.dropdown_selected - 1) % len(options)
                 self._update_dropdown_highlight()
-            elif key == "Down":
+            elif key == mcrfpy.Key.DOWN:
                 options = self.items[self.selected_item].get('options', [])
                 self.dropdown_selected = (self.dropdown_selected + 1) % len(options)
                 self._update_dropdown_highlight()
-            elif key == "Return":
+            elif key == mcrfpy.Key.ENTER:
                 opt = self.items[self.selected_item]['options'][self.dropdown_selected]
                 if opt.get('action'):
                     opt['action']()
                 self.dropdown_open = False
                 self._hide_dropdown(ui)
                 self._update_highlight()
-            elif key == "Escape":
+            elif key == mcrfpy.Key.ESCAPE:
                 self.dropdown_open = False
                 self._hide_dropdown(ui)
                 self._update_highlight()
@@ -615,7 +620,7 @@ class MenuBar:
 
 ## McRogueFace-Specific Considerations
 
-1. **Keyboard Input**: The `scene.on_key` callback receives key names as strings like "Up", "Down", "Return", "Escape". Handle both arrow keys and WASD for accessibility.
+1. **Keyboard Input**: The `scene.on_key` callback receives `(key: mcrfpy.Key, state: mcrfpy.InputState)` enum values, not strings (e.g. `mcrfpy.Key.UP`, `mcrfpy.Key.ENTER`, `mcrfpy.Key.ESCAPE`). Handle both arrow keys and WASD for accessibility.
 
 2. **Focus Management**: Only one menu should handle input at a time. Use an `active` flag or a global `current_menu` reference.
 
@@ -623,7 +628,7 @@ class MenuBar:
 
 4. **State Persistence**: Menus retain their state when hidden. Reset `selected_index` if you want fresh state on re-open.
 
-5. **Key Repeat**: McRogueFace sends "start" and "end" states for key events. Filter to only "start" to avoid double-processing.
+5. **Key Repeat**: McRogueFace sends `mcrfpy.InputState.PRESSED` and `mcrfpy.InputState.RELEASED` states for key events. Filter to only `PRESSED` to avoid double-processing.
 
 ## Complete Example
 
@@ -634,7 +639,7 @@ import mcrfpy
 scene = mcrfpy.Scene("main_menu")
 
 # Background
-bg = mcrfpy.Frame(0, 0, 1024, 768)
+bg = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
 bg.fill_color = mcrfpy.Color(20, 20, 35)
 scene.children.append(bg)
 
@@ -665,7 +670,7 @@ menu.add_to_scene(scene.children)
 
 # Input
 def on_key(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
     menu.handle_key(key)
 

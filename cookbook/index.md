@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Cookbook Recipes
+mcrf:
+  objects: []
+  diataxis: meta
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Cookbook Recipes

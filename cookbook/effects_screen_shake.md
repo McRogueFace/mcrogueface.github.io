@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Grid, Timer, Animation]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Screen Shake Effect
 
 Create a brief screen shake on impact for powerful hits, explosions, or dramatic moments.

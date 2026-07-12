@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Entity, Grid, Caption, Font, Color, TileLayer]
+  diataxis: howto
+  disposition: needs-review
+---
+
 # McRogueFace Minimal Template
 
 A barebones starting point for roguelike prototypes using McRogueFace.
@@ -45,9 +52,12 @@ mcrogueface.exe
 
 ```python
 # After creating the grid, add some walls:
+tiles = mcrfpy.TileLayer(name="tiles", z_index=0, texture=texture)
+grid.add_layer(tiles)
+
 def add_wall(grid, x, y):
     point = grid.at(x, y)
-    point.tilesprite = 35  # '#' in CP437
+    tiles.set((x, y), 35)  # '#' in CP437
     point.walkable = False
 
 # Create a border
@@ -108,8 +118,6 @@ scene.children.append(status)
 
 ```python
 # Animate the player with a smooth transition
-from mcrfpy import Animation
-
 def try_move_animated(dx: int, dy: int) -> bool:
     global player_x, player_y
     new_x = player_x + dx
@@ -120,8 +128,8 @@ def try_move_animated(dx: int, dy: int) -> bool:
         player_y = new_y
 
         # Animate position change over 0.1 seconds
-        Animation(player_entity, "x", float(new_x), 0.1).start()
-        Animation(player_entity, "y", float(new_y), 0.1).start()
+        player_entity.animate("x", float(new_x), 0.1)
+        player_entity.animate("y", float(new_y), 0.1)
         return True
     return False
 ```
@@ -149,7 +157,7 @@ Common sprite indices for CP437-based tilesets:
 ## Next Steps
 
 1. **Add collision detection** with walls using `grid.at(x, y).walkable`
-2. **Implement FOV** using `entity.update_visibility()` and color layers
+2. **Implement FOV** using `entity.update_visibility()` with `ColorLayer.apply_perspective()`
 3. **Create multiple scenes** for menu, gameplay, and game over states
 4. **Follow the full tutorial** at [McRogueFace Tutorials](https://mcrogueface.github.io/tutorials)
 

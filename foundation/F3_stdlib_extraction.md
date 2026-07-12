@@ -1,3 +1,7 @@
+---
+mcrf.disposition: migrated-to-wiki
+---
+
 # McRogueFace Stdlib Extraction from Test Suite
 
 **Status:** Foundation Research Document

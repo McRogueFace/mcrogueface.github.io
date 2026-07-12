@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,Scene,Sprite] verified=0.2.8@b6720f6 status=ok
 # Game Inventory - Grid-based inventory UI
 import mcrfpy
 

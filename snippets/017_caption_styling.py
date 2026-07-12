@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Caption,Color] verified=0.2.8@b6720f6 status=ok
 # Caption Styling - Text colors and fonts
 import mcrfpy
 

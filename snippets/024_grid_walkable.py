@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Grid,Scene] verified=0.2.8@b6720f6 status=ok
 # Grid Walkable - Walkable vs blocked tiles
 import mcrfpy
 

@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Reference
+mcrf:
+  objects: []
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Reference
@@ -52,8 +56,7 @@ Detailed reference for every McRogueFace object.
 |--------|-------------|
 | [Grid](objects/Grid) | Tile-based game world |
 | [GridPoint](objects/GridPoint) | Individual tile data (walkable, transparent) |
-| [GridPointState](objects/GridPointState) | Entity's view of a tile (visible, discovered) |
-| [Entity](objects/Entity) | Game objects that exist on grids |
+| [Entity](objects/Entity) | Game objects that exist on grids (per-entity FOV memory via `perspective_map`) |
 | [TileLayer](objects/TileLayer) | Tile sprite layer for grids |
 | [ColorLayer](objects/ColorLayer) | Color overlay layer for grids |
 
@@ -80,7 +83,7 @@ Detailed reference for every McRogueFace object.
 
 | Object | Description |
 |--------|-------------|
-| [Animation](objects/Animation) | Property animation system |
+| [Animation](objects/Animation) | Animation handle returned by drawable.animate() (mcrfpy.Animation is not directly constructible) |
 | [Easing](objects/Easing) | Easing function enum |
 | [Transition](objects/Transition) | Scene transition enum |
 | [Alignment](objects/Alignment) | UI element alignment enum |
@@ -101,10 +104,23 @@ Detailed reference for every McRogueFace object.
 | [Music](objects/Music) | Background music playback |
 | [Sound](objects/Sound) | Sound effect playback |
 
+## Module Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| [`current_scene`](reference/generated/functions) | Scene | Get or set the active scene: `mcrfpy.current_scene = mcrfpy.Scene("gameplay")` |
+| `scenes` | tuple[str] | Read-only tuple of all scene names |
+| `default_font` | Font | JetBrains Mono font, always available |
+| `default_texture` | Texture | Kenney Tiny Dungeon tileset (16x16 sprites) |
+
+## Module Functions
+
+For every top-level `mcrfpy` function (`step`, `find`, `find_all`, `get_metrics`, `bresenham`, the benchmark API, ...), see the auto-generated [Module Functions](reference/generated/functions) reference, extracted directly from the C++ docstrings.
+
 ## Quick Reference
 
 For a condensed cheat sheet of common operations, see the [Quick Reference](quick-reference).
 
 ## Full API
 
-For the complete `mcrfpy` module documentation with all functions and attributes, see the [API Reference](api-reference).
+For the complete generated `mcrfpy` object reference (every class, method, and property, with lifecycle badges), see [Generated Reference](reference/generated/functions).

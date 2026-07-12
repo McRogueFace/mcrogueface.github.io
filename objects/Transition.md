@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Transition
+mcrf:
+  objects: [Transition, Scene]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Transition

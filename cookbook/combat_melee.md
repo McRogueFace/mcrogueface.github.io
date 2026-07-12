@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Frame, Caption, Color, Timer, Grid, Animation]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Melee Combat System
 
 ![Melee Combat Recipe](/images/cookbook/combat_melee.png)
@@ -205,8 +212,7 @@ def show_damage_number(scene, x, y, damage, is_critical=False):
     scene.children.append(caption)
 
     # Animate upward and fade out
-    anim_y = mcrfpy.Animation("y", float(y - 30), 0.8, "easeOut")
-    anim_y.start(caption)
+    caption.animate("y", float(y - 30), 0.8, mcrfpy.Easing.EASE_OUT)
 
     # Remove after animation
     def cleanup(timer, runtime):
@@ -227,23 +233,24 @@ def flash_entity(entity, color, duration=0.2):
     # Note: Entity color support depends on implementation
 
     # Simple flash using sprite swap
-    original_sprite = entity.sprite_number
+    original_sprite = entity.sprite_index
 
     # Damage sprite (e.g., white version)
     damage_sprite = original_sprite + 100  # Assuming damage sprites offset
 
-    entity.sprite_number = damage_sprite
+    entity.sprite_index = damage_sprite
 
     timer_name = f"flash_{id(entity)}"
 
     def restore(timer, runtime):
-        entity.sprite_number = original_sprite
+        entity.sprite_index = original_sprite
 
     mcrfpy.Timer(timer_name, restore, int(duration * 1000))
 
 
 def shake_screen(grid, intensity=5, duration=0.3):
     """Shake the camera for impact feedback."""
+    import random
     original_center = (grid.center[0], grid.center[1])
 
     shake_count = [0]
@@ -274,17 +281,18 @@ class HealthBar:
     def __init__(self, scene, combat_entity, offset_y=-10, width=32, height=4):
         self.scene = scene
         self.entity = combat_entity
+        self.offset_x = 0
         self.offset_y = offset_y
         self.width = width
         self.height = height
 
         # Background (red/empty)
-        self.bg = mcrfpy.Frame(0, 0, width, height)
+        self.bg = mcrfpy.Frame(pos=(0, 0), size=(width, height))
         self.bg.fill_color = mcrfpy.Color(100, 0, 0)
         scene.children.append(self.bg)
 
         # Foreground (green/full)
-        self.fg = mcrfpy.Frame(0, 0, width, height)
+        self.fg = mcrfpy.Frame(pos=(0, 0), size=(width, height))
         self.fg.fill_color = mcrfpy.Color(0, 200, 0)
         scene.children.append(self.fg)
 
@@ -343,7 +351,7 @@ class CombatLog:
         self.captions = []
 
         # Background
-        self.frame = mcrfpy.Frame(x, y, width, height)
+        self.frame = mcrfpy.Frame(pos=(x, y), size=(width, height))
         self.frame.fill_color = mcrfpy.Color(0, 0, 0, 180)
         scene.children.append(self.frame)
 
@@ -461,8 +469,7 @@ def on_enemy_killed(enemy):
    ```python
    def die_with_animation(entity):
        # Play death animation
-       anim = mcrfpy.Animation("opacity", 0.0, 0.5, "linear")
-       anim.start(entity)
+       entity.animate("opacity", 0.0, 0.5, mcrfpy.Easing.LINEAR)
        # Remove after animation
        mcrfpy.Timer("remove", lambda timer, runtime: remove_entity(entity), 500)
    ```
@@ -481,3 +488,4 @@ def on_enemy_killed(enemy):
 - [Turn System](combat_turn_system.md) - When attacks happen
 - [Enemy AI](combat_enemy_ai.md) - Making enemies attack intelligently
 - [Status Effects](combat_status_effects.md) - Poison, buffs, debuffs
+

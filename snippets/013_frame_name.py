@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Frame,Color,find,Caption] verified=0.2.8@b6720f6 status=ok
 # Frame Name - Named elements for lookup
 import mcrfpy
 

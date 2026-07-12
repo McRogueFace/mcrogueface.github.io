@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Entity,Grid,InputState,Key,Scene] verified=0.2.8@b6720f6 status=ok
 # Camera Follow - Camera tracks entity
 import mcrfpy
 

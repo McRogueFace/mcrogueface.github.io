@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Entity,Grid,Scene] verified=0.2.8@b6720f6 status=ok
 # Multiple Entities - Several entities on one grid
 import mcrfpy
 

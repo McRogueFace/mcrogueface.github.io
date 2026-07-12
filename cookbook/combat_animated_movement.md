@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Animation, Entity, Grid, Timer, Easing, Scene]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Animated Movement
 
 Smooth entity movement using the Animation system.

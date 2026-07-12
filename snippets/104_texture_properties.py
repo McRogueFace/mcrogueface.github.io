@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,Scene,Sprite,current_scene,default_texture] verified=0.2.8@b6720f6 status=ok
 # Texture Properties - Texture information
 import mcrfpy
 

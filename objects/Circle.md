@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Circle
+mcrf:
+  objects: [Circle]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Circle
@@ -50,8 +54,8 @@ mcrfpy.Circle(radius=0, center=None, fill_color=None, outline_color=None, outlin
 | Property | Type | Description |
 |----------|------|-------------|
 | `radius` | float | Circle radius |
-| `center` | tuple | Center point as (x, y) |
-| `pos` | tuple | Alias for center |
+| `center` | Vector | Center point as (x, y) |
+| `pos` | Vector | Alias for center |
 | `fill_color` | Color | Interior fill color |
 | `outline_color` | Color | Border color |
 | `outline` | float | Border thickness |
@@ -91,13 +95,13 @@ button = mcrfpy.Circle(
     outline=2
 )
 
-def on_hover_enter(x, y):
+def on_hover_enter(pos):
     button.fill_color = mcrfpy.Color(80, 80, 230)
 
-def on_hover_exit(x, y):
+def on_hover_exit(pos):
     button.fill_color = mcrfpy.Color(50, 50, 200)
 
-def on_click(x, y):
+def on_click(pos, button, action):
     print("Button clicked!")
 
 button.on_enter = on_hover_enter

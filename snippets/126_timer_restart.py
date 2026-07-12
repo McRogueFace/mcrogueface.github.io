@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,InputState,Key,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Timer Restart - Reset and start timer
 import mcrfpy
 

@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Grid, Frame, Caption, Color, FOV]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # McRogueFace Complete Roguelike Template
 
 A fully playable mini-roguelike demonstrating all major McRogueFace features. Use this as a starting point for your own roguelike game!

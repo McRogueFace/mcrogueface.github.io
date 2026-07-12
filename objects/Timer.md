@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Timer
+mcrf:
+  objects: [Timer, Key, InputState]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Timer
@@ -91,7 +95,7 @@ def my_callback(timer, runtime):
 
 ```python
 timer.start()    # Begin running (resets interval)
-timer.stop()     # Fully stop (cannot resume)
+timer.stop()     # Stop the timer (preserves callback; timer can be restarted via restart()/start())
 timer.pause()    # Temporarily halt (can resume)
 timer.resume()   # Continue from paused state
 timer.restart()  # Reset to full interval and start
@@ -183,7 +187,7 @@ animate_sequence()
 game_timer = mcrfpy.Timer("game", game_update, 16)
 
 def on_key(key, action):
-    if key == "P" and action == "start":
+    if key == mcrfpy.Key.P and action == mcrfpy.InputState.PRESSED:
         if game_timer.paused:
             game_timer.resume()
         else:

@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Alignment
+mcrf:
+  objects: [Alignment]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # Alignment

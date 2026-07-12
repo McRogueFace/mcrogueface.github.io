@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,ColorLayer,Grid,Scene] verified=0.2.8@b6720f6 status=ok
 # Grid Cell Colors - Use color layer for cell colors
 import mcrfpy
 

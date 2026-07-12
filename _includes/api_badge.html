@@ -1,0 +1,19 @@
+{%- comment -%}
+  api_badge.html -- lifecycle badge for generated API reference pages.
+  Params:
+    kind    : one of "added" | "changed" | "deprecated" | "removed" (required)
+    version : version string to display (optional)
+    note    : extra tooltip text (optional)
+  Owned by the generated-reference builder (tools/build_reference.py).
+  Inline styles only. Each badge carries its own opaque background + white text
+  so it stays legible regardless of the page's light/dark theme (no media
+  queries are available inside a style attribute).
+{%- endcomment -%}
+{%- assign _k = include.kind -%}
+{%- if _k == "added" -%}{%- assign _label = "added" -%}{%- assign _bg = "#2c8a4a" -%}
+{%- elsif _k == "changed" -%}{%- assign _label = "changed" -%}{%- assign _bg = "#2563c9" -%}
+{%- elsif _k == "deprecated" -%}{%- assign _label = "deprecated" -%}{%- assign _bg = "#b0770a" -%}
+{%- elsif _k == "removed" -%}{%- assign _label = "removed" -%}{%- assign _bg = "#c1362f" -%}
+{%- else -%}{%- assign _label = _k -%}{%- assign _bg = "#5a636e" -%}
+{%- endif -%}
+<span class="mcrf-api-badge mcrf-api-badge--{{ _k }}"{% if include.note %} title="{{ include.note | escape }}"{% endif %} style="display:inline-block;vertical-align:middle;margin-left:.4em;padding:.08em .55em;border-radius:1em;background:{{ _bg }};color:#ffffff;font-size:.72em;font-weight:700;line-height:1.5;letter-spacing:.02em;white-space:nowrap;box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;">{{ _label }}{% if include.version %} {{ include.version | escape }}{% endif %}</span>

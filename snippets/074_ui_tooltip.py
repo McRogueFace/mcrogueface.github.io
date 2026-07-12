@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,Scene,Vector] verified=0.2.8@b6720f6 status=ok
 # UI Tooltip - Hover tooltip display
 import mcrfpy
 

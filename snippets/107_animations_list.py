@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,Scene,Timer,animations,current_scene] verified=0.2.8@b6720f6 status=ran
 # Animations List - View all active animations
 import mcrfpy
 

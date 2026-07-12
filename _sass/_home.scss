@@ -79,23 +79,23 @@
     color: $color-text-muted;
   }
 
-  // Card accent colors
-  &:nth-child(1) {
+  // Card accent colors (cycle every 4 cards)
+  &:nth-child(4n+1) {
     border-top: 3px solid $color-secondary;
     &:hover { border-color: $color-secondary; }
   }
 
-  &:nth-child(2) {
+  &:nth-child(4n+2) {
     border-top: 3px solid $color-primary;
     &:hover { border-color: $color-primary; }
   }
 
-  &:nth-child(3) {
+  &:nth-child(4n+3) {
     border-top: 3px solid $color-accent;
     &:hover { border-color: $color-accent; }
   }
 
-  &:nth-child(4) {
+  &:nth-child(4n+4) {
     border-top: 3px solid #8b5cf6; // Purple for reference
     &:hover { border-color: #8b5cf6; }
   }

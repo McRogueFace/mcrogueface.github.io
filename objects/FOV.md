@@ -1,6 +1,10 @@
 ---
 layout: default
 title: FOV
+mcrf:
+  objects: [FOV, Grid]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # FOV

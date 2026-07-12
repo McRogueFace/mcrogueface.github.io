@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Caption, Color, Timer, Mouse]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Tooltip on Hover
 
 Tooltips provide contextual information when hovering over UI elements. This recipe shows how to use Frame click handlers with mouse events to show and hide tooltip overlays.

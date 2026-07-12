@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Grid, Entity, TileLayer, ColorLayer, HeightMap, BSP, NoiseSource, Drawable]
+  diataxis: explanation
+  disposition: needs-review
+---
+
 # McRogueFace Architecture
 
 I built McRogueFace with the intention of writing games entirely in Python, and without accepting the shortcomings like difficult installation, performance impacts, or the boilerplate that games call for. The McRogueFace philosophy is "C++ every frame, Python every tick": once you define your objects, McRogueFace handles rendering them, and your animations play while Python doesn't run at all. When user input occurs, your code modifies your objects. I imagine that means moving sprites around to play a game, but really it's just a Python environment: I hope you'll be enticed by the fun, but stay for the full-blown powers of programming in the same language used by web developers, AI researchers, and system administrators worldwide.
@@ -52,12 +59,12 @@ Layers also support **C++ data binding** for FOV updates—when `entity.update_v
 
 McRogueFace exposes libtcod algorithms through its own objects:
 
-- **Grid Path Finding methods**: A* and Djikstra maps integrated with Grid's walkable data
+- **Grid Path Finding methods**: A* and Dijkstra maps integrated with Grid's walkable data
 - **Grid + Entity Field of View methods**: Entity perspectives integrated with Grid's transparency data and GridLayer for rendering
 - **mcrfpy.HeightMap**: libtcod's heightmap class is a first-class McRogueFace object for handling terrain, path, walkability data
 - **mcrfpy.BSP**: libtcod's binary space partitioning tree is a first-class McRogueFace object
 - **mcrfpy.NoiseSource**: libtcod's noise generator is a first-class McRogueFace object
-- **`mcrfpy.libtcod`**: For utilities that don't directly relate to McRogueFace's objects
+- **Standalone utilities**: `mcrfpy.bresenham()` and other module-level functions for utilities that don't directly relate to McRogueFace's objects
 
 *What's a "First Class" McRogueFace object?* Things that relate to what your game renders follow McRogueFace's data model: manipulation of arrays of values stays in C++, and Python requests manipulations to take place. You shouldn't set the visible/discovered/unknown value of every cell for an Entity's perspective, you manage their FOV. You shouldn't copy individual tile values from Grids or Layers or HeightMaps, you call a method to copy a region. Just a few Python commands can instruct libtcod to copy, combine, modify, and generate tens of thousands of tiles for your maps. This is fundamentally what libtcod always enabled, and rendered via its console view - McRogueFace makes the same algorithms and data structures available in a way that supports arbitrary on-screen positioning, scaling, and animation.
 

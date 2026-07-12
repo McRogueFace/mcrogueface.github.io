@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Texture
+mcrf:
+  objects: [Texture, Sprite, Grid, TileLayer]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Texture
@@ -48,6 +52,14 @@ mcrfpy.Texture(filename: str, sprite_width: int, sprite_height: int)
 
 Raises `IOError` if the image file cannot be loaded.
 
+The constructor also accepts optional `display_size` and `display_origin` parameters: `Texture(filename, sprite_width=0, sprite_height=0, display_size=None, display_origin=None)`.
+
+## Classmethods
+
+- `Texture.from_bytes(data, width, height, sprite_width, sprite_height)` — construct a texture from raw bytes.
+- `Texture.composite(layers, sprite_width, sprite_height)` — composite multiple layers into a new texture.
+- `texture.hsl_shift(h, s, l)` — instance method returning a NEW texture with a hue/saturation/lightness shift applied.
+
 ## Properties
 
 | Property | Type | Access | Description |
@@ -55,8 +67,8 @@ Raises `IOError` if the image file cannot be loaded.
 | `source` | str | read-only | Path to the loaded image file |
 | `sprite_width` | int | read-only | Width of each sprite in pixels |
 | `sprite_height` | int | read-only | Height of each sprite in pixels |
-| `sheet_width` | int | read-only | Total width of texture in pixels |
-| `sheet_height` | int | read-only | Total height of texture in pixels |
+| `sheet_width` | int | read-only | Number of sprite columns (texture_width / sprite_width) |
+| `sheet_height` | int | read-only | Number of sprite rows |
 | `sprite_count` | int | read-only | Total number of sprites in the sheet |
 
 ## Sprite Index Calculation
@@ -75,7 +87,7 @@ Sprites are indexed left-to-right, top-to-bottom, starting from 0:
 
 To calculate the index for a sprite at row `r`, column `c`:
 ```python
-columns = texture.sheet_width // texture.sprite_width
+columns = texture.sheet_width
 index = r * columns + c
 ```
 
@@ -109,11 +121,10 @@ grid = mcrfpy.Grid(
     size=(640, 480)
 )
 
-# Set tile sprites
-for x in range(40):
-    for y in range(30):
-        cell = grid.at(x, y)
-        cell.sprite_index = 0  # Floor tile
+# Set tile sprites via a TileLayer
+layer = mcrfpy.TileLayer(name="floor", z_index=0, texture=texture)
+grid.add_layer(layer)
+layer.fill(0)  # Floor tile
 
 # Add entity with same texture
 player = mcrfpy.Entity(
@@ -159,11 +170,11 @@ dungeon_tex = TextureManager.get("dungeon")
 ```python
 def print_texture_info(texture):
     """Display texture properties."""
-    cols = texture.sheet_width // texture.sprite_width
-    rows = texture.sheet_height // texture.sprite_height
+    cols = texture.sheet_width
+    rows = texture.sheet_height
 
     print(f"Source: {texture.source}")
-    print(f"Sheet size: {texture.sheet_width}x{texture.sheet_height} pixels")
+    print(f"Sheet size: {texture.sheet_width}x{texture.sheet_height}")
     print(f"Sprite size: {texture.sprite_width}x{texture.sprite_height} pixels")
     print(f"Grid: {cols} columns x {rows} rows")
     print(f"Total sprites: {texture.sprite_count}")

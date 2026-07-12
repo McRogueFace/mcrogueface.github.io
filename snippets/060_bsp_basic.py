@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Grid,Color,ColorLayer,BSP,Caption] verified=0.2.8@b6720f6 status=ok
 # BSP Basic - Binary space partition for dungeon generation
 import mcrfpy
 

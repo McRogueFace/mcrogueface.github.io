@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Scene System
+mcrf:
+  objects: [Window, Scene, Frame, Caption, Font, Sprite, Texture]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Scene System
@@ -52,19 +56,10 @@ font = mcrfpy.Font("assets/fonts/DejaVuSans.ttf")
 Captions render text at a position:
 
 ```python
-caption = mcrfpy.Caption(pos=(100, 50), text="Hello, World!")
-caption.font = font
-caption.size = 24
-caption.color = mcrfpy.Color(255, 255, 255)
+caption = mcrfpy.Caption(pos=(100, 50), text="Hello, World!", font=font)
+caption.font_size = 24
+caption.fill_color = mcrfpy.Color(255, 255, 255)
 scene.children.append(caption)
-```
-
-### Text Measurement
-
-Use Font's `measure()` method to get text dimensions for layout:
-
-```python
-width, height = font.measure("Hello", size=24)
 ```
 
 ---

@@ -1,6 +1,10 @@
 ---
 layout: default
 title: MouseButton
+mcrf:
+  objects: [MouseButton, InputState]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # MouseButton

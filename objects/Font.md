@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Font
+mcrf:
+  objects: [Font, Caption]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Font
@@ -66,7 +70,7 @@ title = mcrfpy.Caption(
     pos=(400, 100),
     font=font
 )
-title.size = 48
+title.font_size = 48
 title.fill_color = mcrfpy.Color(255, 255, 255)
 
 scene.children.append(title)
@@ -82,15 +86,15 @@ mono_font = mcrfpy.Font("assets/fonts/monospace.ttf")
 
 # Title text
 title = mcrfpy.Caption(text="Dungeon Quest", pos=(400, 50), font=title_font)
-title.size = 64
+title.font_size = 64
 
 # Description text
 desc = mcrfpy.Caption(text="A roguelike adventure", pos=(400, 130), font=body_font)
-desc.size = 24
+desc.font_size = 24
 
 # Stats display (monospace for alignment)
 stats = mcrfpy.Caption(text="HP: 100  MP: 50", pos=(50, 500), font=mono_font)
-stats.size = 16
+stats.font_size = 16
 ```
 
 ### Font Manager Class
@@ -121,7 +125,7 @@ class FontManager:
 
 # Usage
 FontManager.preload()
-caption.font = FontManager.get("title")
+caption = mcrfpy.Caption(text="Title", pos=(400, 50), font=FontManager.get("title"))
 ```
 
 ### Error Handling

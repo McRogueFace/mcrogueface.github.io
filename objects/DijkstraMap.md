@@ -1,6 +1,10 @@
 ---
 layout: default
 title: DijkstraMap
+mcrf:
+  objects: [DijkstraMap, AStarPath, Grid]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # DijkstraMap

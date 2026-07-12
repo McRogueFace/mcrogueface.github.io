@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Easing Comparison - Multiple easings side by side
 import mcrfpy
 

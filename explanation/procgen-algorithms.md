@@ -1,3 +1,12 @@
+---
+mcrf:
+  objects: [BSP, NoiseSource, HeightMap]
+  diataxis: explanation
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # Procedural Generation: Choosing the Right Algorithm
 
 *When to use BSP, WFC, Cellular Automata, or Noise—and why.*

@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Color
+mcrf:
+  objects: [Color]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Color

@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, ColorLayer, FOV, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 5: Placing Enemies
 
 ![Part 5 Preview](/images/tutorials/part_05_enemies.png)
@@ -305,7 +312,7 @@ def get_blocking_entity_at(target_grid: mcrfpy.Grid, x: int, y: int) -> mcrfpy.E
         The blocking entity, or None if no entity blocks this position
     """
     for entity in target_grid.entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             return entity
     return None
 
@@ -321,11 +328,7 @@ def clear_enemies(target_grid: mcrfpy.Grid) -> None:
 
     # Remove from grid and entity_data
     for enemy in enemies_to_remove:
-        # Find and remove from grid.entities
-        for i, e in enumerate(target_grid.entities):
-            if e == enemy:
-                target_grid.entities.remove(i)
-                break
+        target_grid.entities.remove(enemy)
         # Remove from entity_data
         if enemy in entity_data:
             del entity_data[enemy]
@@ -348,7 +351,7 @@ def update_entity_visibility(target_grid: mcrfpy.Grid) -> None:
             continue
 
         # Other entities are only visible if in FOV
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = entity.grid_x, entity.grid_y
         entity.visible = target_grid.is_in_fov(ex, ey)
 
 # =============================================================================
@@ -358,18 +361,18 @@ def update_entity_visibility(target_grid: mcrfpy.Grid) -> None:
 def update_fov(target_grid: mcrfpy.Grid, target_fov_layer, player_x: int, player_y: int) -> None:
     """Update the field of view visualization."""
     # Compute FOV from player position
-    target_grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+    target_grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
 
     # Update each tile's visibility
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if target_grid.is_in_fov(x, y):
                 mark_explored(x, y)
-                target_fov_layer.set(x, y, COLOR_VISIBLE)
+                target_fov_layer.set((x, y), COLOR_VISIBLE)
             elif is_explored(x, y):
-                target_fov_layer.set(x, y, COLOR_DISCOVERED)
+                target_fov_layer.set((x, y), COLOR_DISCOVERED)
             else:
-                target_fov_layer.set(x, y, COLOR_UNKNOWN)
+                target_fov_layer.set((x, y), COLOR_UNKNOWN)
 
     # Update entity visibility
     update_entity_visibility(target_grid)
@@ -509,10 +512,11 @@ else:
     player_start_x, player_start_y = GRID_WIDTH // 2, GRID_HEIGHT // 2
 
 # Add FOV layer
-fov_layer = grid.add_layer("color", z_index=-1)
+fov_layer = mcrfpy.ColorLayer(name="fov", z_index=-1)
+grid.add_layer(fov_layer)
 for y in range(GRID_HEIGHT):
     for x in range(GRID_WIDTH):
-        fov_layer.set(x, y, COLOR_UNKNOWN)
+        fov_layer.set((x, y), COLOR_UNKNOWN)
 
 # Create the player
 player = mcrfpy.Entity(
@@ -567,7 +571,7 @@ scene.children.append(instructions)
 
 pos_display = mcrfpy.Caption(
     pos=(50, 660),
-    text=f"Position: ({int(player.x)}, {int(player.y)})"
+    text=f"Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
@@ -628,8 +632,8 @@ def regenerate_dungeon() -> None:
     else:
         new_x, new_y = GRID_WIDTH // 2, GRID_HEIGHT // 2
 
-    player.x = new_x
-    player.y = new_y
+    player.grid_x = new_x
+    player.grid_y = new_y
 
     # Spawn new enemies
     for i, room in enumerate(rooms):
@@ -640,35 +644,35 @@ def regenerate_dungeon() -> None:
     # Reset FOV layer
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            fov_layer.set(x, y, COLOR_UNKNOWN)
+            fov_layer.set((x, y), COLOR_UNKNOWN)
 
     # Update FOV
     update_fov(grid, fov_layer, new_x, new_y)
     pos_display.text = f"Position: ({new_x}, {new_y})"
     status_display.text = "New dungeon generated!"
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input."""
     global player, grid, fov_layer
 
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     new_x, new_y = px, py
 
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
         new_y -= 1
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
         new_y += 1
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
         new_x -= 1
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
         new_x += 1
-    elif key == "R":
+    elif key == mcrfpy.Key.R:
         regenerate_dungeon()
         return
-    elif key == "Escape":
+    elif key == mcrfpy.Key.Escape:
         mcrfpy.exit()
         return
     else:
@@ -686,8 +690,8 @@ def handle_keys(key: str, action: str) -> None:
 
     # Check if we can move
     if can_move_to(grid, new_x, new_y):
-        player.x = new_x
-        player.y = new_y
+        player.grid_x = new_x
+        player.grid_y = new_y
         pos_display.text = f"Position: ({new_x}, {new_y})"
         status_display.text = "Exploring..."
         status_display.fill_color = mcrfpy.Color(100, 200, 100)
@@ -802,7 +806,7 @@ Enemies spawn in rooms, but:
 ```python
 def get_blocking_entity_at(target_grid, x, y):
     for entity in target_grid.entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             return entity
     return None
 ```
@@ -823,7 +827,7 @@ def update_entity_visibility(target_grid):
             entity.visible = True
             continue
 
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = entity.grid_x, entity.grid_y
         entity.visible = target_grid.is_in_fov(ex, ey)
 ```
 
@@ -886,7 +890,7 @@ if entity in entity_data:
 ```
 
 This pattern works well because:
-- McRogueFace entities cannot be subclassed
+- It keeps game data decoupled from the engine's Entity type (McRogueFace does support Entity subclassing, but a plain dictionary is often simpler for tutorial code)
 - Dictionary lookups are fast
 - We can store any data we want
 - Easy to serialize for save games later

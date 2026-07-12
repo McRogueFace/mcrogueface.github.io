@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Entity,Grid,InputState,Key,Scene,current_scene,default_texture] verified=0.2.8@b6720f6 status=ok
 # Grid Camera Rotation - Rotate the view
 import mcrfpy
 

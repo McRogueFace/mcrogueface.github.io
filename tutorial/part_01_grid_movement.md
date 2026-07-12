@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 1: The '@' and the Dungeon Grid
 
 ![Part 1 Preview](/images/tutorials/part_01_grid_movement.png)
@@ -96,45 +103,45 @@ scene.children.append(title)
 # Add a position display
 pos_display = mcrfpy.Caption(
     pos=(100, 50),
-    text=f"Player Position: ({player.x}, {player.y})"
+    text=f"Player Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
 scene.children.append(pos_display)
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input to move the player.
 
     Args:
-        key: The key that was pressed (e.g., "W", "Up", "Space")
-        action: Either "start" (key pressed) or "end" (key released)
+        key: The mcrfpy.Key enum value that was pressed
+        action: mcrfpy.InputState.PRESSED or mcrfpy.InputState.RELEASED
     """
     # Only respond to key press, not release
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
     # Get current player position
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
 
     # Calculate new position based on key
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         py -= 1  # Up decreases Y
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         py += 1  # Down increases Y
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         px -= 1  # Left decreases X
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         px += 1  # Right increases X
-    elif key == "Escape":
+    elif key == mcrfpy.Key.ESCAPE:
         mcrfpy.exit()
         return
 
     # Update player position
-    player.x = px
-    player.y = py
+    player.grid_x = px
+    player.grid_y = py
 
     # Update the position display
-    pos_display.text = f"Player Position: ({player.x}, {player.y})"
+    pos_display.text = f"Player Position: ({player.grid_x}, {player.grid_y})"
 
 # Set the key handler on the scene
 # This is the preferred approach - works on ANY scene, not just the active one
@@ -191,9 +198,11 @@ McRogueFace uses two coordinate systems:
 grid.pos = (100, 80)
 
 # Entity position in tiles - where it sits in the grid
-player.x = 10  # 10th column
-player.y = 7   # 7th row
+player.grid_x = 10  # 10th column
+player.grid_y = 7   # 7th row
 ```
+
+Note: `Entity.x`/`Entity.y` are pixel coordinates (the entity's drawn position), separate from `Entity.grid_x`/`Entity.grid_y`, which are the logical tile coordinates used above.
 
 ### Accessing Grid Cells
 
@@ -223,8 +232,8 @@ An `Entity` is a game object that exists on a grid. Unlike tiles, entities can m
 ### Handling Keyboard Input
 
 ```python
-def handle_keys(key: str, action: str) -> None:
-    if action != "start":
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
+    if action != mcrfpy.InputState.PRESSED:
         return
     # ... handle movement ...
 
@@ -232,8 +241,8 @@ scene.on_key = handle_keys
 ```
 
 The key handler receives two arguments:
-- `key`: A string identifying the key ("W", "Up", "Space", "Escape", etc.)
-- `action`: Either "start" (key pressed) or "end" (key released)
+- `key`: An `mcrfpy.Key` enum value identifying the key (e.g. `mcrfpy.Key.W`, `mcrfpy.Key.UP`, `mcrfpy.Key.ESCAPE`)
+- `action`: An `mcrfpy.InputState` enum value, either `PRESSED` (key pressed) or `RELEASED` (key released)
 
 Setting `scene.on_key` is the standard approach because:
 - It can be set on ANY scene, not just the active one

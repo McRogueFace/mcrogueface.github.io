@@ -1,5 +1,10 @@
 // Content-specific styles
 
+// API lifecycle badge component (added/changed/deprecated markers).
+// Imported here because assets/css/main.scss only pulls in the partials
+// listed in its manifest; badges are content-level elements.
+@import "badge";
+
 // System and object page header
 .page-header {
   margin-bottom: $spacing-2xl;

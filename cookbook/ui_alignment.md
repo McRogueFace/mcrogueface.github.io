@@ -1,3 +1,12 @@
+---
+mcrf:
+  objects: [Frame, Caption, Alignment, Color]
+  diataxis: howto
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # UI Alignment System
 
 ![UI Alignment Recipe](/images/cookbook/ui_alignment.png)

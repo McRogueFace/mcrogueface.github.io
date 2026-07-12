@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,InputState,Key,Scene,Vector] verified=0.2.8@b6720f6 status=ok
 # Scene Position - Offset all scene content
 import mcrfpy
 

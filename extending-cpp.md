@@ -2,6 +2,10 @@
 title: "Extending McRogueFace with C++"
 description: "A comprehensive guide to creating C++ extensions for the McRogueFace engine"
 layout: default
+mcrf:
+  objects: []
+  diataxis: howto
+  disposition: rewrite-pending
 ---
 
 # Extending McRogueFace with C++
@@ -10,7 +14,7 @@ layout: default
 
 ---
 
-[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/api-reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • **[C++ Extensions](https://mcrogueface.github.io/extending-cpp)**
+[**Source Code**](https://github.com/jmccardle/McRogueFace) • [**Downloads**](https://github.com/jmccardle/McRogueFace/releases) • [**Quickstart**](https://mcrogueface.github.io/quickstart) • [**Tutorials**](https://mcrogueface.github.io/tutorials) • [**API Reference**](https://mcrogueface.github.io/reference) • [**Cookbook**](https://mcrogueface.github.io/cookbook) • **[C++ Extensions](https://mcrogueface.github.io/extending-cpp)**
 
 ---
 
@@ -1020,5 +1024,5 @@ Happy hacking! 🚀
 
 ---
 
-*For more information, check out the [API Reference](/api-reference) and explore the [source code](https://github.com/jmccardle/McRogueFace).*
+*For more information, check out the [API Reference](/reference) and explore the [source code](https://github.com/jmccardle/McRogueFace).*
 

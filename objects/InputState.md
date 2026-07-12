@@ -1,6 +1,10 @@
 ---
 layout: default
 title: InputState
+mcrf:
+  objects: [InputState]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # InputState
@@ -21,40 +25,14 @@ def handle_input(key, state):
         print(f"{key} was released")
 
 scene.on_key = handle_input
-
-# Legacy string comparison still works
-if state == "start":   # Same as InputState.PRESSED
-    pass
-if state == "end":     # Same as InputState.RELEASED
-    pass
 ```
 
 ## Values
 
-| Value | Legacy String | Description |
-|-------|---------------|-------------|
-| `PRESSED` | `"start"` | Key or button was pressed down |
-| `RELEASED` | `"end"` | Key or button was released |
-
-## Legacy Compatibility
-
-For backwards compatibility with older McRogueFace code, InputState values compare equal to their legacy string equivalents:
-
-```python
-# These are equivalent
-mcrfpy.InputState.PRESSED == "start"   # True
-mcrfpy.InputState.RELEASED == "end"    # True
-
-# Both styles work in handlers
-def on_key(key, state):
-    # Modern style
-    if state == mcrfpy.InputState.PRESSED:
-        pass
-
-    # Legacy style (still supported)
-    if state == "start":
-        pass
-```
+| Value | Description |
+|-------|-------------|
+| `PRESSED` | Key or button was pressed down |
+| `RELEASED` | Key or button was released |
 
 ## Related
 

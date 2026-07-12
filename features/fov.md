@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Grid, ColorLayer, Entity, FOV, Color]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Field of View
 
 McRogueFace provides a complete field of view (FOV) system for implementing visibility, fog of war, and line-of-sight mechanics in your roguelike games.

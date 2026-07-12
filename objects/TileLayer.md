@@ -1,6 +1,10 @@
 ---
 layout: default
 title: TileLayer
+mcrf:
+  objects: [TileLayer, Grid, HeightMap, Texture]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # TileLayer

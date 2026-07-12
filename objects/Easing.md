@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Easing
+mcrf:
+  objects: [Easing]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Easing
@@ -112,6 +118,16 @@ character.animate("x", 100, 0.5, mcrfpy.Easing.EASE_IN_BACK)
 | `EASE_IN_BOUNCE` | Bounces at start |
 | `EASE_OUT_BOUNCE` | Bounces at end |
 | `EASE_IN_OUT_BOUNCE` | Bounces at both ends |
+
+### Ping-Pong
+
+| Value | Description |
+|-------|-------------|
+| `PING_PONG` | Linear back-and-forth between start and end |
+| `PING_PONG_EASE_IN` | Ping-pong with eased acceleration |
+| `PING_PONG_EASE_OUT` | Ping-pong with eased deceleration |
+| `PING_PONG_EASE_IN_OUT` | Ping-pong eased at both ends |
+| `PING_PONG_SMOOTH` | Ping-pong with smooth interpolation |
 
 ## Choosing an Easing
 

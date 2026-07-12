@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Entity,Grid,Scene,Timer,Vector] verified=0.2.8@b6720f6 status=ran
 # Entity Draw Position - Smooth sub-tile positioning
 import mcrfpy
 

@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Caption,Color,Frame] verified=0.2.8@b6720f6 status=ok
 # Caption Dimensions - Text width and height
 import mcrfpy
 

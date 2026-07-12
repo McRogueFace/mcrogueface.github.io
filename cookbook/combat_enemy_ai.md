@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Grid, Behavior, DijkstraMap, AStarPath]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Basic Enemy AI
 
 Using A* pathfinding to create enemies that chase and attack the player.

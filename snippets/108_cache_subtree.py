@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Frame,Scene,current_scene] verified=0.2.8@b6720f6 status=ok
 # Cache Subtree - Performance optimization
 import mcrfpy
 

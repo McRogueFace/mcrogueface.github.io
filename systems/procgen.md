@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Procedural Generation
+mcrf:
+  objects: [NoiseSource, HeightMap, BSP, Grid]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # Procedural Generation

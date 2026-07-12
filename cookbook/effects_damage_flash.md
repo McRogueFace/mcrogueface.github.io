@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [ColorLayer, Color, Grid, Timer, Animation]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Damage Flash Effect
 
 Flash an entity red when hit, then return to normal color.

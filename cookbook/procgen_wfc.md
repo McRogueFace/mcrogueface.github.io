@@ -3,6 +3,10 @@ layout: default
 title: Wave Function Collapse
 parent: Cookbook
 nav_order: 26
+mcrf:
+  objects: [Grid, Texture, Scene]
+  diataxis: howto
+  disposition: needs-review
 ---
 
 # Wave Function Collapse
@@ -23,6 +27,10 @@ Wave Function Collapse (WFC) generates patterns by:
 5. Repeating until complete or contradiction
 
 WFC excels at generating coherent patterns where tiles must connect properly—roads, rivers, terrain transitions, dungeon walls, etc.
+
+> **Note:** `cell.tilesprite` (used throughout this recipe) is legacy. For new code, write generated tiles to a `TileLayer` instead (e.g. `layer.set((x, y), chosen)`); the final walkability assignment stays on `grid.at(...)`.
+
+> **See also:** `mcrfpy.WangSet` and `mcrfpy.AutoRuleSet` provide native adjacency/terrain tiling for many WFC use cases. This recipe demonstrates the general constraint-propagation algorithm from first principles.
 
 ---
 
@@ -328,6 +336,11 @@ def generate_with_retries(grid, rules, max_attempts=10):
     return False
 
 # Or use backtracking (more complex but more reliable)
+# NOTE: this sketch is illustrative, not production-ready — on a failed
+# _propagate, it pops history and subtracts `tried` but never restores the
+# grid's tiles or re-propagates the reverted possibilities. A real
+# implementation needs to undo grid.at(...).tilesprite writes made during
+# the failed branch (and re-propagate) before continuing.
 class WFCBacktracking(WFC):
     """WFC with backtracking on contradiction."""
 

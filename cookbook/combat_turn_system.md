@@ -1,8 +1,17 @@
+---
+mcrf:
+  objects: [Frame, Caption, Scene, Grid]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Turn-Based Game Loop
 
 A state machine approach to managing turn-based combat and gameplay.
 
 ## Overview
+
+> **Note:** Since 0.2.x the engine ships a native turn manager - `grid.step(n=1, turn_order=None)`, `entity.turn_order`, `entity.set_behavior(mcrfpy.Behavior.SEEK/WAYPOINT)`, and the `entity.step` trigger callback (`mcrfpy.Trigger`) - use it for standard turn cycling. See the [Turn Manager system guide](../systems/turn_manager) for the full engine-native alternative. This recipe remains useful for custom initiative/energy systems the native manager does not model.
 
 Turn-based games require careful management of game state to ensure actors take turns in order. This recipe provides a `TurnManager` class that handles actor ordering, speed-based initiative, and turn cycling.
 
@@ -207,7 +216,7 @@ def cleanup_dead_actors():
 
 def handle_player_input(key, action):
     """Handle keyboard input during player's turn."""
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
     if game_state != GameState.PLAYER_TURN:
@@ -215,15 +224,15 @@ def handle_player_input(key, action):
 
     # Movement keys
     dx, dy = 0, 0
-    if key in ["W", "Up"]:
+    if key in (mcrfpy.Key.W, mcrfpy.Key.UP):
         dy = -1
-    elif key in ["S", "Down"]:
+    elif key in (mcrfpy.Key.S, mcrfpy.Key.DOWN):
         dy = 1
-    elif key in ["A", "Left"]:
+    elif key in (mcrfpy.Key.A, mcrfpy.Key.LEFT):
         dx = -1
-    elif key in ["D", "Right"]:
+    elif key in (mcrfpy.Key.D, mcrfpy.Key.RIGHT):
         dx = 1
-    elif key == "Space":
+    elif key == mcrfpy.Key.SPACE:
         # Wait/skip turn
         end_current_turn()
         return
@@ -244,7 +253,7 @@ Show the turn order to the player:
 def create_turn_order_ui(scene, turn_manager, x=800, y=50):
     """Create a visual turn order display."""
     # Background frame
-    frame = mcrfpy.Frame(x, y, 200, 300)
+    frame = mcrfpy.Frame(pos=(x, y), size=(200, 300))
     frame.fill_color = mcrfpy.Color(30, 30, 30, 200)
     frame.outline = 2
     frame.outline_color = mcrfpy.Color(100, 100, 100)
@@ -271,9 +280,9 @@ def update_turn_order_display(scene, frame, turn_manager, x=800, y=50):
         name = getattr(actor, 'name', f"Actor {i}")
         color = mcrfpy.Color(255, 255, 0) if is_current else mcrfpy.Color(200, 200, 200)
 
-        caption = mcrfpy.Caption(name, x + 10, y + 40 + i * 25)
+        caption = mcrfpy.Caption(text=name, pos=(x + 10, y + 40 + i * 25))
         caption.fill_color = color
-        ui.append(caption)
+        scene.children.append(caption)
 ```
 
 ## Tips

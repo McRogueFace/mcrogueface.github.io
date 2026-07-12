@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, ColorLayer, FOV, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 4: Field of View
 
 ![Part 4 Preview](/images/tutorials/part_04_fov.png)
@@ -221,7 +228,7 @@ def update_fov(grid: mcrfpy.Grid, fov_layer, player_x: int, player_y: int) -> No
         player_y: Player's Y position
     """
     # Compute FOV from player position
-    grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+    grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
 
     # Update each tile's visibility
     for y in range(GRID_HEIGHT):
@@ -229,13 +236,13 @@ def update_fov(grid: mcrfpy.Grid, fov_layer, player_x: int, player_y: int) -> No
             if grid.is_in_fov(x, y):
                 # Currently visible - mark as explored and show clearly
                 mark_explored(x, y)
-                fov_layer.set(x, y, COLOR_VISIBLE)
+                fov_layer.set((x, y), COLOR_VISIBLE)
             elif is_explored(x, y):
                 # Previously seen but not currently visible - show dimmed
-                fov_layer.set(x, y, COLOR_DISCOVERED)
+                fov_layer.set((x, y), COLOR_DISCOVERED)
             else:
                 # Never seen - hide completely
-                fov_layer.set(x, y, COLOR_UNKNOWN)
+                fov_layer.set((x, y), COLOR_UNKNOWN)
 
 # =============================================================================
 # Collision Detection
@@ -270,12 +277,13 @@ grid = mcrfpy.Grid(
 player_start_x, player_start_y = generate_dungeon(grid)
 
 # Add a color layer for FOV visualization (below entities)
-fov_layer = grid.add_layer("color", z_index=-1)
+fov_layer = mcrfpy.ColorLayer(name="fov", z_index=-1)
+grid.add_layer(fov_layer)
 
 # Initialize the FOV layer to all black (unknown)
 for y in range(GRID_HEIGHT):
     for x in range(GRID_WIDTH):
-        fov_layer.set(x, y, COLOR_UNKNOWN)
+        fov_layer.set((x, y), COLOR_UNKNOWN)
 
 # Create the player
 player = mcrfpy.Entity(
@@ -313,7 +321,7 @@ scene.children.append(instructions)
 
 pos_display = mcrfpy.Caption(
     pos=(50, 660),
-    text=f"Position: ({int(player.x)}, {int(player.y)})"
+    text=f"Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
@@ -334,46 +342,46 @@ scene.children.append(fov_display)
 def regenerate_dungeon() -> None:
     """Generate a new dungeon and reposition the player."""
     new_x, new_y = generate_dungeon(grid)
-    player.x = new_x
-    player.y = new_y
+    player.grid_x = new_x
+    player.grid_y = new_y
 
     # Reset FOV layer to unknown
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            fov_layer.set(x, y, COLOR_UNKNOWN)
+            fov_layer.set((x, y), COLOR_UNKNOWN)
 
     # Calculate new FOV
     update_fov(grid, fov_layer, new_x, new_y)
     pos_display.text = f"Position: ({new_x}, {new_y})"
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input."""
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     new_x, new_y = px, py
 
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
         new_y -= 1
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
         new_y += 1
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
         new_x -= 1
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
         new_x += 1
-    elif key == "R":
+    elif key == mcrfpy.Key.R:
         regenerate_dungeon()
         return
-    elif key == "Escape":
+    elif key == mcrfpy.Key.Escape:
         mcrfpy.exit()
         return
     else:
         return
 
     if can_move_to(grid, new_x, new_y):
-        player.x = new_x
-        player.y = new_y
+        player.grid_x = new_x
+        player.grid_y = new_y
         pos_display.text = f"Position: ({new_x}, {new_y})"
 
         # Update FOV after movement
@@ -394,7 +402,8 @@ print("Part 4 loaded! Explore the dungeon - watch the fog of war!")
 ### The ColorLayer
 
 ```python
-fov_layer = grid.add_layer("color", z_index=-1)
+fov_layer = mcrfpy.ColorLayer(name="fov", z_index=-1)
+grid.add_layer(fov_layer)
 ```
 
 A `ColorLayer` is a grid-sized overlay that tints each cell. The `z_index=-1` places it below entities, so the player remains visible even in darkness.
@@ -402,9 +411,9 @@ A `ColorLayer` is a grid-sized overlay that tints each cell. The `z_index=-1` pl
 ### Setting Cell Colors
 
 ```python
-fov_layer.set(x, y, COLOR_VISIBLE)    # Clear overlay - show tile
-fov_layer.set(x, y, COLOR_DISCOVERED) # Dark tint - dimmed
-fov_layer.set(x, y, COLOR_UNKNOWN)    # Solid black - hidden
+fov_layer.set((x, y), COLOR_VISIBLE)    # Clear overlay - show tile
+fov_layer.set((x, y), COLOR_DISCOVERED) # Dark tint - dimmed
+fov_layer.set((x, y), COLOR_UNKNOWN)    # Solid black - hidden
 ```
 
 The color's alpha channel controls visibility:
@@ -415,7 +424,7 @@ The color's alpha channel controls visibility:
 ### Computing FOV
 
 ```python
-grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
 ```
 
 This calculates which tiles are visible from the player's position:
@@ -461,18 +470,18 @@ We maintain a 2D array tracking which tiles have ever been seen. Once a tile is 
 ```python
 def update_fov(grid, fov_layer, player_x, player_y):
     # 1. Compute what is visible
-    grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+    grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
 
     # 2. Update each tile's visual state
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if grid.is_in_fov(x, y):
                 mark_explored(x, y)
-                fov_layer.set(x, y, COLOR_VISIBLE)
+                fov_layer.set((x, y), COLOR_VISIBLE)
             elif is_explored(x, y):
-                fov_layer.set(x, y, COLOR_DISCOVERED)
+                fov_layer.set((x, y), COLOR_DISCOVERED)
             else:
-                fov_layer.set(x, y, COLOR_UNKNOWN)
+                fov_layer.set((x, y), COLOR_UNKNOWN)
 ```
 
 This runs every time the player moves:
@@ -484,8 +493,8 @@ This runs every time the player moves:
 
 ```python
 if can_move_to(grid, new_x, new_y):
-    player.x = new_x
-    player.y = new_y
+    player.grid_x = new_x
+    player.grid_y = new_y
     update_fov(grid, fov_layer, new_x, new_y)  # Recalculate!
 ```
 
@@ -560,9 +569,9 @@ def update_lighting(timer, runtime):
     # Vary radius between 7 and 9
     flicker = math.sin(time_counter * 0.3) * 0.5 + 0.5
     current_radius = int(base_radius - 1 + flicker * 2)
-    update_fov(grid, fov_layer, int(player.x), int(player.y), current_radius)
+    update_fov(grid, fov_layer, player.grid_x, player.grid_y, current_radius)
 
-light_timer = mcrfpy.Timer("lighting", update_lighting, 0.1)  # Update every 100ms
+light_timer = mcrfpy.Timer("lighting", update_lighting, 100)  # Update every 100ms
 ```
 
 ### Challenge: Enemy Visibility
@@ -574,7 +583,7 @@ def update_entity_visibility():
     for entity in grid.entities:
         if entity == player:
             continue
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = entity.grid_x, entity.grid_y
         # Hide entities outside FOV
         entity.visible = grid.is_in_fov(ex, ey)
 ```
@@ -613,7 +622,7 @@ In Part 5, we will add enemies to the dungeon. You will learn:
 
 The complete code is shown above. Key additions from Part 3:
 
-- **FOV layer**: `grid.add_layer("color", z_index=-1)`
+- **FOV layer**: `mcrfpy.ColorLayer(name="fov", z_index=-1)` + `grid.add_layer(fov_layer)`
 - **Exploration tracking**: `explored` 2D array with `mark_explored()` and `is_explored()`
 - **FOV computation**: `grid.compute_fov()` and `grid.is_in_fov()`
 - **Visibility colors**: `COLOR_VISIBLE`, `COLOR_DISCOVERED`, `COLOR_UNKNOWN`

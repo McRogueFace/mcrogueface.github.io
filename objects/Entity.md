@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Entity
+mcrf:
+  objects: [Entity, Behavior, Trigger]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # Entity
@@ -68,7 +72,7 @@ mcrfpy.Entity(grid_pos=None, texture=None, sprite_index=0, **kwargs)
 | `opacity` | float | Transparency (0.0-1.0) |
 | `name` | str | Element name for finding |
 | `grid` | Grid | Parent grid or None |
-| `gridstate` | GridPointState | Entity's visibility state tracking |
+| `perspective_map` | DiscreteMap | Per-entity FOV memory: 3-state values per cell (0=unknown, 1=discovered, 2=visible). Lazy-allocated on first access once the entity has a grid. |
 
 ## Methods
 
@@ -78,7 +82,7 @@ mcrfpy.Entity(grid_pos=None, texture=None, sprite_index=0, **kwargs)
 | `move(dx, dy)` | Move by relative offset |
 | `resize(width, height)` | Resize to new dimensions |
 | `get_bounds()` | Get bounding rectangle (x, y, w, h) |
-| `at(x, y)` | Get grid point at position |
+| `at(x, y)` | Return the `GridPoint` at (x, y) if currently visible to this entity's `perspective_map`, otherwise `None` |
 | `die()` | Remove this entity from its grid |
 | `index()` | Return index in grid's entity collection |
 | `path_to(x, y)` | Find and follow A* path to target |

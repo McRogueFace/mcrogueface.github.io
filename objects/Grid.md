@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Grid
+mcrf:
+  objects: [Grid, GridView, TileLayer, ColorLayer, Entity, FOV, AStarPath, DijkstraMap]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # Grid

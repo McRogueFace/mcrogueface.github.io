@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Keyboard
+mcrf:
+  objects: [Keyboard]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Keyboard
@@ -9,7 +13,7 @@ Keyboard state singleton for checking modifier keys.
 
 ## Overview
 
-`Keyboard` is a singleton object that provides real-time access to modifier key states. Unlike event-based input which fires callbacks, `Keyboard` lets you poll whether shift, ctrl, alt, or system keys are currently held down.
+`Keyboard` is a singleton object that provides real-time access to modifier key states. Unlike event-based input which fires callbacks, `Keyboard` lets you poll whether shift, ctrl, alt, or system keys are currently held down. The singleton instance is `mcrfpy.keyboard` (lowercase) — the `Keyboard` class itself is not the instance.
 
 ## Quick Reference
 
@@ -17,9 +21,9 @@ Keyboard state singleton for checking modifier keys.
 def handle_key(key, state):
     if state == mcrfpy.InputState.PRESSED:
         if key == mcrfpy.Key.S:
-            if mcrfpy.Keyboard.ctrl:
+            if mcrfpy.keyboard.ctrl:
                 save_game()  # Ctrl+S
-            elif mcrfpy.Keyboard.shift:
+            elif mcrfpy.keyboard.shift:
                 save_as()    # Shift+S
             else:
                 move_south() # Just S
@@ -27,7 +31,7 @@ def handle_key(key, state):
 scene.on_key = handle_key
 
 # Check modifier states anywhere
-if mcrfpy.Keyboard.shift:
+if mcrfpy.keyboard.shift:
     print("Shift is currently held")
 ```
 
@@ -51,9 +55,9 @@ def on_key(key, state):
 
     # Check for key combinations
     if key == mcrfpy.Key.Z:
-        if mcrfpy.Keyboard.ctrl and mcrfpy.Keyboard.shift:
+        if mcrfpy.keyboard.ctrl and mcrfpy.keyboard.shift:
             redo()      # Ctrl+Shift+Z
-        elif mcrfpy.Keyboard.ctrl:
+        elif mcrfpy.keyboard.ctrl:
             undo()      # Ctrl+Z
 ```
 
@@ -62,7 +66,7 @@ def on_key(key, state):
 ```python
 def update_movement():
     speed = 2.0
-    if mcrfpy.Keyboard.shift:
+    if mcrfpy.keyboard.shift:
         speed = 4.0  # Run when shift is held
 
     move_player(speed)

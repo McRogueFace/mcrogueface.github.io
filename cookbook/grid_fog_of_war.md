@@ -3,6 +3,10 @@ layout: default
 title: Fog of War
 parent: Cookbook
 nav_order: 1
+mcrf:
+  objects: [Grid, Entity, FOV, ColorLayer, Color, Scene, Texture]
+  diataxis: howto
+  disposition: rewrite-pending
 ---
 
 # Basic Fog of War

@@ -3,6 +3,10 @@ layout: default
 title: Dijkstra Maps
 parent: Cookbook
 nav_order: 4
+mcrf:
+  objects: [Grid, DijkstraMap, Color]
+  diataxis: howto
+  disposition: rewrite-pending
 ---
 
 # Dijkstra Distance Maps

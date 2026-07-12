@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Grid, ColorLayer]
+  diataxis: explanation
+  disposition: needs-review
+---
+
 # The Entity System
 
 *How Entities, Grids, and spatial indexing work together.*
@@ -38,14 +45,14 @@ The spatial index updates automatically when entity positions change.
 
 ## Visibility System
 
-Entities track what they can see through the `gridstate` system:
+Entities track what they can see through the `perspective_map` system:
 
 - **Visible cells**: Currently in line-of-sight
 - **Discovered cells**: Previously seen (for fog-of-war)
 
 Call `entity.update_visibility()` to recompute FOV. This:
 1. Runs libtcod's FOV algorithm from entity position
-2. Updates the entity's gridstate
+2. Updates the entity's perspective_map
 3. Auto-updates any bound ColorLayers
 
 **Why bind layers?** ColorLayers can visualize FOV without Python iteration. The binding happens in C++, so updating thousands of cells is fast.
@@ -57,21 +64,22 @@ When using the FOV system, entities can retrieve other entities from their grid 
 Entity movement is straightforward:
 
 ```python
-entity.x, entity.y = new_x, new_y
+entity.grid_pos = (new_x, new_y)
 ```
 
 Check walkability before moving:
 
 ```python
 if grid.at(new_x, new_y).walkable:
-    entity.x, entity.y = new_x, new_y
+    entity.grid_pos = (new_x, new_y)
 ```
+
 
 For animated movement, use the Animation system instead of direct position changes.
 
 ## Entity Lifecycle
 
-- **Creation**: `entity = mcrfpy.Entity((x, y), texture=tex, sprite_index=idx)`
+- **Creation**: `entity = mcrfpy.Entity(grid_pos=(x, y), texture=tex, sprite_index=idx)`
 - **Adding to grid**: `grid.entities.append(entity)`
 - **Removal**: `entity.die()` removes from grid and spatial index
 - **Cleanup**: Python garbage collection handles the rest

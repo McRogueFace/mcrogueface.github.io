@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [ColorLayer, Color, Grid, Timer, Animation, Easing]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Color Pulse Effect
 
 Animate a grid cell's color layer to pulse, useful for highlighting interactable tiles, objectives, warnings, or magical effects.

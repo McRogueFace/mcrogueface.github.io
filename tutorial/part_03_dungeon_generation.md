@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 3: Procedural Dungeon Generation
 
 ![Part 3 Preview](/images/tutorials/part_03_dungeon_generation.png)
@@ -315,7 +322,7 @@ scene.children.append(instructions)
 
 pos_display = mcrfpy.Caption(
     pos=(50, 660),
-    text=f"Position: ({int(player.x)}, {int(player.y)})"
+    text=f"Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
@@ -336,39 +343,39 @@ scene.children.append(room_display)
 def regenerate_dungeon() -> None:
     """Generate a new dungeon and reposition the player."""
     new_x, new_y = generate_dungeon(grid)
-    player.x = new_x
-    player.y = new_y
+    player.grid_x = new_x
+    player.grid_y = new_y
     pos_display.text = f"Position: ({new_x}, {new_y})"
     room_display.text = "New dungeon generated!"
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input."""
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     new_x, new_y = px, py
 
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         new_y -= 1
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         new_y += 1
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         new_x -= 1
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         new_x += 1
-    elif key == "R":
+    elif key == mcrfpy.Key.R:
         regenerate_dungeon()
         return
-    elif key == "Escape":
+    elif key == mcrfpy.Key.ESCAPE:
         mcrfpy.exit()
         return
     else:
         return
 
     if can_move_to(grid, new_x, new_y):
-        player.x = new_x
-        player.y = new_y
+        player.grid_x = new_x
+        player.grid_y = new_y
         pos_display.text = f"Position: ({new_x}, {new_y})"
 
 scene.on_key = handle_keys
@@ -552,7 +559,7 @@ Step 3: Carve second room at (20, 10), connect to first
 
 ### Challenge: Direct Tunnels
 
-Modify `carve_l_tunnel` to sometimes carve a direct diagonal path using Bresenham's line algorithm:
+Modify `carve_l_tunnel` to sometimes carve a direct diagonal path using Bresenham's line algorithm. (McRogueFace also ships a built-in `mcrfpy.bresenham()` module function you can use instead of writing your own.)
 
 ```python
 def bresenham_line(x1: int, y1: int, x2: int, y2: int) -> list[tuple[int, int]]:

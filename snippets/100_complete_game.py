@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Entity,Frame,Grid,InputState,Key,Scene] verified=0.2.8@b6720f6 status=ok
 # Complete Mini-Game - Putting it all together
 import mcrfpy
 import random

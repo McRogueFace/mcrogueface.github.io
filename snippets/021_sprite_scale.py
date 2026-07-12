@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Scene,Sprite] verified=0.2.8@b6720f6 status=ok
 # Sprite Scale - Resize sprites
 import mcrfpy
 

@@ -1,3 +1,12 @@
+---
+mcrf:
+  objects: []
+  diataxis: meta
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # McRogueFace Playground Snippets
 
 This directory contains 130 runnable code snippets demonstrating every feature of the McRogueFace engine. Each snippet is designed to be:

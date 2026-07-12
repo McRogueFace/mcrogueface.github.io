@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Frame,Color,Caption,find] verified=0.2.8@b6720f6 status=broken
 # Find Elements - Locate UI by name
 import mcrfpy
 

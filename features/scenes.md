@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Key, InputState, Caption, Frame]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Scene Management
 
 Scenes are containers for your game's UI elements and entities. McRogueFace provides an object-oriented Scene class with lifecycle callbacks.

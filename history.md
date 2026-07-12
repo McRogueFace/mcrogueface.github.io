@@ -2,6 +2,10 @@
 layout: default
 title: Project History
 nav_order: 9
+mcrf:
+  objects: []
+  diataxis: meta
+  disposition: rewrite-pending
 ---
 
 # McRogueFace Project History

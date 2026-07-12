@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 2: Walls, Floors, and Collision
 
 ![Part 2 Preview](/images/tutorials/part_02_tiles_collision.png)
@@ -20,7 +27,6 @@ Each cell in a Grid has properties that control both appearance and behavior:
 | `tilesprite` | int | Which sprite index to display |
 | `walkable` | bool | Can entities move through this cell? |
 | `transparent` | bool | Does this cell block line of sight? |
-| `color` | Color | Tint color for the cell |
 
 For a roguelike, we care most about `walkable` - walls should block movement.
 
@@ -168,7 +174,7 @@ scene.children.append(instructions)
 
 pos_display = mcrfpy.Caption(
     pos=(80, 600),
-    text=f"Position: ({int(player.x)}, {int(player.y)})"
+    text=f"Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
@@ -186,26 +192,26 @@ scene.children.append(status_display)
 # Input Handling
 # =============================================================================
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input with collision detection."""
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
     # Get current position
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
 
     # Calculate intended new position
     new_x, new_y = px, py
 
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         new_y -= 1
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         new_y += 1
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         new_x -= 1
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         new_x += 1
-    elif key == "Escape":
+    elif key == mcrfpy.Key.ESCAPE:
         mcrfpy.exit()
         return
     else:
@@ -213,8 +219,8 @@ def handle_keys(key: str, action: str) -> None:
 
     # Check collision before moving
     if can_move_to(grid, new_x, new_y):
-        player.x = new_x
-        player.y = new_y
+        player.grid_x = new_x
+        player.grid_y = new_y
         pos_display.text = f"Position: ({new_x}, {new_y})"
         status_display.text = "Status: Moved"
         status_display.fill_color = mcrfpy.Color(100, 200, 100)
@@ -245,14 +251,14 @@ Safe movement in a tile-based game follows this pattern:
 ```python
 # Step 1: Calculate
 new_x, new_y = px, py
-if key == "W":
+if key == mcrfpy.Key.W:
     new_y -= 1
 
 # Step 2: Check
 if can_move_to(grid, new_x, new_y):
     # Step 3: Move
-    player.x = new_x
-    player.y = new_y
+    player.grid_x = new_x
+    player.grid_y = new_y
 ```
 
 Never move first and check later - that leads to entities getting stuck in walls.
@@ -490,7 +496,7 @@ instructions.fill_color = mcrfpy.Color(180, 180, 180)
 instructions.font_size = 16
 scene.children.append(instructions)
 
-pos_display = mcrfpy.Caption(pos=(80, 600), text=f"Position: ({int(player.x)}, {int(player.y)})")
+pos_display = mcrfpy.Caption(pos=(80, 600), text=f"Position: ({player.grid_x}, {player.grid_y})")
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
 scene.children.append(pos_display)
@@ -500,27 +506,27 @@ status_display.fill_color = mcrfpy.Color(100, 200, 100)
 status_display.font_size = 16
 scene.children.append(status_display)
 
-def handle_keys(key: str, action: str) -> None:
-    if action != "start":
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
+    if action != mcrfpy.InputState.PRESSED:
         return
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     new_x, new_y = px, py
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         new_y -= 1
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         new_y += 1
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         new_x -= 1
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         new_x += 1
-    elif key == "Escape":
+    elif key == mcrfpy.Key.ESCAPE:
         mcrfpy.exit()
         return
     else:
         return
     if can_move_to(grid, new_x, new_y):
-        player.x = new_x
-        player.y = new_y
+        player.grid_x = new_x
+        player.grid_y = new_y
         pos_display.text = f"Position: ({new_x}, {new_y})"
         status_display.text = "Status: Moved"
         status_display.fill_color = mcrfpy.Color(100, 200, 100)

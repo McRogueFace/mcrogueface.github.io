@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Scene
+mcrf:
+  objects: [Scene, Transition, Key, InputState]
+  diataxis: reference
+  disposition: rewrite-pending
 ---
 
 # Scene
@@ -25,14 +29,14 @@ scene.children.append(mcrfpy.Caption(text="Hello", pos=(100, 100)))
 
 # Handle input
 def on_key(key, action):
-    if key == "Escape" and action == "start":
+    if key == mcrfpy.Key.ESCAPE and action == mcrfpy.InputState.PRESSED:
         menu_scene.activate()
 
 scene.on_key = on_key
 
 # Activate with optional transition
 scene.activate()
-scene.activate(transition="fade", duration=0.5)
+scene.activate(mcrfpy.Transition.FADE, duration=0.5)
 
 # Subclass for lifecycle callbacks
 class GameScene(mcrfpy.Scene):
@@ -43,7 +47,7 @@ class GameScene(mcrfpy.Scene):
         print("Leaving game scene")
 
     def on_key(self, key, action):
-        if key == "Q" and action == "start":
+        if key == mcrfpy.Key.Q and action == mcrfpy.InputState.PRESSED:
             self.handle_quit()
 
     def update(self, dt):
@@ -73,6 +77,7 @@ Creates a new scene with the given name. If a scene with that name already exist
 |----------|------|--------|-------------|
 | `name` | str | read-only | Scene identifier |
 | `active` | bool | read-only | True if this is the current scene |
+| `registered` | bool | read-only | Scene registration state |
 | `children` | UICollection | read-only | UI elements in this scene |
 | `on_key` | callable | read/write | Keyboard input callback |
 | `pos` | tuple | read/write | Scene offset position (x, y) |
@@ -85,6 +90,8 @@ Creates a new scene with the given name. If a scene with that name already exist
 |--------|-------------|
 | `activate(transition=None, duration=None)` | Make this scene active |
 | `realign()` | Recompute layout for all child elements |
+| `register()` | Register the scene |
+| `unregister()` | Unregister the scene |
 
 ### activate()
 
@@ -96,8 +103,10 @@ Activates this scene, making it the current scene. Optionally applies a visual t
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `transition` | str | None | Transition type: "fade", "slide_left", "slide_right", "slide_up", "slide_down" |
+| `transition` | Transition | None | Transition type: `mcrfpy.Transition.NONE`, `FADE`, `SLIDE_LEFT`, `SLIDE_RIGHT`, `SLIDE_UP`, `SLIDE_DOWN` |
 | `duration` | float | None | Transition duration in seconds |
+
+Defaults for `transition` and `duration` come from `mcrfpy.default_transition` and `mcrfpy.default_transition_duration` when not specified.
 
 ## Lifecycle Callbacks
 
@@ -114,8 +123,8 @@ When subclassing Scene, override these methods for custom behavior:
 ### Key Handler Arguments
 
 The `on_key` callback receives:
-- `key`: String name of the key ("A", "Escape", "Space", "Num1", etc.)
-- `action`: "start" (key pressed), "end" (key released)
+- `key`: a `mcrfpy.Key` enum member (e.g. `mcrfpy.Key.A`, `mcrfpy.Key.ESCAPE`, `mcrfpy.Key.SPACE`, `mcrfpy.Key.Num1`)
+- `action`: `mcrfpy.InputState.PRESSED` or `mcrfpy.InputState.RELEASED`
 
 ## Examples
 
@@ -132,7 +141,7 @@ menu.children.append(mcrfpy.Caption(
 ))
 
 def menu_keys(key, action):
-    if key == "Return" and action == "start":
+    if key == mcrfpy.Key.ENTER and action == mcrfpy.InputState.PRESSED:
         mcrfpy.Scene("game").activate()
 
 menu.on_key = menu_keys
@@ -156,7 +165,7 @@ class InventoryScene(mcrfpy.Scene):
         self.refresh_items()
 
     def on_key(self, key, action):
-        if key == "Escape" and action == "start":
+        if key == mcrfpy.Key.ESCAPE and action == mcrfpy.InputState.PRESSED:
             mcrfpy.Scene("game").activate()
 ```
 

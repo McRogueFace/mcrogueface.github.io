@@ -1,3 +1,4 @@
+# mcrf: objects=[Animation,Caption,Color,Easing,Frame,InputState,Key,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Animation Complete Check - Monitor animation state
 import mcrfpy
 

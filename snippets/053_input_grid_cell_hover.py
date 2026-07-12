@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Grid,Color,ColorLayer,Caption] verified=0.2.8@b6720f6 status=ok
 # Input Grid Cell Hover - Hover over grid cells
 import mcrfpy
 

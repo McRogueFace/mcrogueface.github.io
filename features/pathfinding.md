@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Grid, Entity, DijkstraMap, AStarPath, Behavior]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Pathfinding
 
 McRogueFace provides built-in pathfinding algorithms for AI movement, player auto-travel, and tactical analysis. The engine supports A* pathfinding for point-to-point routes and Dijkstra maps for distance calculations.

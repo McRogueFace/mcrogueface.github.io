@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Caption
+mcrf:
+  objects: [Caption, Font]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Caption
@@ -15,10 +19,9 @@ A `Caption` renders text at a position with configurable font, size, and colors.
 
 ```python
 # Create a caption
-title = mcrfpy.Caption(text="Hello, World!", pos=(100, 50))
+title = mcrfpy.Caption(text="Hello, World!", pos=(100, 50), font=mcrfpy.Font("assets/DejaVuSans.ttf"))
 
 # Style it
-title.font = mcrfpy.Font("assets/DejaVuSans.ttf")
 title.font_size = 24
 title.fill_color = mcrfpy.Color(255, 255, 255)
 title.outline_color = mcrfpy.Color(0, 0, 0)
@@ -50,7 +53,7 @@ mcrfpy.Caption(pos=None, font=None, text='', **kwargs)
 - `outline_color` (Color): Text outline color. Default: (0, 0, 0, 255)
 - `outline` (float): Text outline thickness. Default: 0
 - `font_size` (float): Font size in points. Default: 16
-- `click` (callable): Click event handler
+- `on_click` (callable): Click event handler
 - `visible` (bool): Visibility state. Default: True
 - `opacity` (float): Opacity (0.0-1.0). Default: 1.0
 - `z_index` (int): Rendering order. Default: 0
@@ -63,7 +66,7 @@ mcrfpy.Caption(pos=None, font=None, text='', **kwargs)
 | `text` | str | Text content |
 | `x`, `y` | float | Position coordinates |
 | `pos` | Vector | Position as a Vector |
-| `font` | Font | Font used for rendering |
+| `font` | Font | Font used for rendering (read-only; set at construction only) |
 | `font_size` | int | Font size in points |
 | `fill_color` | Color | Text fill color |
 | `outline_color` | Color | Text outline color |
@@ -89,7 +92,8 @@ mcrfpy.Caption(pos=None, font=None, text='', **kwargs)
 | `move(dx, dy)` | Move by relative offset |
 | `resize(width, height)` | Resize to new dimensions |
 | `realign()` | Reapply alignment relative to parent |
-| `get_bounds()` | Get bounding rectangle (x, y, w, h) |
+
+The read-only `bounds` property returns a (pos, size) pair of Vectors.
 
 ## Related
 

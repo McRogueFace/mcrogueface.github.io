@@ -1,3 +1,12 @@
+---
+mcrf:
+  objects: [Grid, DijkstraMap, HeightMap, ColorLayer, Color]
+  diataxis: howto
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
+---
+
 # Dijkstra to HeightMap Conversion
 
 ![Dijkstra to HeightMap Recipe](/images/cookbook/grid_dijkstra_heightmap.png)
@@ -206,6 +215,8 @@ def carve_river(grid, source, destination):
         path.append(current)
 
         # Carve the path (make it water/floor)
+        # NOTE: GridPoint.tilesprite is legacy - write to a TileLayer instead,
+        # e.g. tile_layer.set(current, WATER_TILE)
         grid.at(current).tilesprite = WATER_TILE
         grid.at(current).walkable = True
 
@@ -226,6 +237,13 @@ def create_influence_map(grid, player_pos, enemy_positions):
     player_hmap = player_dijkstra.to_heightmap(unreachable=100.0)
 
     # Combined enemy influence (take minimum distance to any enemy)
+    # Compute each enemy's heightmap once, outside the per-cell loop
+    # (recomputing it width*height times per enemy is wasteful).
+    enemy_hmaps = []
+    for enemy_pos in enemy_positions:
+        enemy_dijkstra = grid.get_dijkstra_map(enemy_pos)
+        enemy_hmaps.append(enemy_dijkstra.to_heightmap(unreachable=100.0))
+
     influence = {}
 
     for y in range(height):
@@ -234,9 +252,7 @@ def create_influence_map(grid, player_pos, enemy_positions):
 
             # Find closest enemy
             min_enemy_dist = 100.0
-            for enemy_pos in enemy_positions:
-                enemy_dijkstra = grid.get_dijkstra_map(enemy_pos)
-                enemy_hmap = enemy_dijkstra.to_heightmap(unreachable=100.0)
+            for enemy_hmap in enemy_hmaps:
                 enemy_dist = enemy_hmap[(x, y)]
                 min_enemy_dist = min(min_enemy_dist, enemy_dist)
 
@@ -245,6 +261,10 @@ def create_influence_map(grid, player_pos, enemy_positions):
 
     return influence
 ```
+
+> **Tip:** `grid.get_dijkstra_map(root, roots=[...])` also accepts multiple
+> source points natively, which is the built-in way to get "distance to the
+> closest enemy" instead of computing per-enemy maps and taking the minimum.
 
 ## Performance Tips
 

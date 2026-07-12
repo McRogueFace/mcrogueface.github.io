@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Grid, FOV]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Roguelike Starter Template
 
 A minimal but complete roguelike template for McRogueFace that demonstrates the core systems needed for a traditional roguelike game.

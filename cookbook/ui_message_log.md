@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Frame, Caption, Color, Timer, Scene]
+  diataxis: howto
+  disposition: needs-review
+---
+
 # Message Log Widget
 
 ![Message Log Recipe](/images/cookbook/ui_message_log.png)
@@ -37,7 +44,7 @@ class MessageLog:
         self.messages = []  # Store message data
 
         # Create the container frame
-        self.frame = mcrfpy.Frame(x, y, w, h)
+        self.frame = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.frame.fill_color = mcrfpy.Color(20, 20, 30, 220)
         self.frame.outline = 1
         self.frame.outline_color = mcrfpy.Color(60, 60, 80)
@@ -152,7 +159,7 @@ class EnhancedMessageLog:
         self.messages = []
         self.filter_category = None  # None = show all
 
-        self.frame = mcrfpy.Frame(x, y, w, h)
+        self.frame = mcrfpy.Frame(pos=(x, y), size=(w, h))
         self.frame.fill_color = mcrfpy.Color(15, 15, 25, 240)
         self.frame.outline = 2
         self.frame.outline_color = mcrfpy.Color(80, 80, 120)
@@ -278,30 +285,30 @@ Connect keyboard or mouse input to scroll the log:
 
 ```python
 def handle_keys(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
 
-    if key == "PageUp":
+    if key == mcrfpy.Key.PAGEUP:
         log.scroll_up(5)
-    elif key == "PageDown":
+    elif key == mcrfpy.Key.PAGEDOWN:
         log.scroll_down(5)
 
 scene.on_key = handle_keys
 
 # Or with mouse scroll on the frame
-def on_log_scroll(x, y, button, action):
+def on_log_scroll(pos, button, action):
     # Note: You may need to implement scroll detection
     # based on your input system
     pass
 
-log.frame.click = on_log_scroll
+log.frame.on_click = on_log_scroll
 ```
 
 ## McRogueFace-Specific Considerations
 
 1. **Child Positioning**: Caption positions in Frame.children are in absolute screen coordinates, not relative to the frame. Calculate positions using `frame.x + offset`.
 
-2. **No Clipping**: Frames do not automatically clip children that extend beyond their bounds. If you need true clipping, keep messages within the frame area or implement virtual scrolling.
+2. **Clipping**: Frame supports `clip_children=True`, which clips children to the frame's bounds. Enable it on the log frame (`self.frame.clip_children = True`) so overflowing messages don't render outside the log area.
 
 3. **Performance**: Rebuilding all captions on every message can be expensive with many visible lines. For high-frequency logging, consider:
    - Only updating when scrolled or at intervals
@@ -341,17 +348,17 @@ mcrfpy.Timer("combat_sim", simulate_combat, 2000)
 
 # Keyboard controls
 def on_key(key, state):
-    if state != "start":
+    if state != mcrfpy.InputState.PRESSED:
         return
-    if key == "PageUp":
+    if key == mcrfpy.Key.PAGEUP:
         log.scroll_up(3)
-    elif key == "PageDown":
+    elif key == mcrfpy.Key.PAGEDOWN:
         log.scroll_down(3)
-    elif key == "C":
+    elif key == mcrfpy.Key.C:
         log.set_filter('combat')
-    elif key == "L":
+    elif key == mcrfpy.Key.L:
         log.set_filter('loot')
-    elif key == "A":
+    elif key == mcrfpy.Key.A:
         log.set_filter(None)  # All
 
 scene.on_key = on_key

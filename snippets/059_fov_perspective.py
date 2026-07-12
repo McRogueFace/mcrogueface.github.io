@@ -1,3 +1,4 @@
+# mcrf: objects=[Scene,Grid,Color,Entity,Key,InputState,Caption] verified=0.2.8@b6720f6 status=ok
 # FOV Perspective Entity - View from entity's perspective
 import mcrfpy
 

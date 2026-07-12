@@ -1,6 +1,12 @@
 ---
 layout: default
 title: Sound
+mcrf:
+  objects: [Sound]
+  diataxis: reference
+  disposition: current
+  verified: "0.2.8"
+  verified_commit: b6720f6
 ---
 
 # Sound
@@ -36,7 +42,7 @@ mcrfpy.Sound(filename: str)
 
 | Argument | Type | Description |
 |----------|------|-------------|
-| `filename` | str | Path to the audio file |
+| `filename` | str | Filename string or SoundBuffer object |
 
 Supported formats: OGG, WAV, FLAC
 
@@ -46,8 +52,10 @@ Supported formats: OGG, WAV, FLAC
 |----------|------|-------------|
 | `duration` | float | Total duration in seconds (read-only) |
 | `loop` | bool | Whether to loop when reaching the end |
+| `pitch` | float | Playback pitch multiplier (1.0 = normal) |
 | `playing` | bool | Whether sound is currently playing (read-only) |
 | `source` | str | Path to the source file (read-only) |
+| `buffer` | SoundBuffer or None | Underlying sound buffer (read-only) |
 | `volume` | float | Volume level (0-100) |
 
 ## Methods
@@ -57,6 +65,7 @@ Supported formats: OGG, WAV, FLAC
 | `play()` | Start or resume playback |
 | `pause()` | Pause playback (keeps position) |
 | `stop()` | Stop playback (resets position) |
+| `play_varied(pitch_range=0.1, volume_range=3.0)` | Play with randomized pitch/volume |
 
 ## Usage Notes
 

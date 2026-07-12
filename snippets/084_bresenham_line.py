@@ -1,3 +1,4 @@
+# mcrf: objects=[bresenham,Caption,Color,ColorLayer,Grid,Scene] verified=0.2.8@b6720f6 status=ok
 # Bresenham Line - Draw lines on grid
 import mcrfpy
 

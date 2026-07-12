@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Entity, Sprite]
+  diataxis: howto
+  disposition: rewrite-pending
+---
+
 # Status Effects
 
 Tracking and applying temporary effects like poison, confusion, and buffs.
@@ -152,11 +159,11 @@ def create_burning(damage=3, duration=3):
     def on_apply(target):
         print(f"{target.name} catches fire!")
         # Visual: change sprite or add particle effect
-        target.entity.sprite_number = target.burning_sprite
+        target.entity.sprite_index = target.burning_sprite
 
     def on_expire(target):
         print(f"{target.name} stops burning.")
-        target.entity.sprite_number = target.normal_sprite
+        target.entity.sprite_index = target.normal_sprite
 
     return StatusEffect("burning", duration, on_tick=on_tick,
                        on_apply=on_apply, on_expire=on_expire)
@@ -293,12 +300,12 @@ def create_invisibility(duration=5):
         print(f"{target.name} becomes invisible!")
         target.invisible = True
         # Visual: make sprite semi-transparent
-        # target.entity.opacity = 0.3  (if supported)
+        target.entity.opacity = 0.3
 
     def on_expire(target):
         print(f"{target.name} becomes visible again.")
         target.invisible = False
-        # target.entity.opacity = 1.0
+        target.entity.opacity = 1.0
 
     return StatusEffect("invisibility", duration,
                        on_apply=on_apply, on_expire=on_expire)
@@ -407,7 +414,7 @@ class EffectIndicator:
                 x = self.entity.entity.x * 16 + self.offset_x + i * 10
                 y = self.entity.entity.y * 16 + self.offset_y
 
-                icon = mcrfpy.Sprite(self.texture, sprite_idx, x, y, 0.5)
+                icon = mcrfpy.Sprite(pos=(x, y), texture=self.texture, sprite_index=sprite_idx, scale=0.5)
                 self.scene.children.append(icon)
                 self.icons[name] = icon
 

@@ -3,6 +3,10 @@ layout: default
 title: Dungeon Generator
 parent: Cookbook
 nav_order: 2
+mcrf:
+  objects: [Grid, Entity, Texture, Scene, BSP]
+  diataxis: howto
+  disposition: needs-review
 ---
 
 # Room and Corridor Generator
@@ -67,6 +71,8 @@ def generate_dungeon(grid, room_count=8):
 
     return rooms
 ```
+
+> **Note:** `point.tilesprite` is a legacy attribute. For visuals, prefer routing tile rendering through a `TileLayer` (e.g. `layer.set((x, y), TILE_FLOOR)`), while `walkable`/`transparent` remain set directly on `grid.at(x, y)`.
 
 ---
 
@@ -267,7 +273,7 @@ import mcrfpy
 scene = mcrfpy.Scene("dungeon")
 
 texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
-grid = mcrfpy.Grid(60, 40, texture, 0, 0, 960, 640)
+grid = mcrfpy.Grid(grid_size=(60, 40), texture=texture, pos=(0, 0), size=(960, 640))
 scene.children.append(grid)
 
 # Generate dungeon
@@ -287,7 +293,7 @@ for i in range(5):
         grid.entities.append(enemy)
 
 # Center camera
-grid.center = spawn
+grid.center_camera(spawn)
 
 print(f"Generated dungeon with {len(rooms)} rooms")
 ```
@@ -297,6 +303,8 @@ print(f"Generated dungeon with {len(rooms)} rooms")
 ## Advanced: BSP Dungeon
 
 Binary Space Partitioning creates more structured layouts:
+
+> **Note:** `mcrfpy.BSP` provides native binary space partitioning built into the engine. The hand-rolled `BSPNode` class below remains here as an illustration of the algorithm.
 
 ```python
 class BSPNode:

@@ -1,3 +1,4 @@
+# mcrf: objects=[Caption,Color,Easing,Frame,Scene,Timer] verified=0.2.8@b6720f6 status=ran
 # Animation Callback - Run code when animation ends
 import mcrfpy
 

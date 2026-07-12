@@ -1,3 +1,10 @@
+---
+mcrf:
+  objects: [Scene, Grid, Entity, Texture, Caption, Color, ColorLayer, FOV, Key, InputState]
+  diataxis: tutorial
+  disposition: needs-review
+---
+
 # Part 6: Combat System
 
 ![Part 6 Preview](/images/tutorials/part_06_combat.png)
@@ -359,7 +366,7 @@ def spawn_enemies_in_room(target_grid: mcrfpy.Grid, room: RectangularRoom, tex: 
 def get_entity_at(target_grid: mcrfpy.Grid, x: int, y: int) -> Optional[mcrfpy.Entity]:
     """Get any entity at the given position."""
     for entity in target_grid.entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             # Check if this entity is alive (or is a non-Fighter entity)
             if entity in entity_data:
                 if entity_data[entity].is_alive:
@@ -373,18 +380,15 @@ def get_blocking_entity_at(target_grid: mcrfpy.Grid, x: int, y: int, exclude: mc
     for entity in target_grid.entities:
         if entity == exclude:
             continue
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             if entity in entity_data and entity_data[entity].is_alive:
                 return entity
     return None
 
 def remove_entity(target_grid: mcrfpy.Grid, entity: mcrfpy.Entity) -> None:
     """Remove an entity from the grid and data storage."""
-    # Find and remove from grid
-    for i, e in enumerate(target_grid.entities):
-        if e == entity:
-            target_grid.entities.remove(i)
-            break
+    # Remove from grid
+    target_grid.entities.remove(entity)
 
     # Remove from entity data
     if entity in entity_data:
@@ -510,22 +514,22 @@ def update_entity_visibility(target_grid: mcrfpy.Grid) -> None:
             entity.visible = True
             continue
 
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = entity.grid_x, entity.grid_y
         entity.visible = target_grid.is_in_fov(ex, ey)
 
 def update_fov(target_grid: mcrfpy.Grid, target_fov_layer, player_x: int, player_y: int) -> None:
     """Update the field of view visualization."""
-    target_grid.compute_fov(player_x, player_y, FOV_RADIUS, mcrfpy.FOV.SHADOW)
+    target_grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
 
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
             if target_grid.is_in_fov(x, y):
                 mark_explored(x, y)
-                target_fov_layer.set(x, y, COLOR_VISIBLE)
+                target_fov_layer.set((x, y), COLOR_VISIBLE)
             elif is_explored(x, y):
-                target_fov_layer.set(x, y, COLOR_DISCOVERED)
+                target_fov_layer.set((x, y), COLOR_DISCOVERED)
             else:
-                target_fov_layer.set(x, y, COLOR_UNKNOWN)
+                target_fov_layer.set((x, y), COLOR_UNKNOWN)
 
     update_entity_visibility(target_grid)
 
@@ -559,7 +563,7 @@ def try_move_or_attack(dx: int, dy: int) -> None:
     if game_over:
         return
 
-    px, py = int(player.x), int(player.y)
+    px, py = player.grid_x, player.grid_y
     target_x = px + dx
     target_y = py + dy
 
@@ -577,8 +581,8 @@ def try_move_or_attack(dx: int, dy: int) -> None:
         enemy_turn()
     elif grid.at(target_x, target_y).walkable:
         # Move to the empty tile
-        player.x = target_x
-        player.y = target_y
+        player.grid_x = target_x
+        player.grid_y = target_y
         pos_display.text = f"Position: ({target_x}, {target_y})"
 
         # Update FOV after movement
@@ -601,7 +605,7 @@ def enemy_turn() -> None:
     if game_over:
         return
 
-    player_x, player_y = int(player.x), int(player.y)
+    player_x, player_y = player.grid_x, player.grid_y
 
     # Collect enemies that can act
     enemies = []
@@ -616,7 +620,7 @@ def enemy_turn() -> None:
         if fighter is None or not fighter.is_alive:
             continue
 
-        ex, ey = int(enemy.x), int(enemy.y)
+        ex, ey = enemy.grid_x, enemy.grid_y
 
         # Only act if in player's FOV (aware of player)
         if not grid.is_in_fov(ex, ey):
@@ -660,14 +664,14 @@ def move_toward_player(enemy: mcrfpy.Entity, ex: int, ey: int, px: int, py: int)
     new_y = ey + dy
 
     if can_move_to(grid, new_x, new_y, enemy):
-        enemy.x = new_x
-        enemy.y = new_y
+        enemy.grid_x = new_x
+        enemy.grid_y = new_y
     elif dx != 0 and can_move_to(grid, ex + dx, ey, enemy):
         # Try horizontal only
-        enemy.x = ex + dx
+        enemy.grid_x = ex + dx
     elif dy != 0 and can_move_to(grid, ex, ey + dy, enemy):
         # Try vertical only
-        enemy.y = ey + dy
+        enemy.grid_y = ey + dy
     # If all fail, enemy stays in place
 
 # =============================================================================
@@ -750,10 +754,11 @@ else:
     player_start_x, player_start_y = GRID_WIDTH // 2, GRID_HEIGHT // 2
 
 # Add FOV layer
-fov_layer = grid.add_layer("color", z_index=-1)
+fov_layer = mcrfpy.ColorLayer(name="fov", z_index=-1)
+grid.add_layer(fov_layer)
 for y in range(GRID_HEIGHT):
     for x in range(GRID_WIDTH):
-        fov_layer.set(x, y, COLOR_UNKNOWN)
+        fov_layer.set((x, y), COLOR_UNKNOWN)
 
 # Create the player
 player = mcrfpy.Entity(
@@ -808,7 +813,7 @@ scene.children.append(instructions)
 # Position display
 pos_display = mcrfpy.Caption(
     pos=(50, 580),
-    text=f"Position: ({int(player.x)}, {int(player.y)})"
+    text=f"Position: ({player.grid_x}, {player.grid_y})"
 )
 pos_display.fill_color = mcrfpy.Color(200, 200, 100)
 pos_display.font_size = 16
@@ -850,7 +855,7 @@ def restart_game() -> None:
 
     # Remove all entities from grid
     while len(grid.entities) > 0:
-        grid.entities.remove(0)
+        grid.entities.pop()
 
     # Regenerate dungeon
     fill_with_walls(grid)
@@ -915,7 +920,7 @@ def restart_game() -> None:
     # Reset FOV layer
     for y in range(GRID_HEIGHT):
         for x in range(GRID_WIDTH):
-            fov_layer.set(x, y, COLOR_UNKNOWN)
+            fov_layer.set((x, y), COLOR_UNKNOWN)
 
     # Update displays
     update_fov(grid, fov_layer, new_x, new_y)
@@ -924,19 +929,19 @@ def restart_game() -> None:
 
     add_message("A new adventure begins!", mcrfpy.Color(100, 100, 255))
 
-def handle_keys(key: str, action: str) -> None:
+def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
     """Handle keyboard input."""
     global game_over
 
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
     # Handle restart
-    if key == "R":
+    if key == mcrfpy.Key.R:
         restart_game()
         return
 
-    if key == "Escape":
+    if key == mcrfpy.Key.Escape:
         mcrfpy.exit()
         return
 
@@ -945,13 +950,13 @@ def handle_keys(key: str, action: str) -> None:
         return
 
     # Movement and attack
-    if key == "W" or key == "Up":
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
         try_move_or_attack(0, -1)
-    elif key == "S" or key == "Down":
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
         try_move_or_attack(0, 1)
-    elif key == "A" or key == "Left":
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
         try_move_or_attack(-1, 0)
-    elif key == "D" or key == "Right":
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
         try_move_or_attack(1, 0)
 
 scene.on_key = handle_keys
@@ -1077,8 +1082,8 @@ def try_move_or_attack(dx, dy):
         enemy_turn()
     elif grid.at(target_x, target_y).walkable:
         # Move
-        player.x = target_x
-        player.y = target_y
+        player.grid_x = target_x
+        player.grid_y = target_y
         update_fov(...)
         enemy_turn()
 ```

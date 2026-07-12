@@ -1,3 +1,7 @@
+---
+mcrf.disposition: migrated-to-wiki
+---
+
 # McRogueFace Tutorial Blueprint
 
 **F2 Foundation Document - Competitor Analysis & Tutorial Structure**

@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Window
+mcrf:
+  objects: [Window, Scene, Key, InputState]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Window
@@ -43,6 +47,8 @@ window.center()
 |--------|-------------|
 | `Window.get()` | Returns the Window singleton instance |
 
+> The lowercase singleton `mcrfpy.window` is also available as an alternative to `Window.get()` (both verified working).
+
 ## Properties
 
 | Property | Type | Access | Description |
@@ -83,9 +89,9 @@ Captures the current window contents to a PNG file.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `filename` | str | None | Output filename (auto-generated if None) |
+| `filename` | str | None | Output filename; if omitted, no file is saved |
 
-If no filename is provided, generates one with timestamp: `screenshot_YYYYMMDD_HHMMSS.png`
+Returns `bytes | None`. If no filename is provided, the raw RGBA pixel bytes of the window are returned instead of being saved to disk. If a filename is provided, the screenshot is saved to that PNG file and the method returns `None`.
 
 ## Examples
 
@@ -120,7 +126,7 @@ def toggle_fullscreen():
 
 # In key handler
 def on_key(key, action):
-    if key == "F11" and action == "start":
+    if key == mcrfpy.Key.F11 and action == mcrfpy.InputState.PRESSED:
         toggle_fullscreen()
 ```
 
@@ -128,9 +134,9 @@ def on_key(key, action):
 
 ```python
 def on_key(key, action):
-    if key == "F12" and action == "start":
+    if key == mcrfpy.Key.F12 and action == mcrfpy.InputState.PRESSED:
         window = mcrfpy.Window.get()
-        window.screenshot()  # Auto-named with timestamp
+        window.screenshot("screenshot.png")
 ```
 
 ### Named Screenshot

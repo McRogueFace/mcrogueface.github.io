@@ -1,6 +1,10 @@
 ---
 layout: default
 title: Drawable
+mcrf:
+  objects: [Drawable]
+  diataxis: reference
+  disposition: needs-review
 ---
 
 # Drawable
@@ -29,8 +33,8 @@ frame.move(50, 25)
 frame.resize(200, 150)
 
 # Click handling
-def on_click(x, y, button):
-    print(f"Clicked at ({x}, {y})")
+def on_click(pos, button, action):
+    print(f"Clicked at ({pos.x}, {pos.y})")
 
 frame.on_click = on_click
 ```
@@ -54,13 +58,13 @@ frame.on_click = on_click
 ## Click Handler
 
 The `on_click` callback receives:
-- `x` - X coordinate of click (relative to element)
-- `y` - Y coordinate of click (relative to element)
-- `button` - Mouse button ("left", "right", "middle")
+- `pos` (Vector) - click position
+- `button` (`mcrfpy.MouseButton` enum)
+- `action` (`mcrfpy.InputState` enum)
 
 ```python
-def handle_click(x, y, button):
-    if button == "left":
+def handle_click(pos, button, action):
+    if button == mcrfpy.MouseButton.LEFT and action == mcrfpy.InputState.PRESSED:
         print("Left clicked!")
 
 element.on_click = handle_click
@@ -77,6 +81,8 @@ All drawable UI elements inherit from Drawable:
 - **Arc** - Curved line/wedge shape
 - **Circle** - Circular shape
 - **Line** - Line segment
+
+Drawable subclasses also expose `name`, `rotation`, `origin`, and `align`.
 
 ## Z-Index Ordering
 
