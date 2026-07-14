@@ -7,7 +7,7 @@ mcrf:
   diataxis: reference
   source: generated
   verified: 0.2.8-dev
-  verified_commit: b6720f6
+  verified_commit: a46667d
 ---
 
 # Frame
@@ -67,7 +67,7 @@ Attributes:
 | `align` | {% raw %}Alignment relative to parent bounds (Alignment enum or None). When set, position is automatically calculated when parent is assigned or resized. Set to None to disable alignment and use manual positioning.{% endraw %} |
 | `bounds` | {% raw %}Axis-aligned bounding box (tuple, read-only) as a (pos, size) pair of Vectors: (Vector(x, y), Vector(width, height)).{% endraw %} |
 | `cache_subtree` | {% raw %}Cache the frame and all children to a render texture for performance (bool). Useful for complex static subtrees.{% endraw %} |
-| `children` | {% raw %}UICollection of child drawable objects rendered on top of this frame (UICollection, read-only).{% endraw %} |
+| `children` {% include api_badge.html kind="changed" version="0.2.8-dev" %} | {% raw %}UICollection of child drawable objects rendered on top of this frame (UICollection, read-only).{% endraw %} |
 | `clip_children` | {% raw %}Whether to clip child elements to the frame's bounds (bool). Enables render-texture mode when True.{% endraw %} |
 | `fill_color` | {% raw %}Fill color of the rectangle (Color). Returns a copy; modifying components requires reassignment. For animation, use 'fill_color.r', 'fill_color.g', etc.{% endraw %} |
 | `global_bounds` | {% raw %}Axis-aligned bounding box in screen coordinates (tuple, read-only) as a (pos, size) pair of Vectors: (Vector(x, y), Vector(width, height)).{% endraw %} |
@@ -89,7 +89,7 @@ Attributes:
 | `outline_color` | {% raw %}Outline color of the rectangle (Color). Returns a copy; modifying components requires reassignment. For animation, use 'outline_color.r', 'outline_color.g', etc.{% endraw %} |
 | `parent` | {% raw %}Parent drawable. Get: Returns the parent Frame/Grid if nested, or None if at scene level. Set: Assign a Frame/Grid to reparent, or None to remove from parent.{% endraw %} |
 | `pos` | {% raw %}Position as a Vector (Vector).{% endraw %} |
-| `rotate_with_camera` | {% raw %}Whether to rotate visually with parent Grid's camera_rotation (bool). False (default): stay screen-aligned. True: tilt with camera. Only affects children of UIGrid; ignored for other parents.{% endraw %} |
+| `rotate_with_camera` {% include api_badge.html kind="changed" version="0.2.8-dev" %} | {% raw %}Whether to rotate visually with parent Grid's camera_rotation (bool). False (default): stay screen-aligned. True: tilt with camera. Only affects children of a Grid; ignored for other parents.{% endraw %} |
 | `rotation` | {% raw %}Rotation angle in degrees (clockwise around origin). Animatable property.{% endraw %} |
 | `shader` | {% raw %}Shader for GPU visual effects (Shader or None). When set, the drawable is rendered through the shader program. Set to None to disable shader effects.{% endraw %} |
 | `uniforms` | {% raw %}Collection of shader uniforms (read-only access to collection). Set uniforms via dict-like syntax: drawable.uniforms['name'] = value. Supports float, vec2/3/4 tuples, PropertyBinding, and CallableBinding.{% endraw %} |

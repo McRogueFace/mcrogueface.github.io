@@ -7,7 +7,7 @@ mcrf:
   diataxis: reference
   source: generated
   verified: 0.2.8-dev
-  verified_commit: b6720f6
+  verified_commit: a46667d
 ---
 
 # VoxelGrid

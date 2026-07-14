@@ -30,7 +30,11 @@ from pathlib import Path
 SITE_ROOT = Path("/home/john/Development/mcrogueface.github.io")
 ENGINE_ROOT = Path("/home/john/Development/McRogueFace")
 
-SNIPPETS_DIR = SITE_ROOT / "snippets"
+# The snippets live in the ENGINE repo (tests/snippets/), not here. They are executed by
+# McRogueFace's test suite, so breaking the API breaks the build -- and the `status=ok`
+# in each snippet's `# mcrf:` header is stamped by an actual run rather than typed by
+# hand. The site pulls them from there; it does not keep a copy to rot in parallel.
+SNIPPETS_DIR = ENGINE_ROOT / "tests" / "snippets"
 LIBRARY_DIR = SITE_ROOT / "library"
 DEMO_SCREENS_DIR = ENGINE_ROOT / "tests" / "demo" / "screens"
 DEMO_SHOTS_DIR = ENGINE_ROOT / "tests" / "demo" / "screenshots"
@@ -177,7 +181,7 @@ def status_badge(status: str) -> str:
 
 
 # --- section builders --------------------------------------------------------
-def build_snippets_section(site_slug, site_ref) -> str:
+def build_snippets_section(engine_slug, engine_ref) -> str:
     snippets = sorted(SNIPPETS_DIR.glob("[0-9]*.py"))
     parsed = [parse_snippet(p) for p in snippets]
 
@@ -194,8 +198,8 @@ def build_snippets_section(site_slug, site_ref) -> str:
         "the source below and paste it into the editor, then press Run "
         "(Ctrl+Enter).\n")
 
-    if site_slug is None:
-        out.append("_(Could not resolve a github.com remote for the site "
+    if engine_slug is None:
+        out.append("_(Could not resolve a github.com remote for the engine "
                    "repo; source links omitted.)_\n")
 
     # Group by leading category token, preserving first-seen order.
@@ -214,10 +218,10 @@ def build_snippets_section(site_slug, site_ref) -> str:
                         f"{info['desc']}</span>"
             objs = ", ".join(f"`{o}`" for o in info["objects"]) or "&mdash;"
             badge = status_badge(info["status"])
-            if site_slug:
-                rel = f"snippets/{info['stem']}.py"
-                link = f"[view]({blob_url(site_slug, site_ref, rel)}) &middot; " \
-                       f"[raw]({raw_url(site_slug, site_ref, rel)})"
+            if engine_slug:
+                rel = f"tests/snippets/{info['stem']}.py"
+                link = f"[view]({blob_url(engine_slug, engine_ref, rel)}) &middot; " \
+                       f"[raw]({raw_url(engine_slug, engine_ref, rel)})"
             else:
                 link = "&mdash;"
             out.append(f"| {info['number']} | {title} | {objs} | {badge} | "
@@ -382,7 +386,7 @@ def main() -> int:
 
     LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
 
-    snippets_md = build_snippets_section(site_slug, site_ref)
+    snippets_md = build_snippets_section(engine_slug, engine_ref)
     demos_md, demo_stats = build_demos_section(engine_slug, engine_ref)
     games_md, games = build_games_section(engine_slug, engine_ref)
 

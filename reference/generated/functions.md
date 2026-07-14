@@ -7,7 +7,7 @@ mcrf:
   diataxis: reference
   source: generated
   verified: 0.2.8-dev
-  verified_commit: b6720f6
+  verified_commit: a46667d
 ---
 
 # Module Functions
@@ -98,7 +98,7 @@ Note:
     Example: find_all('enemy*') finds all elements starting with 'enemy', find_all('*_button') finds all elements ending with '_button'
 {% endraw %}
 
-## `mcrfpy.get_metrics() -> dict`
+## `mcrfpy.get_metrics() -> dict` {% include api_badge.html kind="changed" version="0.2.8-dev" %}
 
 {% raw %}get_metrics() -> dict
 
@@ -106,7 +106,10 @@ Get current performance metrics.
 
 
 Returns:
-    dict: Performance data with keys: frame_time (last frame duration in seconds), avg_frame_time (average frame time), fps (frames per second), draw_calls (number of draw calls), ui_elements (total UI element count), visible_elements (visible element count), current_frame (frame counter), runtime (total runtime in seconds), grid_render_time (grid rendering time in ms), entity_render_time (entity rendering time in ms), fov_overlay_time (FOV overlay rendering time in ms), python_time (Python script execution time in ms), animation_time (animation processing time in ms), grid_cells_rendered (number of grid cells rendered this frame), entities_rendered (number of entities rendered this frame), total_entities (total entity count across all grids)
+    dict: Performance data with keys: frame_time (last frame duration in MILLISECONDS), avg_frame_time (rolling mean frame time over the last 60 frames, in milliseconds), fps (frames per second, derived from avg_frame_time -- a rolling average, not an instantaneous rate), draw_calls (number of draw calls), ui_elements (total UI element count), visible_elements (visible element count), current_frame (frame counter), runtime (total runtime in seconds), grid_render_time (grid rendering time in ms), entity_render_time (entity rendering time in ms), fov_overlay_time (FOV overlay rendering time in ms), python_time (Python script execution time in ms), animation_time (animation processing time in ms), grid_cells_rendered (grid cell draws this frame, counted per layer), entities_rendered (number of entities drawn this frame), total_entities (total entity count across all rendered grids)
+
+Note:
+    All per-frame counters and timing breakdowns describe the last COMPLETED frame. Python callbacks run before the frame is rendered, so the in-progress frame's values are not available yet; frame_time, fps, runtime and current_frame are live.
 {% endraw %}
 
 ## `mcrfpy.lock() -> _LockContext`
@@ -193,11 +196,11 @@ Note:
     Benchmark filename is auto-generated from PID and timestamp. Use end_benchmark() to stop and get filename.
 {% endraw %}
 
-## `mcrfpy.step(dt: float = None) -> float`
+## `mcrfpy.step(dt: float = None) -> float` {% include api_badge.html kind="changed" version="0.2.8-dev" %}
 
 {% raw %}step(dt: float = None) -> float
 
-Advance simulation time (headless mode only).
+Run one full simulation frame (headless mode only). Advances the scene update, timers, Python Scene.update() callbacks, animations, and scene transitions (including their completion), records frame-time metrics, and increments the frame counter -- everything a windowed frame does except render and input.
 
 Args:
     dt: Time to advance in seconds. If None, advances to the next scheduled event (timer/animation).
@@ -206,5 +209,8 @@ Returns:
     float: Actual time advanced in seconds. Returns 0.0 in windowed mode.
 
 Note:
-    In windowed mode, this is a no-op and returns 0.0. Use this for deterministic simulation control in headless/testing scenarios.
+    Rendering is deliberately excluded: it is orthogonal to the clock and costs zero simulation time, so a screenshot draws arbitrary state without time passing. In windowed mode this is a no-op returning 0.0. Timers run on simulation time -- explicit, deterministic time is the point of driving a headless test with step().
+
+Note:
+    A headless --exec script must end by calling sys.exit(), because step() is the only headless clock: without it the engine cannot advance itself. Pass --run-forever for a long-lived headless process that drives itself.
 {% endraw %}

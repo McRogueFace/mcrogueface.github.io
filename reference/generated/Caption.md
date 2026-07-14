@@ -7,7 +7,7 @@ mcrf:
   diataxis: reference
   source: generated
   verified: 0.2.8-dev
-  verified_commit: b6720f6
+  verified_commit: a46667d
 ---
 
 # Caption
@@ -85,7 +85,7 @@ Attributes:
 | `outline_color` | {% raw %}Outline color of the text (Color). Returns a copy; modifying components requires reassignment. For animation, use 'outline_color.r', 'outline_color.g', etc.{% endraw %} |
 | `parent` | {% raw %}Parent drawable. Get: Returns the parent Frame/Grid if nested, or None if at scene level. Set: Assign a Frame/Grid to reparent, or None to remove from parent.{% endraw %} |
 | `pos` | {% raw %}Position as (x, y) Vector.{% endraw %} |
-| `rotate_with_camera` | {% raw %}Whether to rotate visually with parent Grid's camera_rotation (bool). False (default): stay screen-aligned. True: tilt with camera. Only affects children of UIGrid; ignored for other parents.{% endraw %} |
+| `rotate_with_camera` {% include api_badge.html kind="changed" version="0.2.8-dev" %} | {% raw %}Whether to rotate visually with parent Grid's camera_rotation (bool). False (default): stay screen-aligned. True: tilt with camera. Only affects children of a Grid; ignored for other parents.{% endraw %} |
 | `rotation` | {% raw %}Rotation angle in degrees (clockwise around origin). Animatable property.{% endraw %} |
 | `shader` | {% raw %}Shader for GPU visual effects (Shader or None). When set, the drawable is rendered through the shader program. Set to None to disable shader effects.{% endraw %} |
 | `size` | {% raw %}Text dimensions as Vector (read-only).{% endraw %} |
