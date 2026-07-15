@@ -4,7 +4,9 @@ title: Font
 mcrf:
   objects: [Font, Caption]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Font
@@ -63,6 +65,10 @@ import mcrfpy
 
 # Load font
 font = mcrfpy.Font("assets/fonts/monospace.ttf")
+
+# Create a scene to hold the caption
+scene = mcrfpy.Scene("title_screen")
+mcrfpy.current_scene = scene
 
 # Create caption with font
 title = mcrfpy.Caption(

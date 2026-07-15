@@ -6,7 +6,9 @@ nav_order: 5
 mcrf:
   objects: [Grid, TileLayer, ColorLayer, Color, Timer]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Multi-Layer Tiles
@@ -23,6 +25,10 @@ Grid layers allow stacking multiple visual elements:
 - **Effect layer**: Fog, fire, magic effects
 - **UI layer**: Selection cursors, path indicators
 
+Layers come in two flavors: `mcrfpy.TileLayer` (sprite indices, needs a `texture`) and
+`mcrfpy.ColorLayer` (RGBA colors). Construct a layer object first, then attach it with
+`grid.add_layer(layer)` — `add_layer()` never takes a string.
+
 ---
 
 ## Quick Start
@@ -30,15 +36,33 @@ Grid layers allow stacking multiple visual elements:
 ```python
 import mcrfpy
 
+scene = mcrfpy.Scene("layers")
+mcrfpy.current_scene = scene
+
+grid = mcrfpy.Grid(
+    grid_size=(16, 12),
+    texture=mcrfpy.default_texture,
+    pos=(0, 0),
+    size=(1024, 768),
+    zoom=4.0
+)
+scene.children.append(grid)
+
+TILE_FLOOR = 48
+TILE_RUG = 65
+
 # Add layers with different z-indices
-base_layer = grid.add_layer("tile", z_index=0)      # Base terrain
-decor_layer = grid.add_layer("tile", z_index=1)     # Decorations
-effect_layer = grid.add_layer("color", z_index=2)   # Color effects
-ui_layer = grid.add_layer("color", z_index=3)       # UI highlights
+base_layer = mcrfpy.TileLayer(z_index=0, name="base", texture=mcrfpy.default_texture)     # Base terrain
+decor_layer = mcrfpy.TileLayer(z_index=1, name="decor", texture=mcrfpy.default_texture)   # Decorations
+effect_layer = mcrfpy.ColorLayer(z_index=2, name="effects")                               # Color effects
+ui_layer = mcrfpy.ColorLayer(z_index=3, name="ui")                                        # UI highlights
+
+for layer in (base_layer, decor_layer, effect_layer, ui_layer):
+    grid.add_layer(layer)
 
 # Set tiles on each layer
-base_layer.set(5, 5, TILE_FLOOR)
-decor_layer.set(5, 5, TILE_RUG)  # Rug on top of floor
+base_layer.set((5, 5), TILE_FLOOR)
+decor_layer.set((5, 5), TILE_RUG)  # Rug on top of floor
 ```
 
 ---
@@ -51,15 +75,16 @@ Display sprite tiles from the grid's texture:
 
 ```python
 # Create tile layer
-decor = grid.add_layer("tile", z_index=1)
+decor = mcrfpy.TileLayer(z_index=1, name="decor", texture=mcrfpy.default_texture)
+grid.add_layer(decor)
 
 # Set decoration tiles
-decor.set(10, 10, TILE_TABLE)
-decor.set(11, 10, TILE_CHAIR)
-decor.set(10, 15, TILE_CHEST)
+decor.set((10, 10), TILE_TABLE)
+decor.set((11, 10), TILE_CHAIR)
+decor.set((10, 15), TILE_CHEST)
 
-# Clear a tile (make transparent)
-decor.clear(10, 10)
+# Clear a tile (make transparent) - TileLayer has no clear(); set index -1 instead
+decor.set((10, 10), -1)
 ```
 
 ### Color Layers
@@ -68,16 +93,17 @@ Apply color overlays to cells:
 
 ```python
 # Create color layer
-effects = grid.add_layer("color", z_index=2)
+effects = mcrfpy.ColorLayer(z_index=2, name="effects")
+grid.add_layer(effects)
 
-# Set color at position
-effects.set(5, 5, mcrfpy.Color(255, 0, 0, 128))  # Red overlay
+# Set color at position - pos is always a single (x, y) tuple, not two args
+effects.set((5, 5), mcrfpy.Color(255, 0, 0, 128))  # Red overlay
 
-# Clear color
-effects.set(5, 5, mcrfpy.Color(0, 0, 0, 0))  # Transparent
+# Clear color at one cell
+effects.set((5, 5), mcrfpy.Color(0, 0, 0, 0))  # Transparent
 
-# Clear entire layer
-effects.clear()
+# Clear entire layer - ColorLayer has no clear(); fill() with a transparent color instead
+effects.fill(mcrfpy.Color(0, 0, 0, 0))
 ```
 
 ---
@@ -119,7 +145,9 @@ class DecorationManager:
 
     def __init__(self, grid):
         self.grid = grid
-        self.layer = grid.add_layer("tile", z_index=1)
+        self.layer = grid.add_layer(
+            mcrfpy.TileLayer(z_index=1, name="decor", texture=mcrfpy.default_texture)
+        )
         self.placed = {}  # (x, y) -> decoration_name
 
     def place(self, x, y, category, name):
@@ -127,12 +155,12 @@ class DecorationManager:
         if category in self.DECORATIONS:
             if name in self.DECORATIONS[category]:
                 sprite_idx = self.DECORATIONS[category][name]
-                self.layer.set(x, y, sprite_idx)
+                self.layer.set((x, y), sprite_idx)
                 self.placed[(x, y)] = (category, name)
 
     def remove(self, x, y):
         """Remove a decoration."""
-        self.layer.clear(x, y)
+        self.layer.set((x, y), -1)
         if (x, y) in self.placed:
             del self.placed[(x, y)]
 
@@ -149,6 +177,7 @@ class DecorationManager:
 
         names = list(self.DECORATIONS[category].keys())
         grid_w, grid_h = self.grid.grid_size
+        grid_w, grid_h = int(grid_w), int(grid_h)  # grid_size components are floats
 
         placed = 0
         attempts = 0
@@ -196,7 +225,7 @@ class EffectLayer:
 
     def __init__(self, grid, z_index=2):
         self.grid = grid
-        self.layer = grid.add_layer("color", z_index=z_index)
+        self.layer = grid.add_layer(mcrfpy.ColorLayer(z_index=z_index, name="effects"))
         self.effects = {}  # (x, y) -> effect_data
 
     def add_effect(self, x, y, effect_type, duration=None, **kwargs):
@@ -212,7 +241,7 @@ class EffectLayer:
         """Remove an effect."""
         if (x, y) in self.effects:
             del self.effects[(x, y)]
-            self.layer.set(x, y, mcrfpy.Color(0, 0, 0, 0))
+            self.layer.set((x, y), mcrfpy.Color(0, 0, 0, 0))
 
     def update(self, dt):
         """Update all effects."""
@@ -230,7 +259,7 @@ class EffectLayer:
 
             # Calculate color based on effect type
             color = self._calculate_color(effect)
-            self.layer.set(x, y, color)
+            self.layer.set((x, y), color)
 
         for pos in to_remove:
             self.remove_effect(*pos)
@@ -312,15 +341,13 @@ class LayeredGrid:
         self.grid = grid
 
         # Layer stack (bottom to top)
-        self.fog = grid.add_layer("color", z_index=-1)      # Fog of war
+        self.fog = mcrfpy.ColorLayer(z_index=-1, name="fog")   # Fog of war
+        grid.add_layer(self.fog)
         # z_index=0 is the base grid tiles
-        self.decor = grid.add_layer("tile", z_index=1)      # Decorations
-        self.effects = grid.add_layer("color", z_index=2)   # Effects
-        self.highlight = grid.add_layer("color", z_index=3) # UI highlights
-
-        # Managers
-        self.decor_manager = DecorationManager(self.decor)
-        self.effect_manager = EffectManager(self.effects)
+        self.decor_manager = DecorationManager(grid)           # Decorations (z_index=1)
+        self.effect_manager = EffectLayer(grid, z_index=2)     # Effects
+        self.highlight = mcrfpy.ColorLayer(z_index=3, name="highlight")  # UI highlights
+        grid.add_layer(self.highlight)
 
     def update(self, dt):
         """Update all animated layers."""
@@ -329,21 +356,24 @@ class LayeredGrid:
     def set_fog(self, entity):
         """Apply fog of war from entity perspective."""
         self.fog.apply_perspective(
-            entity=entity,
+            entity,
             visible=mcrfpy.Color(0, 0, 0, 0),
             discovered=mcrfpy.Color(20, 20, 40, 160),
             unknown=mcrfpy.Color(0, 0, 0, 255)
         )
+        # apply_perspective() only binds the layer; repaint it once now, and
+        # call update_perspective() again whenever the entity moves.
+        self.fog.update_perspective()
 
     def highlight_cells(self, cells, color):
         """Highlight cells for targeting/movement."""
-        self.highlight.clear()
+        self.highlight.fill(mcrfpy.Color(0, 0, 0, 0))
         for x, y in cells:
-            self.highlight.set(x, y, color)
+            self.highlight.set((x, y), color)
 
     def clear_highlights(self):
         """Clear all highlights."""
-        self.highlight.clear()
+        self.highlight.fill(mcrfpy.Color(0, 0, 0, 0))
 
 
 # Usage
@@ -359,7 +389,7 @@ layers.decor_manager.place(10, 10, 'furniture', 'chest')
 layers.effect_manager.add_effect(15, 15, 'fire')
 
 # Highlight movement range
-movement_cells = get_movement_range(player.pos, 5)
+movement_cells = get_movement_range(player.cell_pos, 5)
 layers.highlight_cells(movement_cells, mcrfpy.Color(50, 100, 255, 80))
 
 # Game loop
@@ -394,14 +424,14 @@ class OptimizedLayers:
         """Apply all queued updates."""
         for layer, updates in self.batch_updates:
             for x, y, value in updates:
-                layer.set(x, y, value)
+                layer.set((x, y), value)
         self.batch_updates = []
 
     def update_dirty_only(self, effect_layer, effect_calculator):
         """Only update cells marked dirty."""
         for x, y in self.dirty_effects:
             color = effect_calculator(x, y)
-            effect_layer.set(x, y, color)
+            effect_layer.set((x, y), color)
         self.dirty_effects.clear()
 ```
 
@@ -412,7 +442,8 @@ class OptimizedLayers:
 1. **Z-index order**: Lower numbers render first (behind higher numbers)
 2. **Alpha blending**: Layers blend - use alpha for transparency
 3. **Performance**: Minimize layer count; combine when possible
-4. **Clear strategically**: clear() is faster than setting each cell transparent
+4. **Clear strategically**: neither layer type has a `clear()` method — `fill()` (whole
+   layer) is faster than setting each cell transparent/`-1` individually
 5. **Fog on bottom**: Use negative z-index for fog of war
 
 ---

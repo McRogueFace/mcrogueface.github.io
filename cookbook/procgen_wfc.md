@@ -6,7 +6,9 @@ nav_order: 26
 mcrf:
   objects: [Grid, Texture, Scene]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Wave Function Collapse
@@ -436,7 +438,7 @@ scene = mcrfpy.Scene("wfc_demo")
 scene.activate()
 mcrfpy.step(0.1)
 
-texture = mcrfpy.Texture("assets/terrain.png", 16, 16)
+texture = mcrfpy.Texture("assets/terrain.png", 16, 16)  # or mcrfpy.default_texture
 grid = mcrfpy.Grid(grid_size=(30, 20), texture=texture,
                    pos=(0, 0), size=(480, 320))
 scene.children.append(grid)

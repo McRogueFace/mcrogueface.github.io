@@ -4,7 +4,9 @@ title: Texture
 mcrf:
   objects: [Texture, Sprite, Grid, TileLayer]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Texture
@@ -35,7 +37,7 @@ sprite = mcrfpy.Sprite(pos=(100, 100), texture=texture, sprite_index=0)
 grid = mcrfpy.Grid(grid_size=(20, 15), texture=texture)
 
 # Use with Entity
-player = mcrfpy.Entity(pos=(5, 5), texture=texture, sprite_index=84)
+player = mcrfpy.Entity(grid_pos=(5, 5), texture=texture, sprite_index=84)
 ```
 
 ## Constructor
@@ -128,7 +130,7 @@ layer.fill(0)  # Floor tile
 
 # Add entity with same texture
 player = mcrfpy.Entity(
-    pos=(5, 5),
+    grid_pos=(5, 5),
     texture=texture,
     sprite_index=84  # Player sprite
 )

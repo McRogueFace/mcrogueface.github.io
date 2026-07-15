@@ -4,7 +4,9 @@ title: Caption
 mcrf:
   objects: [Caption, Font]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Caption
@@ -18,8 +20,13 @@ A `Caption` renders text at a position with configurable font, size, and colors.
 ## Quick Reference
 
 ```python
+import mcrfpy
+
+scene = mcrfpy.Scene("caption_demo")
+mcrfpy.current_scene = scene
+
 # Create a caption
-title = mcrfpy.Caption(text="Hello, World!", pos=(100, 50), font=mcrfpy.Font("assets/DejaVuSans.ttf"))
+title = mcrfpy.Caption(text="Hello, World!", pos=(100, 50), font=mcrfpy.Font("assets/JetbrainsMono.ttf"))
 
 # Style it
 title.font_size = 24
@@ -31,6 +38,7 @@ title.outline = 1
 scene.children.append(title)
 
 # Update text dynamically
+score = 100
 title.text = f"Score: {score}"
 
 # Animate properties

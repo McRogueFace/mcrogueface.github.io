@@ -3,7 +3,9 @@ title: UI Widget Patterns
 mcrf:
   objects: [Frame, Caption, Color, Key, MouseButton, InputState, Scene, Vector]
   diataxis: howto
-  disposition: migrated-from-wiki-needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # UI Widget Patterns
@@ -47,6 +49,8 @@ mcrfpy.current_scene = scene
 A clickable frame with label and hover feedback.
 
 ```python
+import sys
+
 def make_button(parent, pos, text, on_click):
     """Create a button with hover effects."""
     btn = mcrfpy.Frame(pos=pos, size=(120, 32),

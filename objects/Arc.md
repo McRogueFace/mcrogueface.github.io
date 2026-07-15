@@ -5,8 +5,8 @@ mcrf:
   objects: [Arc]
   diataxis: reference
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Arc
@@ -20,6 +20,9 @@ An `Arc` draws a portion of a circle's outline between a start and end angle. Us
 ## Quick Reference
 
 ```python
+scene = mcrfpy.Scene("arc_demo")
+mcrfpy.current_scene = scene
+
 # Create a simple arc
 arc = mcrfpy.Arc(center=(200, 200), radius=50, start_angle=0, end_angle=180)
 
@@ -39,6 +42,7 @@ progress = mcrfpy.Arc(
     color=mcrfpy.Color(0, 255, 0),
     thickness=5
 )
+scene.children.append(progress)
 ```
 
 ## Constructor
@@ -83,7 +87,7 @@ mcrfpy.Arc(center=None, radius=0, start_angle=0, end_angle=90, color=None, thick
 |--------|-------------|
 | `animate(property, target, duration, easing)` | Animate a property over time |
 | `move(dx, dy)` | Move by relative offset |
-| `resize(dw, dh)` | Resize by relative amount |
+| `resize(width, height)` | Resize to new dimensions |
 | `realign()` | Recalculate position based on alignment |
 
 ## Events
@@ -98,6 +102,9 @@ mcrfpy.Arc(center=None, radius=0, start_angle=0, end_angle=90, color=None, thick
 ## Example
 
 ```python
+scene = mcrfpy.Scene("arc_spinner")
+mcrfpy.current_scene = scene
+
 # Animated loading spinner
 arc = mcrfpy.Arc(
     center=(150, 150),

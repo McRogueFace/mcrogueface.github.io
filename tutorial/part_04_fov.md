@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 4: Field of View
@@ -218,7 +220,13 @@ def generate_dungeon(grid: mcrfpy.Grid) -> tuple[int, int]:
 # Field of View
 # =============================================================================
 
-def update_fov(grid: mcrfpy.Grid, fov_layer, player_x: int, player_y: int) -> None:
+def update_fov(
+    grid: mcrfpy.Grid,
+    fov_layer,
+    player_x: int,
+    player_y: int,
+    radius: int = FOV_RADIUS,
+) -> None:
     """Update the field of view visualization.
 
     Args:
@@ -226,9 +234,10 @@ def update_fov(grid: mcrfpy.Grid, fov_layer, player_x: int, player_y: int) -> No
         fov_layer: The ColorLayer for FOV visualization
         player_x: Player's X position
         player_y: Player's Y position
+        radius: How far the player can see (defaults to FOV_RADIUS)
     """
     # Compute FOV from player position
-    grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
+    grid.compute_fov((player_x, player_y), radius=radius, algorithm=mcrfpy.FOV.SHADOW)
 
     # Update each tile's visibility
     for y in range(GRID_HEIGHT):
@@ -468,9 +477,9 @@ We maintain a 2D array tracking which tiles have ever been seen. Once a tile is 
 ### The Update Loop
 
 ```python
-def update_fov(grid, fov_layer, player_x, player_y):
+def update_fov(grid, fov_layer, player_x, player_y, radius=FOV_RADIUS):
     # 1. Compute what is visible
-    grid.compute_fov((player_x, player_y), radius=FOV_RADIUS, algorithm=mcrfpy.FOV.SHADOW)
+    grid.compute_fov((player_x, player_y), radius=radius, algorithm=mcrfpy.FOV.SHADOW)
 
     # 2. Update each tile's visual state
     for y in range(GRID_HEIGHT):

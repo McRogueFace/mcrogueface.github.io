@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 6: Combat System
@@ -941,7 +943,7 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         restart_game()
         return
 
-    if key == mcrfpy.Key.Escape:
+    if key == mcrfpy.Key.ESCAPE:
         mcrfpy.exit()
         return
 
@@ -950,13 +952,13 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         return
 
     # Movement and attack
-    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         try_move_or_attack(0, -1)
-    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         try_move_or_attack(0, 1)
-    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         try_move_or_attack(-1, 0)
-    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         try_move_or_attack(1, 0)
 
 scene.on_key = handle_keys
@@ -1168,7 +1170,7 @@ game_over: bool = False
 
 def handle_keys(key, action):
     if game_over:
-        if key == "R":
+        if key == mcrfpy.Key.R:
             restart_game()
         return  # Ignore other input
 

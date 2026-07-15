@@ -4,7 +4,9 @@ title: HeightMap
 mcrf:
   objects: [HeightMap, NoiseSource, BSP]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # HeightMap

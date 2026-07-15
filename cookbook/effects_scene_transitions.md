@@ -1,8 +1,10 @@
 ---
 mcrf:
-  objects: [Scene, Frame, Color, Timer, Transition, Animation]
+  objects: [Scene, Frame, Color, Timer, Transition, Easing]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Scene Transition Effects
@@ -16,16 +18,13 @@ McRogueFace provides simple built-in scene transitions:
 ```python
 import mcrfpy
 
-# Instant switch (default)
-game_scene.activate()
-
-# With scene references, you can use activate()
+# Create scenes, then switch between them with activate()
 menu_scene = mcrfpy.Scene("menu")
 game_scene = mcrfpy.Scene("game")
 
-# To switch scenes:
-game_scene.activate()
+# Instant switch (default) -- also settable via mcrfpy.current_scene = scene
 menu_scene.activate()
+game_scene.activate()
 ```
 
 ## Custom Fade Transition
@@ -50,8 +49,9 @@ class FadeTransition:
 
     def _create_overlay(self, scene):
         """Create a full-screen black overlay in the given scene."""
-        self.overlay = mcrfpy.Frame(0, 0, 1024, 768)
-        self.overlay.fill_color = mcrfpy.Color(0, 0, 0, 0)
+        self.overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
+        self.overlay.fill_color = mcrfpy.Color(0, 0, 0, 255)
+        self.overlay.opacity = 0.0
         self.overlay.z_index = 9999  # On top of everything
         scene.children.append(self.overlay)
 
@@ -69,8 +69,7 @@ class FadeTransition:
         self._create_overlay(self.current_scene)
 
         # Fade to black
-        anim = mcrfpy.Animation("opacity", 1.0, half_duration, "easeIn")
-        anim.start(self.overlay)
+        self.overlay.animate("opacity", 1.0, half_duration, mcrfpy.Easing.EASE_IN)
 
         # Switch scene and fade in
         def switch_and_fade_in(timer, runtime):
@@ -82,21 +81,17 @@ class FadeTransition:
             self.overlay.opacity = 1.0  # Start fully opaque
 
             # Fade in
-            anim_in = mcrfpy.Animation("opacity", 0.0, half_duration, "easeOut")
-            anim_in.start(self.overlay)
+            self.overlay.animate("opacity", 0.0, half_duration, mcrfpy.Easing.EASE_OUT)
 
             # Cleanup and callback
             def cleanup(timer, runtime):
-                for i, elem in enumerate(self.target_scene.children):
-                    if elem is self.overlay:
-                        self.target_scene.children.remove(i)
-                        break
+                self.target_scene.children.remove(self.overlay)
                 if on_complete:
                     on_complete()
 
-            mcrfpy.Timer("fade_cleanup", cleanup, int(half_duration * 1000) + 50)
+            mcrfpy.Timer("fade_cleanup", cleanup, int(half_duration * 1000) + 50, once=True)
 
-        mcrfpy.Timer("fade_switch", switch_and_fade_in, int(half_duration * 1000))
+        mcrfpy.Timer("fade_switch", switch_and_fade_in, int(half_duration * 1000), once=True)
 
 
 # Usage
@@ -131,41 +126,37 @@ def flash_transition(current_scene, target_scene, color=(255, 255, 255), duratio
         duration: Total transition time
     """
     # Create colored overlay in current scene
-    overlay = mcrfpy.Frame(0, 0, 1024, 768)
-    overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 0)
+    overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
+    overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
+    overlay.opacity = 0.0
     overlay.z_index = 9999
     current_scene.children.append(overlay)
 
     quarter = duration / 4
 
     # Flash in (fast)
-    anim_in = mcrfpy.Animation("opacity", 1.0, quarter, "easeOut")
-    anim_in.start(overlay)
+    overlay.animate("opacity", 1.0, quarter, mcrfpy.Easing.EASE_OUT)
 
     # Hold, then switch and fade out
     def switch_scene(timer, runtime):
         target_scene.activate()
 
         # Create overlay in new scene
-        new_overlay = mcrfpy.Frame(0, 0, 1024, 768)
+        new_overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
         new_overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
         new_overlay.z_index = 9999
         target_scene.children.append(new_overlay)
 
         # Fade out (slower)
-        anim_out = mcrfpy.Animation("opacity", 0.0, duration / 2, "easeIn")
-        anim_out.start(new_overlay)
+        new_overlay.animate("opacity", 0.0, duration / 2, mcrfpy.Easing.EASE_IN)
 
         # Cleanup
         def cleanup(timer, runtime):
-            for i, elem in enumerate(target_scene.children):
-                if elem is new_overlay:
-                    target_scene.children.remove(i)
-                    break
+            target_scene.children.remove(new_overlay)
 
-        mcrfpy.Timer("flash_cleanup", cleanup, int(duration * 500) + 50)
+        mcrfpy.Timer("flash_cleanup", cleanup, int(duration * 500) + 50, once=True)
 
-    mcrfpy.Timer("flash_switch", switch_scene, int(quarter * 2000))
+    mcrfpy.Timer("flash_switch", switch_scene, int(quarter * 2000), once=True)
 
 
 # Usage
@@ -199,19 +190,19 @@ def wipe_transition(current_scene, target_scene, direction="right", duration=0.5
 
     # Set up wipe overlay based on direction
     if direction == "right":
-        overlay = mcrfpy.Frame(0, 0, 0, 768)
+        overlay = mcrfpy.Frame(pos=(0, 0), size=(0, 768))
         anim_prop = "w"
         anim_target = 1024
     elif direction == "left":
-        overlay = mcrfpy.Frame(1024, 0, 0, 768)
+        overlay = mcrfpy.Frame(pos=(1024, 0), size=(0, 768))
         anim_prop = "x"  # Move left edge
         anim_target = 0
     elif direction == "down":
-        overlay = mcrfpy.Frame(0, 0, 1024, 0)
+        overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 0))
         anim_prop = "h"
         anim_target = 768
     else:  # up
-        overlay = mcrfpy.Frame(0, 768, 1024, 0)
+        overlay = mcrfpy.Frame(pos=(0, 768), size=(1024, 0))
         anim_prop = "y"
         anim_target = 0
 
@@ -220,8 +211,7 @@ def wipe_transition(current_scene, target_scene, direction="right", duration=0.5
     current_scene.children.append(overlay)
 
     # Wipe in
-    anim = mcrfpy.Animation(anim_prop, float(anim_target), half, "easeInOut")
-    anim.start(overlay)
+    overlay.animate(anim_prop, float(anim_target), half, mcrfpy.Easing.EASE_IN_OUT)
 
     # Switch and wipe out
     def switch_and_wipe(timer, runtime):
@@ -229,19 +219,19 @@ def wipe_transition(current_scene, target_scene, direction="right", duration=0.5
 
         # Create covering overlay
         if direction == "right":
-            new_overlay = mcrfpy.Frame(0, 0, 1024, 768)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
             new_anim_prop = "x"
             new_anim_target = 1024
         elif direction == "left":
-            new_overlay = mcrfpy.Frame(0, 0, 1024, 768)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
             new_anim_prop = "w"
             new_anim_target = 0
         elif direction == "down":
-            new_overlay = mcrfpy.Frame(0, 0, 1024, 768)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
             new_anim_prop = "y"
             new_anim_target = -768
         else:
-            new_overlay = mcrfpy.Frame(0, 0, 1024, 768)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
             new_anim_prop = "h"
             new_anim_target = 0
 
@@ -250,19 +240,15 @@ def wipe_transition(current_scene, target_scene, direction="right", duration=0.5
         target_scene.children.append(new_overlay)
 
         # Wipe out
-        anim_out = mcrfpy.Animation(new_anim_prop, float(new_anim_target), half, "easeInOut")
-        anim_out.start(new_overlay)
+        new_overlay.animate(new_anim_prop, float(new_anim_target), half, mcrfpy.Easing.EASE_IN_OUT)
 
         # Cleanup
         def cleanup(timer, runtime):
-            for i, elem in enumerate(target_scene.children):
-                if elem is new_overlay:
-                    target_scene.children.remove(i)
-                    break
+            target_scene.children.remove(new_overlay)
 
-        mcrfpy.Timer("wipe_cleanup", cleanup, int(half * 1000) + 50)
+        mcrfpy.Timer("wipe_cleanup", cleanup, int(half * 1000) + 50, once=True)
 
-    mcrfpy.Timer("wipe_switch", switch_and_wipe, int(half * 1000))
+    mcrfpy.Timer("wipe_switch", switch_and_wipe, int(half * 1000), once=True)
 
 
 # Usage
@@ -332,105 +318,92 @@ class TransitionManager:
     def _fade(self, target_scene, duration, color):
         half = duration / 2
 
-        overlay = mcrfpy.Frame(0, 0, self.width, self.height)
-        overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 0)
+        overlay = mcrfpy.Frame(pos=(0, 0), size=(self.width, self.height))
+        overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
+        overlay.opacity = 0.0
         overlay.z_index = 9999
         self.current_scene.children.append(overlay)
 
-        anim = mcrfpy.Animation("opacity", 1.0, half, "easeIn")
-        anim.start(overlay)
+        overlay.animate("opacity", 1.0, half, mcrfpy.Easing.EASE_IN)
 
         def phase2(timer, runtime):
             target_scene.activate()
 
-            new_overlay = mcrfpy.Frame(0, 0, self.width, self.height)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(self.width, self.height))
             new_overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
             new_overlay.z_index = 9999
             target_scene.children.append(new_overlay)
 
-            anim2 = mcrfpy.Animation("opacity", 0.0, half, "easeOut")
-            anim2.start(new_overlay)
+            new_overlay.animate("opacity", 0.0, half, mcrfpy.Easing.EASE_OUT)
 
             def cleanup(timer, runtime):
-                for i, elem in enumerate(target_scene.children):
-                    if elem is new_overlay:
-                        target_scene.children.remove(i)
-                        break
+                target_scene.children.remove(new_overlay)
                 self.current_scene = target_scene
                 self.is_transitioning = False
 
-            mcrfpy.Timer("fade_done", cleanup, int(half * 1000) + 50)
+            mcrfpy.Timer("fade_done", cleanup, int(half * 1000) + 50, once=True)
 
-        mcrfpy.Timer("fade_switch", phase2, int(half * 1000))
+        mcrfpy.Timer("fade_switch", phase2, int(half * 1000), once=True)
 
     def _flash(self, target_scene, duration, color):
         quarter = duration / 4
 
-        overlay = mcrfpy.Frame(0, 0, self.width, self.height)
-        overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 0)
+        overlay = mcrfpy.Frame(pos=(0, 0), size=(self.width, self.height))
+        overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
+        overlay.opacity = 0.0
         overlay.z_index = 9999
         self.current_scene.children.append(overlay)
 
-        anim = mcrfpy.Animation("opacity", 1.0, quarter, "easeOut")
-        anim.start(overlay)
+        overlay.animate("opacity", 1.0, quarter, mcrfpy.Easing.EASE_OUT)
 
         def phase2(timer, runtime):
             target_scene.activate()
 
-            new_overlay = mcrfpy.Frame(0, 0, self.width, self.height)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(self.width, self.height))
             new_overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
             new_overlay.z_index = 9999
             target_scene.children.append(new_overlay)
 
-            anim2 = mcrfpy.Animation("opacity", 0.0, duration / 2, "easeIn")
-            anim2.start(new_overlay)
+            new_overlay.animate("opacity", 0.0, duration / 2, mcrfpy.Easing.EASE_IN)
 
             def cleanup(timer, runtime):
-                for i, elem in enumerate(target_scene.children):
-                    if elem is new_overlay:
-                        target_scene.children.remove(i)
-                        break
+                target_scene.children.remove(new_overlay)
                 self.current_scene = target_scene
                 self.is_transitioning = False
 
-            mcrfpy.Timer("flash_done", cleanup, int(duration * 500) + 50)
+            mcrfpy.Timer("flash_done", cleanup, int(duration * 500) + 50, once=True)
 
-        mcrfpy.Timer("flash_switch", phase2, int(quarter * 2000))
+        mcrfpy.Timer("flash_switch", phase2, int(quarter * 2000), once=True)
 
     def _wipe(self, target_scene, duration, direction, color):
         # Simplified wipe - right direction only for brevity
         half = duration / 2
 
-        overlay = mcrfpy.Frame(0, 0, 0, self.height)
+        overlay = mcrfpy.Frame(pos=(0, 0), size=(0, self.height))
         overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
         overlay.z_index = 9999
         self.current_scene.children.append(overlay)
 
-        anim = mcrfpy.Animation("w", float(self.width), half, "easeInOut")
-        anim.start(overlay)
+        overlay.animate("w", float(self.width), half, mcrfpy.Easing.EASE_IN_OUT)
 
         def phase2(timer, runtime):
             target_scene.activate()
 
-            new_overlay = mcrfpy.Frame(0, 0, self.width, self.height)
+            new_overlay = mcrfpy.Frame(pos=(0, 0), size=(self.width, self.height))
             new_overlay.fill_color = mcrfpy.Color(color[0], color[1], color[2], 255)
             new_overlay.z_index = 9999
             target_scene.children.append(new_overlay)
 
-            anim2 = mcrfpy.Animation("x", float(self.width), half, "easeInOut")
-            anim2.start(new_overlay)
+            new_overlay.animate("x", float(self.width), half, mcrfpy.Easing.EASE_IN_OUT)
 
             def cleanup(timer, runtime):
-                for i, elem in enumerate(target_scene.children):
-                    if elem is new_overlay:
-                        target_scene.children.remove(i)
-                        break
+                target_scene.children.remove(new_overlay)
                 self.current_scene = target_scene
                 self.is_transitioning = False
 
-            mcrfpy.Timer("wipe_done", cleanup, int(half * 1000) + 50)
+            mcrfpy.Timer("wipe_done", cleanup, int(half * 1000) + 50, once=True)
 
-        mcrfpy.Timer("wipe_switch", phase2, int(half * 1000))
+        mcrfpy.Timer("wipe_switch", phase2, int(half * 1000), once=True)
 
 
 # Usage

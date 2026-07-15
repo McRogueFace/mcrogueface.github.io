@@ -2,7 +2,9 @@
 mcrf:
   objects: [Grid, Entity, DijkstraMap, AStarPath, Behavior]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Pathfinding
@@ -15,16 +17,18 @@ A* finds the shortest path between two points, respecting walkability.
 
 ### Entity.path_to()
 
-The simplest way to pathfind - ask an entity for a path to a destination:
+The simplest way to pathfind - ask an entity for a path to a destination. `path_to(x, y)`
+takes **grid/tile coordinates** and returns a plain `list` of `(x, y)` tuples (not an
+`AStarPath` object):
 
 ```python
 import mcrfpy
 
-# Create an entity on a grid
-entity = mcrfpy.Entity(grid_pos=(5, 5), texture=texture, sprite_index=64)
+# Create an entity on a grid (grid must already exist)
+entity = mcrfpy.Entity(grid_pos=(5, 5), texture=mcrfpy.default_texture, sprite_index=64)
 grid.entities.append(entity)
 
-# Find path to destination
+# Find path to destination (grid coordinates)
 path = entity.path_to(20, 15)
 
 if path:
@@ -35,17 +39,24 @@ else:
     print("No path available")
 ```
 
-The returned path is a list of `(x, y)` tuples representing each step from the current position to the destination.
+The returned path is a list of `(x, y)` tuples representing each step from the current
+position to the destination.
+
+There is also `entity.find_path(target, diagonal_cost=1.41, collide=None)`, which returns
+an `AStarPath` object (consumed step-by-step with `.walk()`/`.peek()`) instead of a plain
+list — useful when you want to keep the path around and consume it turn by turn.
 
 ### Grid.find_path()
 
-For pathfinding without an entity, use the grid directly:
+For pathfinding without an entity, use the grid directly. `Grid.find_path()` takes
+`start`/`end` positions (tuples, `Vector`s, or `Entity`s) and returns an `AStarPath`
+object, or `None` if no path exists:
 
 ```python
 # Find path between any two points
 start = (5, 5)
 end = (20, 15)
-path = grid.find_path(start[0], start[1], end[0], end[1])
+path = grid.find_path(start, end)
 
 if path:
     print(f"Found path with {len(path)} steps")
@@ -70,6 +81,10 @@ for x in range(10, 25):
 # Path will go around the wall
 path = entity.path_to(20, 20)  # Will route around the obstacle
 ```
+
+After changing any cell's `walkable` state, call `grid.clear_dijkstra_maps()` to
+invalidate cached Dijkstra maps (A* via `find_path`/`path_to` always recomputes fresh,
+but Dijkstra maps are cached by root position).
 
 ### Error Handling
 
@@ -96,13 +111,16 @@ Dijkstra maps calculate distances from a source point to all reachable tiles. Th
 
 ### Computing a Dijkstra Map
 
+`Grid.get_dijkstra_map(root)` returns a `DijkstraMap` object. Grids cache these by root
+position, so calling it again with the same root is cheap:
+
 ```python
 # Compute distances from a source point
-source_x, source_y = 25, 15
-grid.compute_dijkstra(source_x, source_y)
+source = (25, 15)
+dijkstra = grid.get_dijkstra_map(source)
 
 # Now query distances from any point
-distance = grid.get_dijkstra_distance(10, 10)
+distance = dijkstra.distance((10, 10))
 if distance is not None:
     print(f"Distance from (10,10) to source: {distance}")
 else:
@@ -111,43 +129,47 @@ else:
 
 ### Getting Paths from Dijkstra
 
-Once computed, you can get the shortest path from any point back to the source:
+Once computed, you can get the shortest path from any point back to the root, or take a
+single step toward it:
 
 ```python
-# Compute from player position
-grid.compute_dijkstra(player.x, player.y)
+# Compute from player's grid position
+dijkstra = grid.get_dijkstra_map(player.grid_pos)
 
-# Get path from enemy to player
-path = grid.get_dijkstra_path(enemy.x, enemy.y)
-
+# Full path from enemy back to player
+path = dijkstra.path_from(enemy.grid_pos)
 if path:
-    # Move enemy along path
-    next_x, next_y = path[0]
-    enemy.pos = (next_x, next_y)
+    next_pos = path.walk()
+    enemy.grid_pos = next_pos
+
+# Or just take one step toward the root without building a full path
+step = dijkstra.step_from(enemy.grid_pos)
+if step is not None:
+    enemy.grid_pos = step
 ```
 
 ### Multi-Target Dijkstra
 
 For enemies chasing multiple possible targets (like multiple party members):
 
+You can also let `get_dijkstra_map` compute a single map from multiple roots at once via
+its `roots` argument (multi-source maps are not cached, unlike single-root maps):
+
 ```python
-def compute_player_distances(players):
+def compute_player_distances(grid, players):
     """
-    Compute minimum distances to any player.
+    Compute minimum distance to the nearest player, for every walkable cell.
     Returns dict mapping (x,y) -> distance to nearest player.
     """
+    roots = [player.grid_pos for player in players]
+    dijkstra = grid.get_dijkstra_map(roots=roots)
+
     distances = {}
-
-    for player in players:
-        grid.compute_dijkstra(player.x, player.y)
-
-        for y in range(grid.grid_size[1]):
-            for x in range(grid.grid_size[0]):
-                dist = grid.get_dijkstra_distance(x, y)
-                if dist is not None:
-                    key = (x, y)
-                    if key not in distances or dist < distances[key]:
-                        distances[key] = dist
+    for y in range(grid.grid_size[1]):
+        for x in range(grid.grid_size[0]):
+            dist = dijkstra.distance((x, y))
+            if dist is not None:
+                distances[(x, y)] = dist
 
     return distances
 ```
@@ -156,12 +178,17 @@ def compute_player_distances(players):
 
 To make an entity flee (move away from a threat):
 
-```python
-def flee_from(entity, threat_x, threat_y):
-    """Move entity away from threat."""
-    grid.compute_dijkstra(threat_x, threat_y)
+A `DijkstraMap` also has `.invert()`, which flips the distance field into a "safety"
+field — descending it moves away from the root, which is a shortcut for the same flee
+logic below:
 
-    current_dist = grid.get_dijkstra_distance(entity.x, entity.y)
+```python
+def flee_from(grid, entity, threat_pos):
+    """Move entity away from threat."""
+    dijkstra = grid.get_dijkstra_map(threat_pos)
+
+    ex, ey = entity.grid_x, entity.grid_y
+    current_dist = dijkstra.distance((ex, ey))
     if current_dist is None:
         return  # Can't calculate
 
@@ -170,34 +197,36 @@ def flee_from(entity, threat_x, threat_y):
     best_dist = current_dist
 
     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        nx, ny = int(entity.x) + dx, int(entity.y) + dy
+        nx, ny = ex + dx, ey + dy
 
         if not grid.at(nx, ny).walkable:
             continue
 
-        dist = grid.get_dijkstra_distance(nx, ny)
+        dist = dijkstra.distance((nx, ny))
         if dist is not None and dist > best_dist:
             best_dist = dist
             best_pos = (nx, ny)
 
     if best_pos:
-        entity.pos = best_pos
+        entity.grid_pos = best_pos
 ```
 
 ## Line of Sight
 
-For checking if two points have an unobstructed line between them:
+There is no `libtcod` submodule — Bresenham line tracing is exposed directly as
+`mcrfpy.bresenham(start, end, include_start=True, include_end=True)`, returning a list of
+`(x, y)` grid coordinates:
 
 ```python
-from mcrfpy import libtcod
+import mcrfpy
 
 # Get all cells along a line
-line = libtcod.line(x1, y1, x2, y2)
+line = mcrfpy.bresenham((x1, y1), (x2, y2))
 
 # Check for obstacles
-def has_line_of_sight(grid, x1, y1, x2, y2):
+def has_line_of_sight(grid, start, end):
     """Check if there's a clear line of sight between two points."""
-    line = libtcod.line(x1, y1, x2, y2)
+    line = mcrfpy.bresenham(start, end)
 
     for x, y in line:
         if not grid.at(x, y).transparent:
@@ -206,16 +235,16 @@ def has_line_of_sight(grid, x1, y1, x2, y2):
     return True
 
 # Example usage
-if has_line_of_sight(grid, player.x, player.y, enemy.x, enemy.y):
+if has_line_of_sight(grid, player.grid_pos, enemy.grid_pos):
     print("Enemy has clear shot at player!")
 ```
 
 ### Line for Projectiles
 
 ```python
-def get_projectile_path(start_x, start_y, end_x, end_y):
+def get_projectile_path(grid, start, end):
     """Get the path a projectile would travel."""
-    line = libtcod.line(start_x, start_y, end_x, end_y)
+    line = mcrfpy.bresenham(start, end)
     path = []
 
     for x, y in line:
@@ -239,12 +268,12 @@ def get_projectile_path(start_x, start_y, end_x, end_y):
 ```python
 def chase_player(enemy, player):
     """Move enemy one step toward player using A*."""
-    path = enemy.path_to(player.x, player.y)
+    path = enemy.path_to(player.grid_x, player.grid_y)
 
     if path and len(path) > 0:
         # Move to first step in path
         next_x, next_y = path[0]
-        enemy.pos = (next_x, next_y)
+        enemy.grid_pos = (next_x, next_y)
 ```
 
 ### Smart Chase with Dijkstra
@@ -252,25 +281,29 @@ def chase_player(enemy, player):
 For multiple enemies sharing pathfinding calculation:
 
 ```python
-def update_all_enemies(enemies, player):
+def update_all_enemies(grid, enemies, player):
     """Efficient multi-enemy chase using shared Dijkstra map."""
-    # Compute once from player
-    grid.compute_dijkstra(player.x, player.y)
+    # Compute once from player (cached by root position)
+    dijkstra = grid.get_dijkstra_map(player.grid_pos)
 
     for enemy in enemies:
-        path = grid.get_dijkstra_path(enemy.x, enemy.y)
-        if path and len(path) > 0:
-            next_x, next_y = path[0]
+        step = dijkstra.step_from(enemy.grid_pos)
+        if step is not None:
+            next_x, next_y = int(step.x), int(step.y)
+
+            # Don't walk into player (would be attack in real game)
+            if (next_x, next_y) == (player.grid_x, player.grid_y):
+                continue
 
             # Check if another enemy is there
             occupied = False
             for other in enemies:
-                if other != enemy and int(other.x) == next_x and int(other.y) == next_y:
+                if other != enemy and other.grid_x == next_x and other.grid_y == next_y:
                     occupied = True
                     break
 
             if not occupied:
-                enemy.pos = (next_x, next_y)
+                enemy.grid_pos = (next_x, next_y)
 ```
 
 ### Wander Behavior
@@ -278,17 +311,17 @@ def update_all_enemies(enemies, player):
 ```python
 import random
 
-def wander(entity):
+def wander(grid, entity):
     """Move entity in a random valid direction."""
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
     random.shuffle(directions)
 
     for dx, dy in directions:
-        nx = int(entity.x) + dx
-        ny = int(entity.y) + dy
+        nx = entity.grid_x + dx
+        ny = entity.grid_y + dy
 
         if grid.at(nx, ny).walkable:
-            entity.pos = (nx, ny)
+            entity.grid_pos = (nx, ny)
             return True
 
     return False  # Stuck
@@ -302,7 +335,7 @@ import random
 
 # Setup
 scene = mcrfpy.Scene("game")
-scene.activate()
+mcrfpy.current_scene = scene
 
 # Create grid
 grid = mcrfpy.Grid(
@@ -349,62 +382,62 @@ for _ in range(5):
     grid.entities.append(enemy)
     enemies.append(enemy)
 
-# Player movement
-def on_key(key, action):
-    if action != "start":
-        return
-
-    dx, dy = 0, 0
-    key = key.lower()
-
-    if key in ("up", "w"): dy = -1
-    elif key in ("down", "s"): dy = 1
-    elif key in ("left", "a"): dx = -1
-    elif key in ("right", "d"): dx = 1
-    else:
-        return
-
-    new_x = int(player.x) + dx
-    new_y = int(player.y) + dy
-
-    if grid.at(new_x, new_y).walkable:
-        player.pos = (new_x, new_y)
-        grid.center = player.pos
-
-        # Enemy turn after player moves
-        update_enemies()
-
-scene.on_key = on_key
-
 # Enemy AI
 def update_enemies():
     """Move all enemies toward player."""
-    # Use Dijkstra for efficiency with multiple enemies
-    grid.compute_dijkstra(player.x, player.y)
+    # Use Dijkstra for efficiency with multiple enemies; cached by root position
+    dijkstra = grid.get_dijkstra_map(player.grid_pos)
 
     for enemy in enemies:
-        dist = grid.get_dijkstra_distance(enemy.x, enemy.y)
+        dist = dijkstra.distance(enemy.grid_pos)
 
         if dist is not None and dist <= 15:  # Only chase if close enough
-            path = grid.get_dijkstra_path(enemy.x, enemy.y)
+            step = dijkstra.step_from(enemy.grid_pos)
 
-            if path and len(path) > 0:
-                next_x, next_y = path[0]
+            if step is not None:
+                next_x, next_y = int(step.x), int(step.y)
 
                 # Don't walk into player (would be attack in real game)
-                if next_x == int(player.x) and next_y == int(player.y):
+                if next_x == player.grid_x and next_y == player.grid_y:
                     continue
 
                 # Don't walk into other enemies
                 blocked = False
                 for other in enemies:
                     if other != enemy:
-                        if int(other.x) == next_x and int(other.y) == next_y:
+                        if other.grid_x == next_x and other.grid_y == next_y:
                             blocked = True
                             break
 
                 if not blocked:
-                    enemy.pos = (next_x, next_y)
+                    enemy.grid_pos = (next_x, next_y)
+
+# Player movement
+def on_key(key, action):
+    if action != mcrfpy.InputState.PRESSED:
+        return
+
+    dx, dy = 0, 0
+
+    if key == mcrfpy.Key.UP or key == mcrfpy.Key.W: dy = -1
+    elif key == mcrfpy.Key.DOWN or key == mcrfpy.Key.S: dy = 1
+    elif key == mcrfpy.Key.LEFT or key == mcrfpy.Key.A: dx = -1
+    elif key == mcrfpy.Key.RIGHT or key == mcrfpy.Key.D: dx = 1
+    else:
+        return
+
+    new_x = player.grid_x + dx
+    new_y = player.grid_y + dy
+
+    if grid.at(new_x, new_y).walkable:
+        player.grid_pos = (new_x, new_y)
+        grid.center = player.pos
+
+        # Enemy turn after player moves. get_dijkstra_map() is cached by root
+        # position, so a moved root simply produces a fresh map on next call.
+        update_enemies()
+
+scene.on_key = on_key
 
 # Initialize camera
 grid.center = player.pos
@@ -412,18 +445,28 @@ grid.center = player.pos
 
 ## Performance Tips
 
-- **A* vs Dijkstra**: Use A* (`path_to`, `find_path`) for single paths. Use Dijkstra when multiple entities need paths to the same target.
-- **Caching**: Dijkstra results are valid until the map changes. Recompute only when walls change or the target moves.
+- **A* vs Dijkstra**: Use A* (`entity.path_to`, `entity.find_path`, `grid.find_path`) for
+  single paths. Use Dijkstra (`grid.get_dijkstra_map`) when multiple entities need paths
+  to the same target, since the map is computed once and reused.
+- **Caching**: Single-root Dijkstra maps are cached by root position — calling
+  `get_dijkstra_map()` again with the same root is cheap. Call
+  `grid.clear_dijkstra_maps()` after changing any cell's `walkable` state to invalidate
+  stale cached maps. Multi-source maps (`roots=[...]`) are never cached.
 - **Path Length**: Very long paths are expensive. Consider limiting search distance for AI.
 - **Grid Size**: Pathfinding on large grids (100x100+) may need optimization strategies.
 
 ## Notes and Caveats
 
-- Pathfinding only considers `walkable` property, not other entities
-- `path_to()` returns `None` or empty list if no path exists
-- Dijkstra distances are in tile units (diagonal moves count as 1.4 if supported)
-- Paths do not include the starting position
-- The `libtcod.line()` function uses Bresenham's algorithm
+- Pathfinding only considers the `walkable` property, not other entities, unless you pass
+  a `collide` label to `find_path`/`get_dijkstra_map` to make entities with that label
+  block the search.
+- `entity.path_to()` returns an empty list (not `None`) if no path exists.
+  `entity.find_path()` / `grid.find_path()` return `None` if no path exists.
+- Dijkstra distances are in tile units (diagonal moves cost 1.41 by default, matching
+  `diagonal_cost`).
+- Paths returned by `path_to()` do not include the starting position; `AStarPath.walk()`
+  likewise only yields steps ahead of the current position.
+- `mcrfpy.bresenham()` uses Bresenham's line algorithm.
 
 ## Related Topics
 

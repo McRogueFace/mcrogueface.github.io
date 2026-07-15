@@ -3,8 +3,8 @@ mcrf:
   objects: [Frame, Caption, Alignment, Color]
   diataxis: howto
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # UI Alignment System
@@ -223,7 +223,7 @@ All UIDrawable types support alignment:
 
 1. **Set alignment before adding to parent** - Alignment triggers when the child is added
 2. **Use transparent containers** - Create invisible Frame containers just for layout organization
-3. **Combine with Animation** - Animate `margin` for sliding effects
+3. **Combine with Animation** - Set `align = None`, then animate `x`/`y` for sliding effects (`margin` itself is not animatable)
 4. **Remember CENTER has no margin** - Use CENTER_LEFT/CENTER_RIGHT with margin for offset centering
 
 ## See Also

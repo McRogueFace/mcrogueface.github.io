@@ -4,7 +4,9 @@ title: Timer
 mcrf:
   objects: [Timer, Key, InputState]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Timer
@@ -19,6 +21,10 @@ A `Timer` executes a callback function at specified intervals. Use timers for ga
 
 ```python
 import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+scene.children.append(mcrfpy.Frame(pos=(0, 0), size=(1024, 768)))
 
 # Create a repeating timer (fires every 500ms)
 def on_tick(timer, runtime):
@@ -39,8 +45,11 @@ timer.restart()
 timer.stop()
 
 # Create paused (start manually later)
-timer = mcrfpy.Timer("manual", callback, 1000, start=False)
-timer.start()
+def callback(timer, runtime):
+    pass
+
+timer2 = mcrfpy.Timer("manual", callback, 1000, start=False)
+timer2.start()
 ```
 
 ## Constructor

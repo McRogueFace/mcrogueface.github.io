@@ -5,8 +5,8 @@ mcrf:
   objects: [Transition, Scene]
   diataxis: reference
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Transition
@@ -20,10 +20,16 @@ The `Transition` IntEnum defines visual effects used when switching between scen
 ## Quick Reference
 
 ```python
+import mcrfpy
+
 # Create scenes
 menu = mcrfpy.Scene("menu")
 game = mcrfpy.Scene("game")
 settings = mcrfpy.Scene("settings")
+
+menu.children.append(mcrfpy.Caption(text="Menu", pos=(10, 10)))
+game.children.append(mcrfpy.Caption(text="Game", pos=(10, 10)))
+settings.children.append(mcrfpy.Caption(text="Settings", pos=(10, 10)))
 
 # Fade transition (default feel)
 game.activate(mcrfpy.Transition.FADE)
@@ -103,10 +109,16 @@ def resume_game():
 ### Scene Subclass with Transitions
 
 ```python
+import mcrfpy
+
+
 class GameScene(mcrfpy.Scene):
     def __init__(self):
         super().__init__("game")
         self.setup_ui()
+
+    def setup_ui(self):
+        self.children.append(mcrfpy.Caption(text="Game", pos=(10, 10)))
 
     def on_enter(self):
         """Called after transition completes."""
@@ -116,14 +128,19 @@ class GameScene(mcrfpy.Scene):
         """Called before transition to another scene."""
         print("Leaving game scene...")
 
+
 class MenuScene(mcrfpy.Scene):
     def __init__(self, game_scene):
         super().__init__("menu")
         self.game_scene = game_scene
         self.setup_menu()
 
+    def setup_menu(self):
+        self.children.append(mcrfpy.Caption(text="Menu", pos=(10, 10)))
+
     def start_game(self):
         self.game_scene.activate(mcrfpy.Transition.FADE, duration=0.5)
+
 
 # Usage
 game = GameScene()

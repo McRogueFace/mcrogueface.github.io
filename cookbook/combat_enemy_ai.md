@@ -1,8 +1,10 @@
 ---
 mcrf:
-  objects: [Entity, Grid, Behavior, DijkstraMap, AStarPath]
+  objects: [Entity, Grid, AStarPath]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Basic Enemy AI
@@ -11,7 +13,9 @@ Using A* pathfinding to create enemies that chase and attack the player.
 
 ## Overview
 
-McRogueFace provides built-in A* pathfinding through `entity.path_to(x, y)` and `grid.find_path(start_x, start_y, end_x, end_y)`. This recipe shows how to use these for enemy AI behaviors.
+McRogueFace provides built-in A* pathfinding through `entity.path_to(x, y)` (returns a plain list of `(x, y)` tuples) and `grid.find_path((start_x, start_y), (end_x, end_y))` (returns an `AStarPath` object, or `None` if unreachable). `AStarPath` supports `len()`, truthiness, and iteration, plus `peek()`/`walk()` to inspect or consume the next step — it does **not** support `path[0]` indexing. This recipe shows how to use these for enemy AI behaviors.
+
+Entity tile position is read/written through `grid_x`/`grid_y` (or `grid_pos`) — `entity.x`/`entity.y` are *pixel* coordinates relative to the grid, not tile coordinates, so they are not used here.
 
 ## Basic Chase AI
 
@@ -20,9 +24,9 @@ import mcrfpy
 
 def enemy_ai(enemy, player, grid):
     """Simple AI: chase the player and attack if adjacent."""
-    # Get positions
-    ex, ey = int(enemy.x), int(enemy.y)
-    px, py = int(player.x), int(player.y)
+    # Get positions (tile coordinates, not pixel x/y)
+    ex, ey = enemy.grid_x, enemy.grid_y
+    px, py = player.grid_x, player.grid_y
 
     # Check if adjacent (can attack)
     distance = abs(ex - px) + abs(ey - py)
@@ -40,8 +44,8 @@ def enemy_ai(enemy, player, grid):
 
         # Check if tile is walkable and not occupied
         if is_walkable(grid, next_x, next_y) and not is_occupied(next_x, next_y):
-            enemy.x = next_x
-            enemy.y = next_y
+            enemy.grid_x = next_x
+            enemy.grid_y = next_y
 ```
 
 ## AI with Line of Sight
@@ -51,8 +55,8 @@ Only chase when the player is visible:
 ```python
 def enemy_ai_with_sight(enemy, player, grid, sight_range=8):
     """Chase player only when in sight range."""
-    ex, ey = int(enemy.x), int(enemy.y)
-    px, py = int(player.x), int(player.y)
+    ex, ey = enemy.grid_x, enemy.grid_y
+    px, py = player.grid_x, player.grid_y
 
     # Calculate distance
     distance = abs(ex - px) + abs(ey - py)
@@ -76,8 +80,8 @@ def enemy_ai_with_sight(enemy, player, grid, sight_range=8):
         if path:
             next_x, next_y = path[0]
             if is_walkable(grid, next_x, next_y):
-                enemy.x = next_x
-                enemy.y = next_y
+                enemy.grid_x = next_x
+                enemy.grid_y = next_y
 
 def has_line_of_sight(grid, x1, y1, x2, y2):
     """Simple line of sight check using Bresenham's line."""
@@ -118,7 +122,7 @@ import random
 
 def wander(enemy, grid):
     """Move randomly to an adjacent walkable tile."""
-    ex, ey = int(enemy.x), int(enemy.y)
+    ex, ey = enemy.grid_x, enemy.grid_y
 
     # Get valid adjacent tiles
     directions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
@@ -128,8 +132,8 @@ def wander(enemy, grid):
         new_x, new_y = ex + dx, ey + dy
 
         if is_walkable(grid, new_x, new_y) and not is_occupied(new_x, new_y):
-            enemy.x = new_x
-            enemy.y = new_y
+            enemy.grid_x = new_x
+            enemy.grid_y = new_y
             return
 
     # No valid moves - stay in place
@@ -147,7 +151,7 @@ def is_occupied(x, y, entities=None):
         return False
 
     for entity in entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if entity.grid_x == x and entity.grid_y == y:
             return True
     return False
 ```
@@ -168,8 +172,8 @@ class ChaseAI(AIBehavior):
     """Always chase the player."""
 
     def execute(self, enemy, player, grid, entities):
-        ex, ey = int(enemy.x), int(enemy.y)
-        px, py = int(player.x), int(player.y)
+        ex, ey = enemy.grid_x, enemy.grid_y
+        px, py = player.grid_x, player.grid_y
 
         if abs(ex - px) + abs(ey - py) == 1:
             return ("attack", player)
@@ -185,8 +189,8 @@ class CowardAI(AIBehavior):
     """Run away from the player."""
 
     def execute(self, enemy, player, grid, entities):
-        ex, ey = int(enemy.x), int(enemy.y)
-        px, py = int(player.x), int(player.y)
+        ex, ey = enemy.grid_x, enemy.grid_y
+        px, py = player.grid_x, player.grid_y
 
         # Find direction away from player
         dx = 1 if ex > px else -1 if ex < px else 0
@@ -210,8 +214,8 @@ class PatrolAI(AIBehavior):
         self.sight_range = 6
 
     def execute(self, enemy, player, grid, entities):
-        ex, ey = int(enemy.x), int(enemy.y)
-        px, py = int(player.x), int(player.y)
+        ex, ey = enemy.grid_x, enemy.grid_y
+        px, py = player.grid_x, player.grid_y
         distance = abs(ex - px) + abs(ey - py)
 
         # Check for player
@@ -238,10 +242,12 @@ class PatrolAI(AIBehavior):
             self.current_waypoint = (self.current_waypoint + 1) % len(self.waypoints)
             target = self.waypoints[self.current_waypoint]
 
-        # Path to waypoint
-        path = grid.find_path(ex, ey, target[0], target[1])
+        # Path to waypoint. grid.find_path() takes (start, end) tuples and
+        # returns an AStarPath (or None) -- use peek() for the next step,
+        # not path[0] (AStarPath doesn't support indexing).
+        path = grid.find_path((ex, ey), target)
         if path:
-            return ("move", path[0])
+            return ("move", path.peek().int)
 
         return ("wait", None)
 
@@ -255,8 +261,8 @@ class HunterAI(AIBehavior):
         self.hunting = False
 
     def execute(self, enemy, player, grid, entities):
-        ex, ey = int(enemy.x), int(enemy.y)
-        px, py = int(player.x), int(player.y)
+        ex, ey = enemy.grid_x, enemy.grid_y
+        px, py = player.grid_x, player.grid_y
         distance = abs(ex - px) + abs(ey - py)
 
         # Trigger hunting mode
@@ -348,13 +354,12 @@ class Enemy:
             target.hp -= damage
         elif action == "move":
             new_x, new_y = target
-            self.entity.x = new_x
-            self.entity.y = new_y
+            self.entity.grid_x = new_x
+            self.entity.grid_y = new_y
 
     def destroy(self):
         """Remove from game."""
-        idx = self.entity.index()
-        self.grid.entities.remove(idx)
+        self.entity.die()
 
 
 # Usage
@@ -381,7 +386,7 @@ lurker = Enemy(grid, 20, 20, enemy_texture, 1, hunter_ai)
    ```python
    def alert_nearby(x, y, radius, enemies):
        for enemy in enemies:
-           dist = abs(enemy.entity.x - x) + abs(enemy.entity.y - y)
+           dist = abs(enemy.entity.grid_x - x) + abs(enemy.entity.grid_y - y)
            if dist <= radius and hasattr(enemy.ai, 'alert'):
                enemy.ai.alert = True
    ```

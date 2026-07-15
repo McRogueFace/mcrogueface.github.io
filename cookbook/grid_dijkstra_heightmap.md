@@ -3,8 +3,8 @@ mcrf:
   objects: [Grid, DijkstraMap, HeightMap, ColorLayer, Color]
   diataxis: howto
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Dijkstra to HeightMap Conversion
@@ -26,11 +26,15 @@ A Dijkstra map stores the distance from every cell to a target point. Converting
 ```python
 import mcrfpy
 
+scene = mcrfpy.Scene("quickstart")
+mcrfpy.current_scene = scene
+
 # Create a grid with walkable cells
 grid = mcrfpy.Grid(grid_size=(20, 20))
 for y in range(20):
     for x in range(20):
         grid.at((x, y)).walkable = True
+scene.children.append(grid)
 
 # Get dijkstra map from player position
 dijkstra = grid.get_dijkstra_map((10, 10))

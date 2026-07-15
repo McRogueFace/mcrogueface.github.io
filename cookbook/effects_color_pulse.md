@@ -1,71 +1,86 @@
 ---
 mcrf:
-  objects: [ColorLayer, Color, Grid, Timer, Animation, Easing]
+  objects: [ColorLayer, Color, Grid, Timer]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Color Pulse Effect
 
 Animate a grid cell's color layer to pulse, useful for highlighting interactable tiles, objectives, warnings, or magical effects.
 
+`ColorLayer` stores plain `Color` values per cell — `layer.at(x, y)` returns a
+snapshot `Color`, not a live, animatable object, and `ColorLayer` itself has no
+`.animate()` method (only `Drawable`/`Entity`-family objects do). So a "pulse"
+is driven by a repeating `mcrfpy.Timer` that recomputes the alpha each tick and
+writes it back with `layer.set((x, y), color)`.
+
 ## Quick Example
 
 ```python
 import mcrfpy
+import math
+
+def get_or_create_layer(grid, name="pulse", z_index=1):
+    """Find grid's named ColorLayer, or create and attach one."""
+    existing = grid.layer(name)
+    if existing is not None:
+        return existing
+    layer = mcrfpy.ColorLayer(z_index=z_index, name=name)
+    grid.add_layer(layer)
+    return layer
 
 def pulse_cell(grid, x, y, color, duration=1.0):
     """
-    Pulse a cell's color overlay from transparent to visible and back.
+    Pulse a cell's color overlay from transparent to visible and back once.
 
     Args:
-        grid: Grid with a color layer
+        grid: Grid to overlay
         x, y: Cell coordinates
         color: RGB tuple (r, g, b)
         duration: Full cycle duration in seconds
     """
-    # Get or create color layer
-    color_layer = None
-    for layer in grid.layers:
-        if isinstance(layer, mcrfpy.ColorLayer):
-            color_layer = layer
-            break
+    layer = get_or_create_layer(grid)
+    r, g, b = color
+    half_duration = duration / 2.0
+    state = {"t0": None}
 
-    if not color_layer:
-        grid.add_layer("color")
-        color_layer = grid.layers[-1]
+    def tick(timer, runtime):
+        if state["t0"] is None:
+            state["t0"] = runtime
+        t = (runtime - state["t0"]) / 1000.0
+        if t >= duration:
+            layer.set((x, y), mcrfpy.Color(r, g, b, 0))
+            timer.stop()
+            return
+        # Triangle wave: 0 -> 1 over the first half, 1 -> 0 over the second
+        phase = t / half_duration
+        alpha_frac = phase if phase <= 1.0 else 2.0 - phase
+        layer.set((x, y), mcrfpy.Color(r, g, b, int(200 * alpha_frac)))
 
-    # Get the cell
-    cell = color_layer.at(x, y)
-    if not cell:
-        return
-
-    # Set initial color with 0 alpha
-    cell.color = mcrfpy.Color(color[0], color[1], color[2], 0)
-
-    # Animate alpha up
-    half_duration = duration / 2
-    anim_up = mcrfpy.Animation("a", 200.0, half_duration, "easeInOut")
-    anim_up.start(cell.color)
-
-    # Schedule fade out
-    def fade_out(timer_name):
-        anim_down = mcrfpy.Animation("a", 0.0, half_duration, "easeInOut")
-        anim_down.start(cell.color)
-
-    mcrfpy.Timer("pulse_fade", fade_out, int(half_duration * 1000), once=True)
+    mcrfpy.Timer(f"pulse_{x}_{y}", tick, 33)
 
 
 # Usage
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+grid = mcrfpy.Grid(grid_size=(16, 12), pos=(0, 0), size=(512, 384))
+scene.children.append(grid)
+
 pulse_cell(grid, 5, 5, (255, 200, 0), duration=1.5)  # Golden pulse
 ```
 
 ## Continuous Pulsing
 
-Keep a cell pulsing until stopped:
+Keep a cell pulsing until stopped, using a single repeating `Timer` driven by
+`math.sin` instead of chained one-shot animations:
 
 ```python
 import mcrfpy
+import math
 
 class PulsingCell:
     """A cell that continuously pulses until stopped."""
@@ -86,86 +101,51 @@ class PulsingCell:
         self.period = period
         self.max_alpha = max_alpha
         self.is_pulsing = False
-        self.pulse_id = 0
-        self.cell = None
+        self.layer = self._get_or_create_layer()
+        self.timer = None
+        self.t0 = None
 
-        self._setup_layer()
+    def _get_or_create_layer(self):
+        """Ensure a named color layer exists on the grid."""
+        existing = self.grid.layer("pulse")
+        if existing is not None:
+            return existing
+        layer = mcrfpy.ColorLayer(z_index=1, name="pulse")
+        self.grid.add_layer(layer)
+        return layer
 
-    def _setup_layer(self):
-        """Ensure color layer exists and get cell reference."""
-        color_layer = None
-        for layer in self.grid.layers:
-            if isinstance(layer, mcrfpy.ColorLayer):
-                color_layer = layer
-                break
-
-        if not color_layer:
-            self.grid.add_layer("color")
-            color_layer = self.grid.layers[-1]
-
-        self.cell = color_layer.at(self.x, self.y)
-        if self.cell:
-            self.cell.color = mcrfpy.Color(self.color[0], self.color[1],
-                                            self.color[2], 0)
+    def _tick(self, timer, runtime):
+        if not self.is_pulsing:
+            return
+        if self.t0 is None:
+            self.t0 = runtime
+        r, g, b = self.color
+        # Sine wave oscillating between 0 and max_alpha
+        t = (runtime - self.t0) / 1000.0
+        wave = (math.sin(2 * math.pi * t / self.period) + 1.0) / 2.0
+        alpha = int(self.max_alpha * wave)
+        self.layer.set((self.x, self.y), mcrfpy.Color(r, g, b, alpha))
 
     def start(self):
         """Start continuous pulsing."""
-        if self.is_pulsing or not self.cell:
+        if self.is_pulsing:
             return
-
         self.is_pulsing = True
-        self.pulse_id += 1
-        self._pulse_up()
-
-    def _pulse_up(self):
-        """Animate alpha increasing."""
-        if not self.is_pulsing:
-            return
-
-        current_id = self.pulse_id
-        half_period = self.period / 2
-
-        anim = mcrfpy.Animation("a", float(self.max_alpha), half_period, "easeInOut")
-        anim.start(self.cell.color)
-
-        def next_phase(timer_name):
-            if self.is_pulsing and self.pulse_id == current_id:
-                self._pulse_down()
-
-        mcrfpy.Timer(f"pulse_up_{id(self)}_{current_id}",
-                     next_phase, int(half_period * 1000), once=True)
-
-    def _pulse_down(self):
-        """Animate alpha decreasing."""
-        if not self.is_pulsing:
-            return
-
-        current_id = self.pulse_id
-        half_period = self.period / 2
-
-        anim = mcrfpy.Animation("a", 0.0, half_period, "easeInOut")
-        anim.start(self.cell.color)
-
-        def next_phase(timer_name):
-            if self.is_pulsing and self.pulse_id == current_id:
-                self._pulse_up()
-
-        mcrfpy.Timer(f"pulse_down_{id(self)}_{current_id}",
-                     next_phase, int(half_period * 1000), once=True)
+        self.t0 = None
+        self.timer = mcrfpy.Timer(f"pulse_{id(self)}", self._tick, 33)
 
     def stop(self):
-        """Stop pulsing and fade out."""
+        """Stop pulsing and clear the cell."""
         self.is_pulsing = False
-        if self.cell:
-            anim = mcrfpy.Animation("a", 0.0, 0.2, "easeOut")
-            anim.start(self.cell.color)
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer = None
+        r, g, b = self.color
+        self.layer.set((self.x, self.y), mcrfpy.Color(r, g, b, 0))
 
     def set_color(self, color):
-        """Change pulse color."""
+        """Change pulse color for subsequent ticks."""
         self.color = color
-        if self.cell:
-            current_alpha = self.cell.color.a
-            self.cell.color = mcrfpy.Color(color[0], color[1], color[2], current_alpha)
 
 
 # Usage
@@ -197,18 +177,6 @@ class PulseManager:
     def __init__(self, grid):
         self.grid = grid
         self.pulses = {}  # (x, y) -> PulsingCell
-        self._ensure_layer()
-
-    def _ensure_layer(self):
-        """Ensure grid has a color layer."""
-        has_color_layer = False
-        for layer in self.grid.layers:
-            if isinstance(layer, mcrfpy.ColorLayer):
-                has_color_layer = True
-                break
-
-        if not has_color_layer:
-            self.grid.add_layer("color")
 
     def add(self, x, y, color, period=1.0, max_alpha=180):
         """Add a pulsing cell."""
@@ -273,109 +241,96 @@ pulses.clear()
 
 ## Area Pulse Effect
 
-Pulse a group of cells together:
+Pulse a group of cells together with one shared timer:
 
 ```python
 import mcrfpy
+import math
 
 class AreaPulse:
     """Pulse a rectangular or circular area."""
 
     def __init__(self, grid):
         self.grid = grid
-        self.cells = []
+        self.cells = []  # list of (x, y)
         self.is_pulsing = False
-        self._ensure_layer()
+        self.timer = None
+        self.color_layer = self._get_or_create_layer()
 
-    def _ensure_layer(self):
-        has_color_layer = False
-        for layer in self.grid.layers:
-            if isinstance(layer, mcrfpy.ColorLayer):
-                self.color_layer = layer
-                has_color_layer = True
-                break
-
-        if not has_color_layer:
-            self.grid.add_layer("color")
-            self.color_layer = self.grid.layers[-1]
+    def _get_or_create_layer(self):
+        existing = self.grid.layer("area_pulse")
+        if existing is not None:
+            return existing
+        layer = mcrfpy.ColorLayer(z_index=1, name="area_pulse")
+        self.grid.add_layer(layer)
+        return layer
 
     def set_rect(self, x, y, width, height, color):
         """Set a rectangular area to pulse."""
-        self.cells = []
-        for dy in range(height):
-            for dx in range(width):
-                cell = self.color_layer.at(x + dx, y + dy)
-                if cell:
-                    cell.color = mcrfpy.Color(color[0], color[1], color[2], 0)
-                    self.cells.append(cell)
+        self.color = color
+        self.cells = [
+            (x + dx, y + dy)
+            for dy in range(height)
+            for dx in range(width)
+        ]
 
     def set_circle(self, center_x, center_y, radius, color):
         """Set a circular area to pulse."""
-        self.cells = []
-        for dy in range(-radius, radius + 1):
-            for dx in range(-radius, radius + 1):
-                if dx * dx + dy * dy <= radius * radius:
-                    cell = self.color_layer.at(center_x + dx, center_y + dy)
-                    if cell:
-                        cell.color = mcrfpy.Color(color[0], color[1], color[2], 0)
-                        self.cells.append(cell)
+        self.color = color
+        self.cells = [
+            (center_x + dx, center_y + dy)
+            for dy in range(-radius, radius + 1)
+            for dx in range(-radius, radius + 1)
+            if dx * dx + dy * dy <= radius * radius
+        ]
+
+    def _write(self, alpha):
+        r, g, b = self.color
+        for (x, y) in self.cells:
+            self.color_layer.set((x, y), mcrfpy.Color(r, g, b, alpha))
 
     def pulse_once(self, duration=0.5, max_alpha=180):
-        """Single pulse of the area."""
-        half = duration / 2
+        """Single pulse of the area: fade in, then fade out."""
+        half = duration / 2.0
+        state = {"t0": None}
 
-        # Fade in all cells
-        for cell in self.cells:
-            anim = mcrfpy.Animation("a", float(max_alpha), half, "easeOut")
-            anim.start(cell.color)
+        def tick(timer, runtime):
+            if state["t0"] is None:
+                state["t0"] = runtime
+            t = (runtime - state["t0"]) / 1000.0
+            if t >= duration:
+                self._write(0)
+                timer.stop()
+                return
+            phase = t / half
+            frac = phase if phase <= 1.0 else 2.0 - phase
+            self._write(int(max_alpha * frac))
 
-        # Fade out after delay
-        def fade_out(timer_name):
-            for cell in self.cells:
-                anim = mcrfpy.Animation("a", 0.0, half, "easeIn")
-                anim.start(cell.color)
-
-        mcrfpy.Timer("area_fade", fade_out, int(half * 1000), once=True)
+        mcrfpy.Timer(f"area_once_{id(self)}", tick, 33)
 
     def start_continuous(self, period=1.0, max_alpha=150):
-        """Start continuous pulsing."""
+        """Start continuous pulsing of the area."""
         self.is_pulsing = True
-        self._pulse_up(period, max_alpha)
+        state = {"t0": None}
 
-    def _pulse_up(self, period, max_alpha):
-        if not self.is_pulsing:
-            return
+        def tick(timer, runtime):
+            if not self.is_pulsing:
+                return
+            if state["t0"] is None:
+                state["t0"] = runtime
+            t = (runtime - state["t0"]) / 1000.0
+            wave = (math.sin(2 * math.pi * t / period) + 1.0) / 2.0
+            self._write(int(max_alpha * wave))
 
-        half = period / 2
-        for cell in self.cells:
-            anim = mcrfpy.Animation("a", float(max_alpha), half, "easeInOut")
-            anim.start(cell.color)
-
-        def next_phase(timer_name):
-            self._pulse_down(period, max_alpha)
-
-        mcrfpy.Timer("area_up", next_phase, int(half * 1000), once=True)
-
-    def _pulse_down(self, period, max_alpha):
-        if not self.is_pulsing:
-            return
-
-        half = period / 2
-        for cell in self.cells:
-            anim = mcrfpy.Animation("a", 0.0, half, "easeInOut")
-            anim.start(cell.color)
-
-        def next_phase(timer_name):
-            self._pulse_up(period, max_alpha)
-
-        mcrfpy.Timer("area_down", next_phase, int(half * 1000), once=True)
+        self.timer = mcrfpy.Timer(f"area_continuous_{id(self)}", tick, 33)
 
     def stop(self):
         """Stop pulsing and clear."""
         self.is_pulsing = False
-        for cell in self.cells:
-            anim = mcrfpy.Animation("a", 0.0, 0.2, "easeOut")
-            anim.start(cell.color)
+        if self.timer is not None:
+            self.timer.stop()
+            self.timer = None
+        self._write(0)
 
 
 # Usage
@@ -392,7 +347,7 @@ area.pulse_once(duration=0.8)
 
 ## Ripple Effect
 
-Animate an expanding ring of color:
+Animate an expanding ring of color, each ring fading independently:
 
 ```python
 import mcrfpy
@@ -408,41 +363,48 @@ def ripple_effect(grid, center_x, center_y, color, max_radius=5, duration=1.0):
         max_radius: Maximum ripple size
         duration: Total animation time
     """
-    # Get color layer
-    color_layer = None
-    for layer in grid.layers:
-        if isinstance(layer, mcrfpy.ColorLayer):
-            color_layer = layer
-            break
-
-    if not color_layer:
-        grid.add_layer("color")
-        color_layer = grid.layers[-1]
+    layer = grid.layer("ripple")
+    if layer is None:
+        layer = mcrfpy.ColorLayer(z_index=1, name="ripple")
+        grid.add_layer(layer)
 
     step_duration = duration / max_radius
+    r, g, b = color
 
     for radius in range(max_radius + 1):
-        # Get cells at this radius (ring, not filled)
+        # Cells approximately on the ring edge at this radius
         ring_cells = []
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
                 dist_sq = dx * dx + dy * dy
-                # Include cells approximately on the ring edge
                 if radius * radius - radius <= dist_sq <= radius * radius + radius:
-                    cell = color_layer.at(center_x + dx, center_y + dy)
-                    if cell:
-                        ring_cells.append(cell)
+                    ring_cells.append((center_x + dx, center_y + dy))
 
-        # Schedule this ring to animate
-        def animate_ring(timer_name, cells=ring_cells, c=color):
-            for cell in cells:
-                cell.color = mcrfpy.Color(c[0], c[1], c[2], 200)
-                # Fade out
-                anim = mcrfpy.Animation("a", 0.0, step_duration * 2, "easeOut")
-                anim.start(cell.color)
+        fade_duration = step_duration * 2
+
+        def make_ring_animator(cells):
+            state = {"t0": None}
+
+            def tick(timer, runtime):
+                if state["t0"] is None:
+                    state["t0"] = runtime
+                t = (runtime - state["t0"]) / 1000.0
+                frac = max(0.0, 1.0 - t / fade_duration)
+                alpha = int(200 * frac)
+                for cx, cy in cells:
+                    layer.set((cx, cy), mcrfpy.Color(r, g, b, alpha))
+                if t >= fade_duration:
+                    for cx, cy in cells:
+                        layer.set((cx, cy), mcrfpy.Color(r, g, b, 0))
+                    timer.stop()
+            return tick
+
+        def start_ring(timer, runtime, cells=ring_cells):
+            mcrfpy.Timer(f"ripple_fade_{id(cells)}", make_ring_animator(cells), 33)
+            timer.stop()
 
         delay = int(radius * step_duration * 1000)
-        mcrfpy.Timer(f"ripple_{radius}", animate_ring, delay, once=True)
+        mcrfpy.Timer(f"ripple_{radius}", start_ring, max(delay, 1), once=True)
 
 
 # Usage
@@ -451,10 +413,22 @@ ripple_effect(grid, 10, 10, (100, 200, 255), max_radius=6, duration=0.8)
 
 ## Key Concepts
 
-1. **ColorLayer**: Grid overlay for cell-based color effects
-2. **Alpha animation**: Animate `a` property for fade in/out
-3. **Timer coordination**: Use timers to sequence fade up/down phases
-4. **ID tracking**: Track pulse IDs to prevent orphaned animations when stopping
+1. **ColorLayer**: Grid overlay for cell-based color effects; created standalone
+   with `mcrfpy.ColorLayer(z_index=..., name=...)` and attached with
+   `grid.add_layer(layer)` (never `grid.add_layer("color")` — the argument is
+   always a layer object). Look layers up with `grid.layer(name)`.
+2. **No live cell handle**: `layer.at(x, y)` returns a snapshot `Color`, and
+   `ColorLayer` has no `.animate()`. Pulsing means recomputing alpha yourself
+   (triangle wave for a single pulse, `math.sin` for continuous) and writing
+   it with `layer.set((x, y), color)` on every `Timer` tick.
+3. **Timer coordination**: A repeating `mcrfpy.Timer(name, callback, interval_ms)`
+   drives each pulse; the callback receives `(timer, runtime_ms)`, where
+   `runtime_ms` is the total engine runtime in milliseconds (NOT relative to
+   when the timer started); one-shot effects should record the runtime of
+   their first tick and measure elapsed time from it. Call `timer.stop()`
+   to end it.
+4. **Alpha animation**: All effects here only animate the `a` channel of a
+   `Color`, leaving `r`, `g`, `b` fixed.
 
 ## Tips
 
@@ -462,4 +436,6 @@ ripple_effect(grid, 10, 10, (100, 200, 255), max_radius=6, duration=0.8)
 - Longer periods (1.5-2.0s) feel calmer; shorter (0.5-0.8s) feel urgent
 - Combine with other effects (floating text, sound) for important events
 - Consider color blindness: don't rely solely on color for meaning
-- Clean up pulses when cells become irrelevant (player moves, item collected)
+- Clean up pulses when cells become irrelevant (player moves, item collected) —
+  always call `timer.stop()`, since a running `Timer` keeps firing even if its
+  target cell no longer matters

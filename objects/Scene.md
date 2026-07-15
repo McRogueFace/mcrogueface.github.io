@@ -4,7 +4,9 @@ title: Scene
 mcrf:
   objects: [Scene, Transition, Key, InputState]
   diataxis: reference
-  disposition: rewrite-pending
+  disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Scene
@@ -26,6 +28,8 @@ scene = mcrfpy.Scene("game")
 # Add UI elements
 scene.children.append(mcrfpy.Frame(pos=(0, 0), size=(800, 600)))
 scene.children.append(mcrfpy.Caption(text="Hello", pos=(100, 100)))
+
+menu_scene = mcrfpy.Scene("menu")
 
 # Handle input
 def on_key(key, action):
@@ -65,7 +69,7 @@ class GameScene(mcrfpy.Scene):
 mcrfpy.Scene(name: str)
 ```
 
-Creates a new scene with the given name. If a scene with that name already exists, returns the existing scene.
+Creates a new scene with the given name. Creating a scene with a name that is already registered creates a new, distinct scene object and unregisters the previous scene of that name (it does not return the existing scene).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -80,7 +84,7 @@ Creates a new scene with the given name. If a scene with that name already exist
 | `registered` | bool | read-only | Scene registration state |
 | `children` | UICollection | read-only | UI elements in this scene |
 | `on_key` | callable | read/write | Keyboard input callback |
-| `pos` | tuple | read/write | Scene offset position (x, y) |
+| `pos` | Vector | read/write | Scene offset position (x, y) |
 | `visible` | bool | read/write | Whether scene renders |
 | `opacity` | float | read/write | Scene transparency (0.0-1.0) |
 
@@ -123,7 +127,7 @@ When subclassing Scene, override these methods for custom behavior:
 ### Key Handler Arguments
 
 The `on_key` callback receives:
-- `key`: a `mcrfpy.Key` enum member (e.g. `mcrfpy.Key.A`, `mcrfpy.Key.ESCAPE`, `mcrfpy.Key.SPACE`, `mcrfpy.Key.Num1`)
+- `key`: a `mcrfpy.Key` enum member (e.g. `mcrfpy.Key.A`, `mcrfpy.Key.ESCAPE`, `mcrfpy.Key.SPACE`, `mcrfpy.Key.NUM_1`)
 - `action`: `mcrfpy.InputState.PRESSED` or `mcrfpy.InputState.RELEASED`
 
 ## Examples
@@ -146,6 +150,8 @@ def menu_keys(key, action):
 
 menu.on_key = menu_keys
 menu.activate()
+
+mcrfpy.current_scene = menu
 ```
 
 ### Scene Subclass

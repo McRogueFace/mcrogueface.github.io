@@ -2,7 +2,9 @@
 mcrf:
   objects: [Frame, Caption, Scene, Grid]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Turn-Based Game Loop
@@ -138,6 +140,10 @@ class GameState:
     ENEMY_TURN = "enemy_turn"
     ANIMATING = "animating"
     GAME_OVER = "game_over"
+
+# Scene the turn-based loop runs in
+scene = mcrfpy.Scene("game")
+mcrfpy.current_scene = scene
 
 # Initialize turn manager
 turn_manager = TurnManager()

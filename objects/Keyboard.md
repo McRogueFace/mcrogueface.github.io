@@ -4,7 +4,9 @@ title: Keyboard
 mcrf:
   objects: [Keyboard]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Keyboard
@@ -18,6 +20,12 @@ Keyboard state singleton for checking modifier keys.
 ## Quick Reference
 
 ```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+scene.children.append(mcrfpy.Caption(text="Press S, Ctrl+S, or Shift+S", pos=(50, 50)))
+
 def handle_key(key, state):
     if state == mcrfpy.InputState.PRESSED:
         if key == mcrfpy.Key.S:

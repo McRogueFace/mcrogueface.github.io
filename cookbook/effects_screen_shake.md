@@ -1,8 +1,10 @@
 ---
 mcrf:
-  objects: [Frame, Grid, Timer, Animation]
+  objects: [Frame, Grid, Timer]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Screen Shake Effect
@@ -27,18 +29,16 @@ def screen_shake(frame, intensity=5, duration=0.2):
     original_y = frame.y
 
     # Quick shake to offset position
-    shake_x = mcrfpy.Animation("x", float(original_x + intensity), duration / 4, "easeOut")
-    shake_x.start(frame)
+    frame.animate("x", float(original_x + intensity), duration / 4, mcrfpy.Easing.EASE_OUT)
 
     # Schedule return to center
-    def return_to_center(timer_name):
-        anim = mcrfpy.Animation("x", float(original_x), duration / 2, "easeInOut")
-        anim.start(frame)
+    def return_to_center(timer, runtime):
+        frame.animate("x", float(original_x), duration / 2, mcrfpy.Easing.EASE_IN_OUT)
 
     mcrfpy.Timer("shake_return", return_to_center, int(duration * 250), once=True)
 
 # Usage - wrap your game content in a Frame
-game_container = mcrfpy.Frame(0, 0, 1024, 768)
+game_container = mcrfpy.Frame(pos=(0, 0), size=(1024, 768))
 # ... add game elements to game_container.children ...
 screen_shake(game_container, intensity=8, duration=0.3)
 ```
@@ -73,20 +73,16 @@ def screen_shake_multi(frame, intensity=5, duration=0.3, shakes=4):
         offset_x = random.uniform(-current_intensity, current_intensity)
         offset_y = random.uniform(-current_intensity, current_intensity)
 
-        def do_shake(timer_name, ox=offset_x, oy=offset_y, si=shake_interval):
-            anim_x = mcrfpy.Animation("x", float(original_x + ox), si * 0.8, "easeOut")
-            anim_y = mcrfpy.Animation("y", float(original_y + oy), si * 0.8, "easeOut")
-            anim_x.start(frame)
-            anim_y.start(frame)
+        def do_shake(timer, runtime, ox=offset_x, oy=offset_y, si=shake_interval):
+            frame.animate("x", float(original_x + ox), si * 0.8, mcrfpy.Easing.EASE_OUT)
+            frame.animate("y", float(original_y + oy), si * 0.8, mcrfpy.Easing.EASE_OUT)
 
-        mcrfpy.Timer(f"shake_{i}", do_shake, int(i * shake_interval * 1000), once=True)
+        mcrfpy.Timer(f"shake_{i}", do_shake, max(1, int(i * shake_interval * 1000)), once=True)
 
     # Return to original position
-    def reset(timer_name):
-        anim_x = mcrfpy.Animation("x", float(original_x), shake_interval, "easeOut")
-        anim_y = mcrfpy.Animation("y", float(original_y), shake_interval, "easeOut")
-        anim_x.start(frame)
-        anim_y.start(frame)
+    def reset(timer, runtime):
+        frame.animate("x", float(original_x), shake_interval, mcrfpy.Easing.EASE_OUT)
+        frame.animate("y", float(original_y), shake_interval, mcrfpy.Easing.EASE_OUT)
 
     mcrfpy.Timer("shake_reset", reset, int(duration * 1000), once=True)
 
@@ -121,21 +117,17 @@ def camera_shake(grid, intensity=8, duration=0.3, shakes=4):
         offset_x = random.uniform(-intensity, intensity) * decay
         offset_y = random.uniform(-intensity, intensity) * decay
 
-        def do_shake(timer_name, ox=offset_x, oy=offset_y, si=shake_interval,
+        def do_shake(timer, runtime, ox=offset_x, oy=offset_y, si=shake_interval,
                      cx=original_center_x, cy=original_center_y):
-            anim_x = mcrfpy.Animation("center_x", cx + ox, si * 0.8, "easeOut")
-            anim_y = mcrfpy.Animation("center_y", cy + oy, si * 0.8, "easeOut")
-            anim_x.start(grid)
-            anim_y.start(grid)
+            grid.animate("center_x", cx + ox, si * 0.8, mcrfpy.Easing.EASE_OUT)
+            grid.animate("center_y", cy + oy, si * 0.8, mcrfpy.Easing.EASE_OUT)
 
-        mcrfpy.Timer(f"cam_shake_{i}", do_shake, int(i * shake_interval * 1000), once=True)
+        mcrfpy.Timer(f"cam_shake_{i}", do_shake, max(1, int(i * shake_interval * 1000)), once=True)
 
     # Return to original
-    def reset(timer_name):
-        anim_x = mcrfpy.Animation("center_x", float(original_center_x), shake_interval, "easeOut")
-        anim_y = mcrfpy.Animation("center_y", float(original_center_y), shake_interval, "easeOut")
-        anim_x.start(grid)
-        anim_y.start(grid)
+    def reset(timer, runtime):
+        grid.animate("center_x", float(original_center_x), shake_interval, mcrfpy.Easing.EASE_OUT)
+        grid.animate("center_y", float(original_center_y), shake_interval, mcrfpy.Easing.EASE_OUT)
 
     mcrfpy.Timer("cam_reset", reset, int(duration * 1000), once=True)
 
@@ -179,16 +171,14 @@ class ScreenShakeManager:
         else:
             return self.target.center
 
-    def _animate_position(self, x, y, duration, easing="easeOut"):
+    def _animate_position(self, x, y, duration, easing=None):
+        easing = easing or mcrfpy.Easing.EASE_OUT
         if self.mode == "frame":
-            anim_x = mcrfpy.Animation("x", float(x), duration, easing)
-            anim_y = mcrfpy.Animation("y", float(y), duration, easing)
+            self.target.animate("x", float(x), duration, easing)
+            self.target.animate("y", float(y), duration, easing)
         else:
-            anim_x = mcrfpy.Animation("center_x", float(x), duration, easing)
-            anim_y = mcrfpy.Animation("center_y", float(y), duration, easing)
-
-        anim_x.start(self.target)
-        anim_y.start(self.target)
+            self.target.animate("center_x", float(x), duration, easing)
+            self.target.animate("center_y", float(y), duration, easing)
 
     def shake(self, intensity=5, duration=0.3, shakes=4, decay=True):
         """
@@ -218,7 +208,7 @@ class ScreenShakeManager:
             offset_x = random.uniform(-current_intensity, current_intensity)
             offset_y = random.uniform(-current_intensity, current_intensity)
 
-            def do_shake(timer_name, ox=offset_x, oy=offset_y, si=shake_interval,
+            def do_shake(timer, runtime, ox=offset_x, oy=offset_y, si=shake_interval,
                         sid=current_id):
                 if self.shake_id != sid:
                     return  # Cancelled
@@ -229,10 +219,10 @@ class ScreenShakeManager:
                 )
 
             mcrfpy.Timer(f"shake_{current_id}_{i}", do_shake,
-                        int(i * shake_interval * 1000), once=True)
+                        max(1, int(i * shake_interval * 1000)), once=True)
 
         # Reset to original
-        def reset(timer_name, sid=current_id):
+        def reset(timer, runtime, sid=current_id):
             if self.shake_id != sid:
                 return
             self._animate_position(self.original_x, self.original_y, shake_interval)
@@ -320,14 +310,14 @@ def directional_shake(shaker, direction_x, direction_y, intensity=10, duration=0
         duration / 3
     )
 
-    def reverse(timer_name):
+    def reverse(timer, runtime):
         shaker._animate_position(
             shaker.original_x - dir_x * intensity * 0.5,
             shaker.original_y - dir_y * intensity * 0.5,
             duration / 3
         )
 
-    def reset(timer_name):
+    def reset(timer, runtime):
         shaker._animate_position(
             shaker.original_x,
             shaker.original_y,

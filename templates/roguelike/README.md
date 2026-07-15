@@ -2,7 +2,9 @@
 mcrf:
   objects: [Entity, Grid, FOV]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Roguelike Starter Template
@@ -114,11 +116,14 @@ def enemy_turn():
             continue
 
         # Simple chase AI: move toward player if visible
-        player_state = game.player.at(entity.pos[0], entity.pos[1])
-        if player_state.visible:
+        # entity.at(x, y) returns the GridPoint only when that cell is
+        # currently VISIBLE in this entity's perspective_map, else None.
+        ex, ey = entity.grid_pos
+        if game.player.at(ex, ey) is not None:
             # Calculate direction to player
-            dx = sign(game.player.pos[0] - entity.pos[0])
-            dy = sign(game.player.pos[1] - entity.pos[1])
+            px, py = game.player.grid_pos
+            dx = sign(px - ex)
+            dy = sign(py - ey)
             move_entity(entity, game.grid, dx, dy)
 ```
 
@@ -138,9 +143,9 @@ def create_item(grid, texture, x, y, item_type):
 
 # In game.py - check for items at player position
 def check_items():
-    px, py = game.player.pos
+    px, py = game.player.grid_pos
     for item in game.items:
-        if item.pos == (px, py):
+        if item.grid_pos == (px, py):
             pickup_item(item)
 ```
 
@@ -159,6 +164,10 @@ if game.grid.at(new_x, new_y).tilesprite == SPRITE_STAIRS_DOWN:
     generate_new_level()
 ```
 
+`GridPoint.tilesprite` is a legacy convenience setter; the modern equivalent
+is writing directly to a `TileLayer` (e.g. `floor_layer.set((x, y), SPRITE_STAIRS_DOWN)`).
+Either form works.
+
 ## Technical Notes
 
 ### FOV System
@@ -166,9 +175,17 @@ if game.grid.at(new_x, new_y).tilesprite == SPRITE_STAIRS_DOWN:
 McRogueFace uses TCOD (The Complete Roguelike Developer) for field of view calculations. The system works as follows:
 
 1. Set `walkable` and `transparent` on grid tiles during generation
-2. Call `entity.update_visibility()` after the entity moves
-3. Query visibility with `entity.at(x, y).visible` and `.discovered`
-4. Apply color overlays to tiles based on visibility state
+2. Call `entity.update_visibility()` after the entity moves - this recomputes
+   which cells are visible from the entity's position and updates its
+   `perspective_map` (a `DiscreteMap` with values `0`=unknown, `1`=discovered,
+   `2`=visible)
+3. Query visibility with `entity.at(x, y)`, which returns the `GridPoint` if
+   that cell is currently visible to this entity, or `None` otherwise. To
+   check discovered-but-not-currently-visible cells, read
+   `entity.perspective_map[x, y]` directly.
+4. Apply color overlays to tiles based on visibility state, e.g. via a
+   `ColorLayer` (`color_layer.set((x, y), mcrfpy.Color(...))`), or let
+   `grid.perspective = player` drive automatic fog-of-war dimming
 
 ### Coordinate System
 

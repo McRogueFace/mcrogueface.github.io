@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Entity, Grid, Caption, Font, Color, TileLayer]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # McRogueFace Minimal Template
@@ -82,8 +84,7 @@ def try_move(dx: int, dy: int) -> bool:
         if grid.at(new_x, new_y).walkable:
             player_x = new_x
             player_y = new_y
-            player_entity.x = player_x
-            player_entity.y = player_y
+            player_entity.grid_pos = (player_x, player_y)
             return True
     return False
 ```
@@ -93,7 +94,7 @@ def try_move(dx: int, dy: int) -> bool:
 ```python
 # Create an NPC
 npc = mcrfpy.Entity(
-    pos=(5, 5),
+    grid_pos=(5, 5),
     texture=texture,
     sprite_index=111  # 'o' in CP437 - common for orcs
 )

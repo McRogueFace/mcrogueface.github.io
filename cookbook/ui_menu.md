@@ -3,6 +3,8 @@ mcrf:
   objects: [Frame, Caption, Color, Scene, Key, InputState]
   diataxis: howto
   disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Selection Menu Widget
@@ -125,7 +127,7 @@ class Menu:
         Handle keyboard input.
 
         Args:
-            key: Key name string
+            key: A mcrfpy.Key enum value (as delivered to scene.on_key)
 
         Returns:
             True if key was handled, False otherwise

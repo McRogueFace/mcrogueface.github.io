@@ -3,7 +3,9 @@ title: Rendering and Visuals
 mcrf:
   objects: [Frame, Caption, Sprite, Grid, TileLayer, Color, Texture, Easing, Timer, Scene]
   diataxis: howto
-  disposition: migrated-from-wiki-needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Rendering and Visuals

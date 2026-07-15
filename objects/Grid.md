@@ -4,7 +4,9 @@ title: Grid
 mcrf:
   objects: [Grid, GridView, TileLayer, ColorLayer, Entity, FOV, AStarPath, DijkstraMap]
   diataxis: reference
-  disposition: rewrite-pending
+  disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Grid
@@ -26,24 +28,27 @@ grid.pos = (100, 50)
 grid.zoom = 2.0
 grid.center_camera((40, 22))  # Center on tile coordinates
 
-# Work with layers
-tile_layer = grid.add_layer('tile', z_index=0, texture=texture)
-color_layer = grid.add_layer('color', z_index=1)
+# Work with layers - construct a layer object, then attach it
+tile_layer = mcrfpy.TileLayer(name="floor", z_index=0, texture=texture)
+color_layer = mcrfpy.ColorLayer(z_index=1, name="tint")
+grid.add_layer(tile_layer)
+grid.add_layer(color_layer)
 tile_layer.set((5, 5), 42)  # Set tile sprite index
 
 # Add entities
-player = mcrfpy.Entity(pos=(10, 10), texture=texture, sprite_index=84)
+player = mcrfpy.Entity(grid_pos=(10, 10), texture=texture, sprite_index=84)
 grid.entities.append(player)
 
 # Field of view
 grid.fov_radius = 8
-grid.compute_fov(player.x, player.y, radius=8)
-if grid.is_in_fov(15, 10):
+grid.compute_fov(player.grid_pos, radius=8)
+if grid.is_in_fov((15, 10)):
     print("Visible!")
 
 # Pathfinding
-path = grid.find_path(player.pos, (20, 15))
-next_step = path.walk()
+path = grid.find_path(player.grid_pos, (20, 15))
+if path:
+    next_step = path.walk()
 
 # Dijkstra maps
 dijkstra = grid.get_dijkstra_map((goal_x, goal_y))
@@ -76,10 +81,10 @@ mcrfpy.Grid(pos=None, size=None, grid_size=None, texture=None, **kwargs)
 | `zoom` | float | Camera zoom level (1.0 = normal) |
 | `grid_size` | tuple | Tile dimensions (width, height), read-only |
 | `grid_w`, `grid_h` | int | Grid dimensions, read-only |
-| `texture` | Texture | Default sprite sheet for tiles |
+| `texture` | Texture | Sprite sheet for tile rendering (read-only) |
 | `fill_color` | Color | Background fill color |
 | `entities` | EntityCollection | Entities on this grid |
-| `layers` | list | All tile and color layers |
+| `layers` | tuple | All tile and color layers, sorted by z-index (read-only) |
 | `perspective` | Entity | Entity used for FOV perspective |
 | `perspective_enabled` | bool | Whether perspective rendering is active |
 | `fov` | FOV | FOV algorithm to use |
@@ -100,13 +105,13 @@ mcrfpy.Grid(pos=None, size=None, grid_size=None, texture=None, **kwargs)
 | Method | Description |
 |--------|-------------|
 | `at(x, y)` | Get GridPoint at tile coordinates |
-| `add_layer(type, **kwargs)` | Add a TileLayer ('tile') or ColorLayer ('color') |
-| `remove_layer(layer)` | Remove a layer from the grid |
-| `layer(z_index)` | Get layer by z-index |
+| `add_layer(layer)` | Attach a `TileLayer` or `ColorLayer` object (construct it first) |
+| `remove_layer(name_or_layer)` | Remove a layer by name or by object reference |
+| `layer(name)` | Get layer by name |
 | `center_camera(pos)` | Center camera on tile coordinates |
-| `compute_fov(x, y, radius=None)` | Calculate field of view from position |
+| `compute_fov(pos, radius=0, light_walls=True, algorithm=FOV.BASIC)` | Calculate field of view from a position |
 | `is_in_fov(x, y)` | Check if tile is visible in current FOV |
-| `find_path(start, end)` | Compute A* path, returns AStarPath |
+| `find_path(start, end)` | Compute A* path, returns AStarPath (or None) |
 | `get_dijkstra_map(root)` | Get/create Dijkstra map from position |
 | `clear_dijkstra_maps()` | Clear cached Dijkstra maps |
 | `entities_in_radius(pos, radius)` | Get entities within radius |
@@ -122,15 +127,15 @@ mcrfpy.Grid(pos=None, size=None, grid_size=None, texture=None, **kwargs)
 Grid supports three cell interaction callbacks:
 
 ```python
-def on_click(grid, cell_pos, button):
+def on_click(cell_pos, button, action):
     x, y = cell_pos
-    print(f"Clicked cell ({x}, {y}) with button {button}")
+    print(f"Clicked cell ({x}, {y}) with button {button}, action {action}")
 
-def on_enter(grid, cell_pos):
+def on_enter(cell_pos):
     x, y = cell_pos
     print(f"Mouse entered cell ({x}, {y})")
 
-def on_exit(grid, cell_pos):
+def on_exit(cell_pos):
     x, y = cell_pos
     print(f"Mouse exited cell ({x}, {y})")
 

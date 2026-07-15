@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Key, InputState]
   diataxis: tutorial
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 2: Walls, Floors, and Collision
@@ -29,6 +31,11 @@ Each cell in a Grid has properties that control both appearance and behavior:
 | `transparent` | bool | Does this cell block line of sight? |
 
 For a roguelike, we care most about `walkable` - walls should block movement.
+
+> **Note:** `cell.tilesprite = N` (used throughout this tutorial) is the simple, legacy
+> way to set a tile's appearance and still works today. The modern equivalent is a
+> `TileLayer`: `tile_layer.set((x, y), N)`. Either form is fine for this tutorial; the
+> `TileLayer` form becomes useful once you want multiple stacked tile layers (Part 3+).
 
 ## The Complete Code
 

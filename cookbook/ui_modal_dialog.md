@@ -2,7 +2,9 @@
 mcrf:
   objects: [Frame, Caption, Color, Scene, Key, InputState, MouseButton]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Modal Dialog Widget
@@ -529,13 +531,13 @@ def on_key(key, state):
     if current_dialog and current_dialog.handle_key(key):
         return
 
-    if key == mcrfpy.Key.Num1:
+    if key == mcrfpy.Key.NUM_1:
         show_info()
-    elif key == mcrfpy.Key.Num2:
+    elif key == mcrfpy.Key.NUM_2:
         show_warning()
-    elif key == mcrfpy.Key.Num3:
+    elif key == mcrfpy.Key.NUM_3:
         show_error()
-    elif key == mcrfpy.Key.Num4:
+    elif key == mcrfpy.Key.NUM_4:
         show_success()
 
 scene.on_key = on_key

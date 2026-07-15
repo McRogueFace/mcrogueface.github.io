@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Frame, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 9: Ranged Combat and Targeting

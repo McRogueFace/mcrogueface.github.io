@@ -3,6 +3,8 @@ mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Frame, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
   disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 11: Multiple Dungeon Levels
@@ -1222,8 +1224,8 @@ def move_cursor(dx: int, dy: int) -> None:
 
     target_x = new_x
     target_y = new_y
-    target_cursor.x = target_x
-    target_cursor.y = target_y
+    target_cursor.grid_x = target_x
+    target_cursor.grid_y = target_y
 
     enemy = get_blocking_entity_at(grid, target_x, target_y, exclude=player)
     if enemy and enemy in entity_data:
@@ -1488,7 +1490,7 @@ def enemy_turn() -> None:
         if fighter is None or not fighter.is_alive:
             continue
 
-        ex, ey = int(enemy.x), int(enemy.y)
+        ex, ey = int(enemy.grid_x), int(enemy.grid_y)
 
         if not grid.is_in_fov(ex, ey):
             continue
@@ -1521,12 +1523,12 @@ def move_toward_player(enemy: mcrfpy.Entity, ex: int, ey: int, px: int, py: int)
     new_y = ey + dy
 
     if can_move_to(grid, new_x, new_y, enemy):
-        enemy.x = new_x
-        enemy.y = new_y
+        enemy.grid_x = new_x
+        enemy.grid_y = new_y
     elif dx != 0 and can_move_to(grid, ex + dx, ey, enemy):
-        enemy.x = ex + dx
+        enemy.grid_x = ex + dx
     elif dy != 0 and can_move_to(grid, ex, ey + dy, enemy):
-        enemy.y = ey + dy
+        enemy.grid_y = ey + dy
 
 # =============================================================================
 # UI Updates
@@ -1693,7 +1695,7 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         message_log.add("A new adventure begins!", COLOR_INFO)
         return
 
-    if key == mcrfpy.Key.Escape:
+    if key == mcrfpy.Key.ESCAPE:
         if game_mode == GameMode.TARGETING:
             exit_targeting_mode()
             message_log.add("Targeting cancelled.", COLOR_INFO)
@@ -1704,7 +1706,7 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
             mcrfpy.exit()
             return
 
-    if key == mcrfpy.Key.Period and game_mode == GameMode.NORMAL and not game_over:
+    if key == mcrfpy.Key.PERIOD and game_mode == GameMode.NORMAL and not game_over:
         save_game()
         return
 
@@ -1717,27 +1719,27 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         handle_normal_input(key)
 
 ITEM_KEYS = {
-    mcrfpy.Key.Num1: 0,
-    mcrfpy.Key.Num2: 1,
-    mcrfpy.Key.Num3: 2,
-    mcrfpy.Key.Num4: 3,
-    mcrfpy.Key.Num5: 4,
+    mcrfpy.Key.NUM_1: 0,
+    mcrfpy.Key.NUM_2: 1,
+    mcrfpy.Key.NUM_3: 2,
+    mcrfpy.Key.NUM_4: 3,
+    mcrfpy.Key.NUM_5: 4,
 }
 
 def handle_normal_input(key: mcrfpy.Key) -> None:
-    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         try_move_or_attack(0, -1)
-    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         try_move_or_attack(0, 1)
-    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         try_move_or_attack(-1, 0)
-    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         try_move_or_attack(1, 0)
     elif key == mcrfpy.Key.F:
         enter_targeting_mode()
-    elif key == mcrfpy.Key.G or key == mcrfpy.Key.Comma:
+    elif key == mcrfpy.Key.G or key == mcrfpy.Key.COMMA:
         pickup_item()
-    elif key == mcrfpy.Key.Period and mcrfpy.keypressed("LShift"):
+    elif key == mcrfpy.Key.PERIOD and mcrfpy.keyboard.shift:
         # Shift+. (>) to descend stairs
         descend_stairs()
     elif key in ITEM_KEYS:
@@ -1747,15 +1749,15 @@ def handle_normal_input(key: mcrfpy.Key) -> None:
             update_ui()
 
 def handle_targeting_input(key: mcrfpy.Key) -> None:
-    if key == mcrfpy.Key.Up or key == mcrfpy.Key.W:
+    if key == mcrfpy.Key.UP or key == mcrfpy.Key.W:
         move_cursor(0, -1)
-    elif key == mcrfpy.Key.Down or key == mcrfpy.Key.S:
+    elif key == mcrfpy.Key.DOWN or key == mcrfpy.Key.S:
         move_cursor(0, 1)
-    elif key == mcrfpy.Key.Left or key == mcrfpy.Key.A:
+    elif key == mcrfpy.Key.LEFT or key == mcrfpy.Key.A:
         move_cursor(-1, 0)
-    elif key == mcrfpy.Key.Right or key == mcrfpy.Key.D:
+    elif key == mcrfpy.Key.RIGHT or key == mcrfpy.Key.D:
         move_cursor(1, 0)
-    elif key == mcrfpy.Key.Enter or key == mcrfpy.Key.Space:
+    elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.SPACE:
         confirm_target()
 
 scene.on_key = handle_keys

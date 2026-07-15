@@ -2,7 +2,9 @@
 mcrf:
   objects: [Grid, Entity, ColorLayer, TileLayer, Texture, Color]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Grid System
@@ -39,7 +41,7 @@ scene.children.append(grid)
 | `size` | tuple | Display size `(width, height)` in pixels |
 
 Alternative keyword arguments:
-- `grid_x`, `grid_y` instead of `grid_size`
+- `grid_w`, `grid_h` instead of `grid_size`
 - `x`, `y` instead of `pos`
 - `w`, `h` instead of `size`
 
@@ -51,9 +53,10 @@ width, height = grid.grid_size
 print(f"Grid is {width}x{height} tiles")
 
 # Camera control
-grid.center = (25, 25)       # Center camera on tile (25, 25)
-grid.center_x = 25           # Individual axis control
-grid.center_y = 25
+grid.center_camera((25, 25)) # Center camera on tile (25, 25) -- takes TILE coords
+grid.center = (400, 300)     # Center camera on a PIXEL coordinate instead
+grid.center_x = 400          # Individual axis control (pixels)
+grid.center_y = 300
 grid.zoom = 2.0              # 2x zoom (closer view)
 
 # Appearance
@@ -61,6 +64,8 @@ grid.fill_color = mcrfpy.Color(20, 20, 30)  # Background color
 grid.visible = True
 grid.opacity = 1.0           # 0.0 to 1.0
 ```
+
+`grid.center`/`center_x`/`center_y` are in pixel space; `grid.center_camera((x, y))` takes tile coordinates and is usually what you want when following an entity or a fixed point on the map.
 
 ## GridPoint - Individual Tiles
 
@@ -73,9 +78,18 @@ point = grid.at(10, 15)
 # Tile properties
 point.walkable = True        # Can entities walk here?
 point.transparent = True     # Does light/vision pass through?
-point.tilesprite = 0         # Base tile sprite index
-point.color = mcrfpy.Color(255, 255, 255)  # Tile tint
+point.tilesprite = 0         # Base tile sprite index (legacy alias for the
+                              # default 'tilesprite' TileLayer -- see below)
 ```
+
+`GridPoint` itself only exposes `walkable`, `transparent`, `grid_pos` (read-only), and
+`entities` (read-only). There is no `GridPoint.color` or `tile_overlay` property. Every
+grid comes with a default `TileLayer` named `"tilesprite"`, so `point.tilesprite = N` is
+sugar for writing into that layer -- it still works, but new code should prefer talking
+to layers directly (`grid.layer("tilesprite").set((x, y), N)`), especially once you add
+more than one layer. To tint or overlay a cell, add a `ColorLayer` and set colors on it
+(see [Grid Layers](#grid-layers) below) -- there is no built-in per-cell color on
+`GridPoint`.
 
 ### GridPoint Properties
 
@@ -83,11 +97,9 @@ point.color = mcrfpy.Color(255, 255, 255)  # Tile tint
 |----------|------|-------------|
 | `walkable` | bool | Whether entities can occupy this tile |
 | `transparent` | bool | Whether vision/light passes through |
-| `tilesprite` | int | Sprite index from the grid's texture |
-| `color` | Color | Tint color applied to the tile |
-| `color_overlay` | Color | Additional overlay color (for effects) |
-| `tile_overlay` | int | Overlay sprite index (-1 for none) |
+| `grid_pos` | tuple | `(x, y)` cell coordinates (read-only) |
 | `entities` | list | Entities currently at this position (read-only) |
+| `tilesprite` | int | Legacy alias for the default `"tilesprite"` TileLayer's value at this cell |
 
 ## Working with Tiles
 
@@ -165,14 +177,16 @@ player = mcrfpy.Entity(
 grid.entities.append(player)
 
 # Entity properties
-player.pos = (15, 15)        # Move to new position
-player.x = 15                # Individual coordinate access
-player.y = 15
-player.sprite_number = 64    # Change appearance
+player.grid_pos = (15, 15)   # Move to a new TILE (logical/pathfinding position)
+player.grid_x = 15           # Individual tile-coordinate access
+player.grid_y = 15
+player.sprite_index = 64     # Change appearance
 
-# Position can be read as tuple or individual coordinates
-x, y = player.pos
-print(f"Player at ({player.x}, {player.y})")
+# player.pos / player.x / player.y are the entity's PIXEL position relative to
+# the grid (draw_pos * tile size) -- use these for rendering/animation, not
+# for logical game position.
+x, y = player.grid_pos
+print(f"Player at tile ({player.grid_x}, {player.grid_y})")
 ```
 
 ### Entity Collection Operations
@@ -232,7 +246,7 @@ enemies = spawn_enemies(grid, 10)
 The grid's camera determines which portion of the grid is visible on screen.
 
 ```python
-# Center on the player
+# Center on the player (player.pos and grid.center are both pixel coordinates)
 grid.center = player.pos
 
 # Smooth camera following
@@ -246,8 +260,8 @@ def update_camera():
     grid.center_x = current_x + (target_x - current_x) * lerp_speed
     grid.center_y = current_y + (target_y - current_y) * lerp_speed
 
-# Call every frame
-camera_timer = mcrfpy.Timer("camera", lambda t, rt: update_camera(), 0.016)
+# Call roughly every frame (Timer interval is in MILLISECONDS)
+camera_timer = mcrfpy.Timer("camera", lambda t, rt: update_camera(), 16)
 
 # Zoom controls
 grid.zoom = 1.0   # Default view
@@ -260,14 +274,18 @@ grid.zoom = 0.5   # Zoomed out (see more tiles)
 Grids support additional layers for visual effects. See [Field of View](fov.md) for details on `ColorLayer`.
 
 ```python
-# Add a color layer (useful for FOV shading)
-color_layer = grid.add_layer("color", z_index=-1)
+# add_layer() takes a LAYER OBJECT, not a string -- build the layer, then attach it
+color_layer = mcrfpy.ColorLayer(z_index=1, name="tint")
+grid.add_layer(color_layer)
 
 # Set individual cell colors
-color_layer.set(10, 10, mcrfpy.Color(255, 0, 0, 128))  # Red tint
+color_layer.set((10, 10), mcrfpy.Color(255, 0, 0, 128))  # Red tint
 
 # Fill entire layer
 color_layer.fill(mcrfpy.Color(0, 0, 0, 0))  # Clear/transparent
+
+# Layers are also visible through grid.layers (tuple) and grid.layer(name)
+tint = grid.layer("tint")
 ```
 
 ## Complete Example
@@ -344,28 +362,26 @@ grid.entities.append(player)
 # Center camera on player
 grid.center = player.pos
 
-# Movement handler
+# Movement handler -- on_key receives (Key, InputState) enums, not strings
 def on_key(key, action):
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
     dx, dy = 0, 0
-    key = key.lower()
-
-    if key in ("up", "w"): dy = -1
-    elif key in ("down", "s"): dy = 1
-    elif key in ("left", "a"): dx = -1
-    elif key in ("right", "d"): dx = 1
+    if key in (mcrfpy.Key.UP, mcrfpy.Key.W): dy = -1
+    elif key in (mcrfpy.Key.DOWN, mcrfpy.Key.S): dy = 1
+    elif key in (mcrfpy.Key.LEFT, mcrfpy.Key.A): dx = -1
+    elif key in (mcrfpy.Key.RIGHT, mcrfpy.Key.D): dx = 1
     else:
         return
 
-    new_x = int(player.x) + dx
-    new_y = int(player.y) + dy
+    new_x = player.grid_x + dx
+    new_y = player.grid_y + dy
 
     # Check collision
     if grid.at(new_x, new_y).walkable:
-        player.pos = (new_x, new_y)
-        grid.center = player.pos
+        player.grid_pos = (new_x, new_y)
+        grid.center = player.pos  # entity pixel position, matches grid.center's units
 
 scene.on_key = on_key
 ```
@@ -374,7 +390,9 @@ scene.on_key = on_key
 
 - Grid coordinates are integers starting at (0, 0)
 - The `at()` method returns a reference - changes affect the grid directly
-- Entity positions are in grid coordinates, not pixels
+- `entity.grid_pos` is the logical tile position; `entity.pos` is the pixel position
+  relative to the grid (`draw_pos * tile size`) -- use `grid_pos` for game logic,
+  `pos`/`x`/`y` for rendering and camera math
 - Camera center can be set outside grid bounds (shows empty space)
 - Grid rendering is optimized - only visible tiles are drawn
 - The `grid_size` property is read-only after creation

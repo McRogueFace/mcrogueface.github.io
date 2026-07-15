@@ -4,7 +4,9 @@ title: Sprite
 mcrf:
   objects: [Sprite, Texture]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Sprite
@@ -18,7 +20,10 @@ A `Sprite` displays a single image from a texture or sprite sheet. Use sprites f
 ## Quick Reference
 
 ```python
-# Load a texture atlas
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+# Load a texture atlas (or use mcrfpy.default_texture)
 texture = mcrfpy.Texture("assets/sprites.png", 16, 16)
 
 # Create a sprite from the texture

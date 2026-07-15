@@ -5,8 +5,8 @@ mcrf:
   objects: [Music]
   diataxis: reference
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Music
@@ -20,15 +20,21 @@ The `Music` class handles streaming audio playback for longer audio files like b
 ## Quick Reference
 
 ```python
+import mcrfpy
+
+scene = mcrfpy.Scene("music_demo")
+scene.children.append(mcrfpy.Caption(text="Music demo", pos=(20, 20)))
+mcrfpy.current_scene = scene
+
 # Load and play background music
-music = mcrfpy.Music("assets/audio/theme.ogg")
+music = mcrfpy.Music("assets/sfx/splat1.ogg")
 music.volume = 50  # 50% volume
 music.loop = True
 music.play()
 
 # Control playback
 music.pause()
-music.position = 30.0  # Jump to 30 seconds
+music.position = 0.0  # Jump to a position in seconds
 music.play()
 
 # Check status

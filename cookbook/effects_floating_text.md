@@ -1,8 +1,10 @@
 ---
 mcrf:
-  objects: [Caption, Color, Scene, Grid, Timer, Animation, Easing]
+  objects: [Caption, Color, Scene, Grid, Timer, Easing]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Floating Damage Numbers
@@ -25,27 +27,24 @@ def show_damage(scene, x, y, amount, color=(255, 50, 50)):
     scene.children.append(caption)
 
     # Animate upward movement
-    anim_y = mcrfpy.Animation("y", float(y - 50), 0.8, "easeOut")
-    anim_y.start(caption)
+    caption.animate("y", float(y - 50), 0.8, mcrfpy.Easing.EASE_OUT)
 
     # Animate fade out
-    anim_alpha = mcrfpy.Animation("opacity", 0.0, 0.8, "easeIn")
-    anim_alpha.start(caption)
+    caption.animate("opacity", 0.0, 0.8, mcrfpy.Easing.EASE_IN)
 
     # Remove caption after animation completes
     def cleanup(timer, runtime):
-        # Find and remove the caption
-        for i, elem in enumerate(scene.children):
-            if elem is caption:
-                scene.children.remove(i)
-                break
+        try:
+            scene.children.remove(caption)
+        except ValueError:
+            pass
 
-    mcrfpy.Timer("cleanup_damage", cleanup, 850)
+    mcrfpy.Timer("cleanup_damage", cleanup, 850, once=True)
 
 # Usage
 game_scene = mcrfpy.Scene("game")
+mcrfpy.current_scene = game_scene
 show_damage(game_scene, 400, 300, 42)
-game_scene.activate()
 ```
 
 ## Grid-Aware Floating Text
@@ -159,12 +158,10 @@ class FloatingTextManager:
         self.active_texts.append(text_info)
 
         # Animate upward
-        anim_y = mcrfpy.Animation("y", float(y - rise), duration, "easeOut")
-        anim_y.start(caption)
+        caption.animate("y", float(y - rise), duration, mcrfpy.Easing.EASE_OUT)
 
         # Animate fade
-        anim_alpha = mcrfpy.Animation("opacity", 0.0, duration, "easeIn")
-        anim_alpha.start(caption)
+        caption.animate("opacity", 0.0, duration, mcrfpy.Easing.EASE_IN)
 
         # Schedule cleanup
         cleanup_id = self.text_id
@@ -172,7 +169,7 @@ class FloatingTextManager:
             self._remove_text(tid)
 
         mcrfpy.Timer(f"float_cleanup_{self.text_id}", cleanup,
-                     int(duration * 1000) + 50)
+                     int(duration * 1000) + 50, once=True)
 
     def _remove_text(self, text_id):
         """Remove a text element by ID."""
@@ -180,10 +177,10 @@ class FloatingTextManager:
             if info["id"] == text_id:
                 caption = info["caption"]
                 # Find in scene and remove
-                for j, elem in enumerate(self.scene.children):
-                    if elem is caption:
-                        self.scene.children.remove(j)
-                        break
+                try:
+                    self.scene.children.remove(caption)
+                except ValueError:
+                    pass
                 self.active_texts.pop(i)
                 break
 
@@ -267,7 +264,7 @@ class StackedFloatingText:
             if k in self.position_stack:
                 self.position_stack[k] = max(0, self.position_stack[k] - 1)
 
-        mcrfpy.Timer(f"stack_reset_{x}_{y}_{offset}", reset_stack, 300)
+        mcrfpy.Timer(f"stack_reset_{x}_{y}_{offset}", reset_stack, 300, once=True)
 
 # Usage
 game_scene = mcrfpy.Scene("game")

@@ -6,7 +6,9 @@ nav_order: 3
 mcrf:
   objects: [Grid, ColorLayer, Color, FOV]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Cell Highlighting (Targeting)

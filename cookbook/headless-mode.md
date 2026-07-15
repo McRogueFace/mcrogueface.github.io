@@ -3,7 +3,9 @@ title: Headless Mode
 mcrf:
   objects: [Timer, Frame, Scene, Color, Easing]
   diataxis: howto
-  disposition: migrated-from-wiki-needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Headless Mode
@@ -114,7 +116,7 @@ t.interval    # Interval in ms (int)
 t.active      # Is timer running? (bool)
 t.paused      # Is timer paused? (bool)
 t.stopped     # Is timer stopped? (bool)
-t.remaining   # Time until next fire (float)
+t.remaining   # Time until next fire, in ms (int, read-only)
 t.once        # Fire only once? (bool)
 t.callback    # The callback function
 ```

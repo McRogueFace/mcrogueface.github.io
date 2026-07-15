@@ -4,7 +4,9 @@ title: Frame
 mcrf:
   objects: [Frame]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Frame
@@ -18,6 +20,11 @@ A `Frame` is a rectangular UI element that can contain other drawable elements. 
 ## Quick Reference
 
 ```python
+import mcrfpy
+
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
 # Create a styled panel
 panel = mcrfpy.Frame(pos=(100, 100), size=(200, 150))
 panel.fill_color = mcrfpy.Color(40, 40, 40, 200)

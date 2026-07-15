@@ -6,23 +6,30 @@ nav_order: 1
 mcrf:
   objects: [Grid, Entity, FOV, ColorLayer, Color, Scene, Texture]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Basic Fog of War
 
 ![Fog of War Recipe](/images/cookbook/grid_fog_of_war.png)
 
-Create classic roguelike visibility with visible, discovered, and unknown areas using the Grid's FOV system.
+Create classic roguelike visibility with visible, discovered, and unknown areas using the Grid's built-in perspective system.
 
 ---
 
 ## Overview
 
-Fog of war provides three visibility states:
-- **Visible**: Currently in player's line of sight (fully lit)
-- **Discovered**: Previously seen but not currently visible (dimmed)
-- **Unknown**: Never seen (completely black)
+Fog of war provides three visibility states, tracked per-entity in `entity.perspective_map`:
+- **Visible** (`mcrfpy.Perspective.VISIBLE`, value 2): Currently in the entity's line of sight (fully lit)
+- **Discovered** (`mcrfpy.Perspective.DISCOVERED`, value 1): Previously seen but not currently visible (dimmed)
+- **Unknown** (`mcrfpy.Perspective.UNKNOWN`, value 0): Never seen (completely black)
+
+The simplest way to get fog of war is to set `grid.perspective = some_entity`: the engine
+automatically draws unseen cells black and discovered-but-not-visible cells dimmed, using
+that entity's `perspective_map`. For custom colors/shading, bind a `ColorLayer` to the
+entity instead (see [Rendering with ColorLayer](#rendering-with-colorlayer) below).
 
 ---
 
@@ -33,59 +40,75 @@ import mcrfpy
 
 # Create scene and grid
 scene = mcrfpy.Scene("game")
-texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
-grid = mcrfpy.Grid(50, 50, texture, 0, 0, 800, 600)
+mcrfpy.current_scene = scene
+
+texture = mcrfpy.default_texture
+grid = mcrfpy.Grid(grid_size=(50, 50), texture=texture, pos=(0, 0), size=(800, 600))
+scene.children.append(grid)
 
 # Add player entity
-player = mcrfpy.Entity((25, 25), texture, 0)
+player = mcrfpy.Entity(grid_pos=(25, 25), texture=texture, sprite_index=0)
 grid.entities.append(player)
 
-# Set player as the perspective for FOV
-grid.perspective = 0  # Index of player entity
+# Set player as the perspective entity - the view now renders fog of war
+# based on what the player has seen (unseen cells drawn black, discovered
+# cells dimmed). Set to None for an omniscient (fully-lit) view.
+grid.perspective = player
+grid.fov_radius = 10
 ```
 
 ---
 
 ## Computing Field of View
 
-Use the built-in shadowcasting algorithm:
+Each entity tracks its own visibility in `entity.perspective_map`. Call
+`entity.update_visibility()` after the entity moves to recompute it (the engine also
+calls this automatically for entities driven by `grid.step()` behaviors):
 
 ```python
 def update_fov():
-    """Recompute FOV from player's position."""
-    px, py = player.pos
-
-    # Compute FOV with radius 10, using shadowcasting algorithm
-    grid.compute_fov(px, py, radius=10, algorithm=mcrfpy.FOV.SHADOW)
+    """Recompute FOV from the player's current position."""
+    player.update_visibility()
 
 # Call after every player move
 def move_player(dx, dy):
-    px, py = player.pos
-    new_x, new_y = px + dx, py + dy
+    x, y = player.grid_x, player.grid_y
+    new_x, new_y = x + dx, y + dy
 
     # Check if destination is walkable
-    if grid.at(new_x, new_y).walkable:
-        player.pos = (new_x, new_y)
+    cell = grid.at(new_x, new_y)
+    if cell is not None and cell.walkable:
+        player.grid_pos = (new_x, new_y)
         update_fov()
 ```
+
+`grid.fov` selects the shadowcasting algorithm used by `update_visibility()`
+(`mcrfpy.FOV.BASIC` by default; see [FOV Algorithms](#fov-algorithms) below), and
+`grid.fov_radius` sets the default sight radius.
 
 ---
 
 ## Rendering with ColorLayer
 
-The ColorLayer applies visibility shading automatically:
+`grid.perspective` covers the common case, but for custom tint colors, bind a
+`ColorLayer` directly to the entity with `apply_perspective()`. Once bound, the layer
+is repainted every time you call `entity.update_visibility()`:
 
 ```python
 # Add a color layer for FOV shading (behind tiles)
-color_layer = grid.add_layer("color", z_index=-1)
+color_layer = mcrfpy.ColorLayer(z_index=-1, name="fog")
+grid.add_layer(color_layer)
 
-# Apply perspective-based coloring
+# Bind the layer to the player's perspective
 color_layer.apply_perspective(
     entity=player,
-    visible=mcrfpy.Color(0, 0, 0, 0),       # Transparent - fully visible
+    visible=mcrfpy.Color(0, 0, 0, 0),         # Transparent - fully visible
     discovered=mcrfpy.Color(40, 40, 60, 180), # Dim blue-gray overlay
-    unknown=mcrfpy.Color(0, 0, 0, 255)       # Solid black
+    unknown=mcrfpy.Color(0, 0, 0, 255)        # Solid black
 )
+
+# Recompute + repaint together
+player.update_visibility()
 ```
 
 ---
@@ -97,12 +120,13 @@ import mcrfpy
 
 # Scene setup
 scene = mcrfpy.Scene("dungeon")
+mcrfpy.current_scene = scene
 
 # Load tileset
-texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
+texture = mcrfpy.default_texture
 
 # Create grid
-grid = mcrfpy.Grid(50, 50, texture, 0, 0, 800, 600)
+grid = mcrfpy.Grid(grid_size=(50, 50), texture=texture, pos=(0, 0), size=(800, 600))
 scene.children.append(grid)
 
 # Initialize dungeon - walls block sight and movement
@@ -129,50 +153,46 @@ for px, py in pillars:
     point.transparent = False
 
 # Create player
-player = mcrfpy.Entity((25, 25), texture, 64)  # Player sprite
+player = mcrfpy.Entity(grid_pos=(25, 25), texture=texture, sprite_index=64)  # Player sprite
 grid.entities.append(player)
 
-# Set perspective to player
-grid.perspective = 0
+# Add a custom fog of war layer bound to the player
+fog_layer = mcrfpy.ColorLayer(z_index=-1, name="fog")
+grid.add_layer(fog_layer)
+fog_layer.apply_perspective(
+    entity=player,
+    visible=mcrfpy.Color(0, 0, 0, 0),
+    discovered=mcrfpy.Color(20, 20, 40, 160),
+    unknown=mcrfpy.Color(0, 0, 0, 255)
+)
 
-# Add fog of war layer
-fog_layer = grid.add_layer("color", z_index=-1)
+grid.fov_radius = 8
 
 def update_visibility():
-    """Update FOV and fog colors."""
-    px, py = player.pos
+    """Recompute FOV and repaint the bound fog layer."""
+    player.update_visibility()
 
-    # Compute new FOV
-    grid.compute_fov(px, py, radius=8, algorithm=mcrfpy.FOV.SHADOW)
-
-    # Update fog layer colors
-    fog_layer.apply_perspective(
-        entity=player,
-        visible=mcrfpy.Color(0, 0, 0, 0),
-        discovered=mcrfpy.Color(20, 20, 40, 160),
-        unknown=mcrfpy.Color(0, 0, 0, 255)
-    )
-
-def handle_input(key, state):
-    if state != "start":
+def handle_input(key, action):
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    px, py = player.pos
+    x, y = player.grid_x, player.grid_y
     dx, dy = 0, 0
 
-    if key in ("w", "Up"):
+    if key in (mcrfpy.Key.W, mcrfpy.Key.Up):
         dy = -1
-    elif key in ("s", "Down"):
+    elif key in (mcrfpy.Key.S, mcrfpy.Key.Down):
         dy = 1
-    elif key in ("a", "Left"):
+    elif key in (mcrfpy.Key.A, mcrfpy.Key.Left):
         dx = -1
-    elif key in ("d", "Right"):
+    elif key in (mcrfpy.Key.D, mcrfpy.Key.Right):
         dx = 1
 
     if dx != 0 or dy != 0:
-        new_x, new_y = px + dx, py + dy
-        if grid.at(new_x, new_y).walkable:
-            player.pos = (new_x, new_y)
+        new_x, new_y = x + dx, y + dy
+        cell = grid.at(new_x, new_y)
+        if cell is not None and cell.walkable:
+            player.grid_pos = (new_x, new_y)
             update_visibility()
 
 scene.on_key = handle_input
@@ -181,67 +201,79 @@ scene.on_key = handle_input
 update_visibility()
 
 # Center camera on player
-grid.center = player.pos
-
-scene.activate()
+grid.center_camera((player.grid_x + 0.5, player.grid_y + 0.5))
 ```
 
 ---
 
 ## Checking Visibility in Code
 
-Query visibility state for game logic:
+Query visibility state for game logic via the moving entity's `perspective_map`
+(0=unknown, 1=discovered, 2=visible), or the `entity.at()` convenience method:
 
 ```python
 def is_tile_visible(x, y):
     """Check if a tile is currently visible to the player."""
-    return grid.is_in_fov(x, y)
+    return player.perspective_map[x, y] == mcrfpy.Perspective.VISIBLE
 
 def is_tile_discovered(x, y):
     """Check if a tile has ever been seen."""
-    state = player.at(x, y)  # Get GridPointState
-    return state.discovered
+    return player.perspective_map[x, y] != mcrfpy.Perspective.UNKNOWN
 
 def get_visible_enemies():
     """Return list of enemies the player can see."""
-    visible = []
-    for entity in grid.entities:
-        if entity != player:
-            ex, ey = entity.pos
-            if grid.is_in_fov(ex, ey):
-                visible.append(entity)
-    return visible
+    return player.visible_entities()
+```
+
+`entity.at(x, y)` returns the `GridPoint` at that cell only if it is currently VISIBLE
+to that entity's `perspective_map`, or `None` otherwise -- handy for "can I act on this
+cell right now" checks. `entity.visible_entities()` returns other entities within the
+entity's FOV directly, without a manual scan.
+
+If you only need a one-off computation without per-entity memory (e.g. checking line of
+sight for a single spell), use the lower-level grid API instead:
+
+```python
+grid.compute_fov((player.grid_x, player.grid_y), radius=10, algorithm=mcrfpy.FOV.SHADOW)
+if grid.is_in_fov(target_x, target_y):
+    ...
 ```
 
 ---
 
 ## FOV Algorithms
 
-McRogueFace supports multiple FOV algorithms:
+McRogueFace supports multiple FOV algorithms via the `mcrfpy.FOV` enum, used by both
+`entity.update_visibility()` (via `grid.fov`) and `grid.compute_fov()`:
 
 ```python
 # Shadowcasting (default) - fast and produces nice results
-grid.compute_fov(x, y, 10, mcrfpy.FOV.SHADOW)
+grid.compute_fov((x, y), radius=10, algorithm=mcrfpy.FOV.SHADOW)
 
-# Recursive shadowcasting - slightly different corner behavior
-grid.compute_fov(x, y, 10, mcrfpy.FOV.RECURSIVE_SHADOW)
+# Basic (libtcod default)
+grid.compute_fov((x, y), radius=10, algorithm=mcrfpy.FOV.BASIC)
 
 # Diamond - simple but produces diamond-shaped FOV
-grid.compute_fov(x, y, 10, mcrfpy.FOV.DIAMOND)
+grid.compute_fov((x, y), radius=10, algorithm=mcrfpy.FOV.DIAMOND)
 
-# Permissive - sees more tiles, good for tactical games
-grid.compute_fov(x, y, 10, mcrfpy.FOV.PERMISSIVE)
+# Permissive - sees more tiles, good for tactical games (0-8, increasingly permissive)
+grid.compute_fov((x, y), radius=10, algorithm=mcrfpy.FOV.PERMISSIVE_4)
+
+# Other options: FOV.RESTRICTIVE, FOV.SYMMETRIC_SHADOWCAST
 ```
+
+To make `entity.update_visibility()` use a non-default algorithm, set it on the grid
+once: `grid.fov = mcrfpy.FOV.SHADOW`.
 
 ---
 
 ## Tips
 
-1. **Call update after movement**: Always recompute FOV after the player moves
+1. **Call update after movement**: Always call `entity.update_visibility()` after the player moves
 2. **Transparent vs Walkable**: A tile can be see-through but not walkable (glass, water)
 3. **Layer z-index**: Use negative z-index so fog renders behind entities
-4. **Memory**: GridPointState tracks discovered tiles per-entity
-5. **Performance**: compute_fov is optimized - safe to call every frame if needed
+4. **Memory**: `entity.perspective_map` tracks discovered tiles per-entity
+5. **Cheap built-in fog**: `grid.perspective = entity` gets you black/dimmed fog with zero extra layers; only reach for a bound `ColorLayer` when you need custom colors
 
 ---
 

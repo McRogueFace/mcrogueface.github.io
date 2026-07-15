@@ -3,6 +3,8 @@ mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Frame, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
   disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 10: Saving and Loading
@@ -477,7 +479,7 @@ class ModeDisplay:
 
     def update(self, mode: GameMode) -> None:
         if mode == GameMode.NORMAL:
-            self.caption.text = "[NORMAL] F:Ranged | S:Save"
+            self.caption.text = "[NORMAL] F:Ranged | .:Save"
             self.caption.fill_color = mcrfpy.Color(100, 255, 100)
         elif mode == GameMode.TARGETING:
             self.caption.text = "[TARGETING] Arrows:Move, Enter:Fire, Esc:Cancel"
@@ -897,14 +899,14 @@ def spawn_items_in_room(target_grid: mcrfpy.Grid, room: RectangularRoom, tex: mc
 
 def is_position_occupied(target_grid: mcrfpy.Grid, x: int, y: int) -> bool:
     for entity in target_grid.entities:
-        if int(entity.x) == x and int(entity.y) == y:
+        if int(entity.grid_x) == x and int(entity.grid_y) == y:
             return True
     return False
 
 def get_item_at(target_grid: mcrfpy.Grid, x: int, y: int) -> Optional[mcrfpy.Entity]:
     for entity in target_grid.entities:
         if entity in item_data:
-            if int(entity.x) == x and int(entity.y) == y:
+            if int(entity.grid_x) == x and int(entity.grid_y) == y:
                 return entity
     return None
 
@@ -912,7 +914,7 @@ def get_blocking_entity_at(target_grid: mcrfpy.Grid, x: int, y: int, exclude: mc
     for entity in target_grid.entities:
         if entity == exclude:
             continue
-        if int(entity.x) == x and int(entity.y) == y:
+        if int(entity.grid_x) == x and int(entity.grid_y) == y:
             if entity in entity_data and entity_data[entity].is_alive:
                 return entity
     return None
@@ -940,8 +942,8 @@ def remove_item_entity(target_grid: mcrfpy.Grid, entity: mcrfpy.Entity) -> None:
 def enter_targeting_mode() -> None:
     global game_mode, target_cursor, target_x, target_y, player, grid, texture
 
-    target_x = int(player.x)
-    target_y = int(player.y)
+    target_x = int(player.grid_x)
+    target_y = int(player.grid_y)
 
     target_cursor = mcrfpy.Entity(
         grid_pos=(target_x, target_y),
@@ -981,7 +983,7 @@ def move_cursor(dx: int, dy: int) -> None:
         message_log.add("You cannot see that location.", COLOR_INVALID)
         return
 
-    player_x, player_y = int(player.x), int(player.y)
+    player_x, player_y = int(player.grid_x), int(player.grid_y)
     distance = abs(new_x - player_x) + abs(new_y - player_y)
     if distance > RANGED_ATTACK_RANGE:
         message_log.add(f"Target is out of range (max {RANGED_ATTACK_RANGE}).", COLOR_WARNING)
@@ -989,8 +991,7 @@ def move_cursor(dx: int, dy: int) -> None:
 
     target_x = new_x
     target_y = new_y
-    target_cursor.x = target_x
-    target_cursor.y = target_y
+    target_cursor.grid_pos = (target_x, target_y)
 
     enemy = get_blocking_entity_at(grid, target_x, target_y, exclude=player)
     if enemy and enemy in entity_data:
@@ -1000,7 +1001,7 @@ def move_cursor(dx: int, dy: int) -> None:
 def confirm_target() -> None:
     global game_mode, target_x, target_y, player, grid
 
-    if target_x == int(player.x) and target_y == int(player.y):
+    if target_x == int(player.grid_x) and target_y == int(player.grid_y):
         message_log.add("You cannot target yourself!", COLOR_INVALID)
         return
 
@@ -1104,7 +1105,7 @@ def handle_death(entity: mcrfpy.Entity, fighter: Fighter) -> None:
 def pickup_item() -> bool:
     global player, player_inventory, grid
 
-    px, py = int(player.x), int(player.y)
+    px, py = int(player.grid_x), int(player.grid_y)
     item_entity = get_item_at(grid, px, py)
 
     if item_entity is None:
@@ -1171,7 +1172,7 @@ def update_entity_visibility(target_grid: mcrfpy.Grid) -> None:
             entity.visible = True
             continue
 
-        ex, ey = int(entity.x), int(entity.y)
+        ex, ey = int(entity.grid_x), int(entity.grid_y)
         entity.visible = target_grid.is_in_fov(ex, ey)
 
 def update_fov(target_grid: mcrfpy.Grid, target_fov_layer, player_x: int, player_y: int) -> None:
@@ -1212,7 +1213,7 @@ def try_move_or_attack(dx: int, dy: int) -> None:
     if game_over:
         return
 
-    px, py = int(player.x), int(player.y)
+    px, py = int(player.grid_x), int(player.grid_y)
     new_target_x = px + dx
     new_target_y = py + dy
 
@@ -1225,8 +1226,7 @@ def try_move_or_attack(dx: int, dy: int) -> None:
         perform_attack(player, blocker)
         enemy_turn()
     elif grid.at(new_target_x, new_target_y).walkable:
-        player.x = new_target_x
-        player.y = new_target_y
+        player.grid_pos = (new_target_x, new_target_y)
         update_fov(grid, fov_layer, new_target_x, new_target_y)
         enemy_turn()
 
@@ -1242,7 +1242,7 @@ def enemy_turn() -> None:
     if game_over:
         return
 
-    player_x, player_y = int(player.x), int(player.y)
+    player_x, player_y = int(player.grid_x), int(player.grid_y)
 
     enemies = []
     for entity in grid.entities:
@@ -1256,7 +1256,7 @@ def enemy_turn() -> None:
         if fighter is None or not fighter.is_alive:
             continue
 
-        ex, ey = int(enemy.x), int(enemy.y)
+        ex, ey = int(enemy.grid_x), int(enemy.grid_y)
 
         if not grid.is_in_fov(ex, ey):
             continue
@@ -1289,12 +1289,11 @@ def move_toward_player(enemy: mcrfpy.Entity, ex: int, ey: int, px: int, py: int)
     new_y = ey + dy
 
     if can_move_to(grid, new_x, new_y, enemy):
-        enemy.x = new_x
-        enemy.y = new_y
+        enemy.grid_pos = (new_x, new_y)
     elif dx != 0 and can_move_to(grid, ex + dx, ey, enemy):
-        enemy.x = ex + dx
+        enemy.grid_pos = (ex + dx, ey)
     elif dy != 0 and can_move_to(grid, ex, ey + dy, enemy):
-        enemy.y = ey + dy
+        enemy.grid_pos = (ex, ey + dy)
 
 # =============================================================================
 # UI Updates
@@ -1443,7 +1442,7 @@ scene.children.append(title)
 # Instructions
 instructions = mcrfpy.Caption(
     pos=(250, 15),
-    text="WASD:Move | F:Ranged | G:Pickup | Ctrl+S:Save | R:Restart"
+    text="WASD:Move | F:Ranged | G:Pickup | Period(.):Save | R:Restart"
 )
 instructions.fill_color = mcrfpy.Color(180, 180, 180)
 instructions.font_size = 14
@@ -1498,7 +1497,7 @@ if has_save_file():
 else:
     generate_new_game()
     message_log.add("Welcome to the dungeon!", COLOR_INFO)
-    message_log.add("Press Ctrl+S to save your progress.", COLOR_INFO)
+    message_log.add("Press Period (.) to save your progress.", COLOR_INFO)
 
 # =============================================================================
 # Input Handling
@@ -1517,7 +1516,7 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         message_log.add("A new adventure begins!", COLOR_INFO)
         return
 
-    if key == mcrfpy.Key.Escape:
+    if key == mcrfpy.Key.ESCAPE:
         if game_mode == GameMode.TARGETING:
             exit_targeting_mode()
             message_log.add("Targeting cancelled.", COLOR_INFO)
@@ -1529,14 +1528,8 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
             mcrfpy.exit()
             return
 
-    # Save game (Ctrl+S or just S when not moving)
-    if key == mcrfpy.Key.S and game_mode == GameMode.NORMAL:
-        # Check if this is meant to be a save (could add modifier check)
-        # For simplicity, we will use a dedicated save key
-        pass
-
     # Dedicated save with period key
-    if key == mcrfpy.Key.Period and game_mode == GameMode.NORMAL and not game_over:
+    if key == mcrfpy.Key.PERIOD and game_mode == GameMode.NORMAL and not game_over:
         save_game()
         return
 
@@ -1550,28 +1543,28 @@ def handle_keys(key: mcrfpy.Key, action: mcrfpy.InputState) -> None:
         handle_normal_input(key)
 
 ITEM_KEYS = {
-    mcrfpy.Key.Num1: 0,
-    mcrfpy.Key.Num2: 1,
-    mcrfpy.Key.Num3: 2,
-    mcrfpy.Key.Num4: 3,
-    mcrfpy.Key.Num5: 4,
+    mcrfpy.Key.NUM_1: 0,
+    mcrfpy.Key.NUM_2: 1,
+    mcrfpy.Key.NUM_3: 2,
+    mcrfpy.Key.NUM_4: 3,
+    mcrfpy.Key.NUM_5: 4,
 }
 
 def handle_normal_input(key: mcrfpy.Key) -> None:
     # Movement
-    if key == mcrfpy.Key.W or key == mcrfpy.Key.Up:
+    if key == mcrfpy.Key.W or key == mcrfpy.Key.UP:
         try_move_or_attack(0, -1)
-    elif key == mcrfpy.Key.S or key == mcrfpy.Key.Down:
+    elif key == mcrfpy.Key.S or key == mcrfpy.Key.DOWN:
         try_move_or_attack(0, 1)
-    elif key == mcrfpy.Key.A or key == mcrfpy.Key.Left:
+    elif key == mcrfpy.Key.A or key == mcrfpy.Key.LEFT:
         try_move_or_attack(-1, 0)
-    elif key == mcrfpy.Key.D or key == mcrfpy.Key.Right:
+    elif key == mcrfpy.Key.D or key == mcrfpy.Key.RIGHT:
         try_move_or_attack(1, 0)
     # Ranged attack
     elif key == mcrfpy.Key.F:
         enter_targeting_mode()
     # Pickup
-    elif key == mcrfpy.Key.G or key == mcrfpy.Key.Comma:
+    elif key == mcrfpy.Key.G or key == mcrfpy.Key.COMMA:
         pickup_item()
     # Use items
     elif key in ITEM_KEYS:
@@ -1581,15 +1574,15 @@ def handle_normal_input(key: mcrfpy.Key) -> None:
             update_ui()
 
 def handle_targeting_input(key: mcrfpy.Key) -> None:
-    if key == mcrfpy.Key.Up or key == mcrfpy.Key.W:
+    if key == mcrfpy.Key.UP or key == mcrfpy.Key.W:
         move_cursor(0, -1)
-    elif key == mcrfpy.Key.Down or key == mcrfpy.Key.S:
+    elif key == mcrfpy.Key.DOWN or key == mcrfpy.Key.S:
         move_cursor(0, 1)
-    elif key == mcrfpy.Key.Left or key == mcrfpy.Key.A:
+    elif key == mcrfpy.Key.LEFT or key == mcrfpy.Key.A:
         move_cursor(-1, 0)
-    elif key == mcrfpy.Key.Right or key == mcrfpy.Key.D:
+    elif key == mcrfpy.Key.RIGHT or key == mcrfpy.Key.D:
         move_cursor(1, 0)
-    elif key == mcrfpy.Key.Enter or key == mcrfpy.Key.Space:
+    elif key == mcrfpy.Key.ENTER or key == mcrfpy.Key.SPACE:
         confirm_target()
 
 scene.on_key = handle_keys
@@ -1747,7 +1740,7 @@ Loading process:
 ### Automatic Save on Quit
 
 ```python
-if key == "Escape":
+if key == mcrfpy.Key.ESCAPE:
     if game_mode == GameMode.TARGETING:
         exit_targeting_mode()
         return

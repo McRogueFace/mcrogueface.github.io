@@ -1,80 +1,105 @@
 ---
 mcrf:
-  objects: [ColorLayer, Color, Grid, Timer, Animation]
+  objects: [ColorLayer, Color, Grid, Timer, Entity]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Damage Flash Effect
 
-Flash an entity red when hit, then return to normal color.
+Flash a grid cell red when its occupant is hit, then fade back to normal.
+
+There is no built-in sprite/entity color tint in the engine (`Sprite` and `Entity` have
+no `.color` property, and `mcrfpy.Animation` is not a real class — animations are started
+via an object's own `.animate()` method, which only works on `Drawable`/`Entity`
+properties, not on the plain `Color` values stored in a `ColorLayer`). The supported way
+to get a color flash is a **`ColorLayer`** overlay on the grid, faded out manually with a
+`Timer`.
 
 ## Quick Example
 
 ```python
 import mcrfpy
 
+scene = mcrfpy.Scene("demo")
+mcrfpy.current_scene = scene
+
+grid = mcrfpy.Grid(grid_size=(16, 12), pos=(0, 0), size=(640, 480))
+scene.children.append(grid)
+
+for y in range(12):
+    for x in range(16):
+        grid.at(x, y).tilesprite = 48
+
+# One ColorLayer, reused for every flash effect on this grid.
+color_layer = mcrfpy.ColorLayer(z_index=1, name="flash")
+grid.add_layer(color_layer)
+
+def flash_cell(x, y, color, duration=0.3, steps=10):
+    """Flash a grid cell with a color overlay that fades out over `duration` seconds."""
+    r, g, b = color
+    step_ms = max(1, int(duration * 1000 / steps))
+
+    def do_fade(timer, runtime, step=[0]):
+        step[0] += 1
+        alpha = max(0, int(200 * (1 - step[0] / steps)))
+        color_layer.set((x, y), mcrfpy.Color(r, g, b, alpha))
+        if step[0] >= steps:
+            timer.stop()
+
+    color_layer.set((x, y), mcrfpy.Color(r, g, b, 200))
+    mcrfpy.Timer(f"flash_{x}_{y}", do_fade, step_ms)
+
 def damage_flash(entity, duration=0.3):
-    """Flash entity red, then restore original color."""
-    # Store original color
-    original_r = entity.sprite.color.r if hasattr(entity.sprite, 'color') else 255
-    original_g = entity.sprite.color.g if hasattr(entity.sprite, 'color') else 255
-    original_b = entity.sprite.color.b if hasattr(entity.sprite, 'color') else 255
-
-    # Set to red immediately
-    entity.sprite.color = mcrfpy.Color(255, 0, 0, 255)
-
-    # Animate back to original over duration
-    anim_r = mcrfpy.Animation("r", float(original_r), duration, "easeOut")
-    anim_g = mcrfpy.Animation("g", float(original_g), duration, "easeOut")
-    anim_b = mcrfpy.Animation("b", float(original_b), duration, "easeOut")
-
-    anim_r.start(entity.sprite.color)
-    anim_g.start(entity.sprite.color)
-    anim_b.start(entity.sprite.color)
+    """Flash red on the cell an entity occupies."""
+    flash_cell(entity.cell_x, entity.cell_y, (255, 0, 0), duration)
 
 # Usage
+player = mcrfpy.Entity(grid_pos=(8, 6), texture=mcrfpy.default_texture)
+grid.entities.append(player)
 damage_flash(player)
 ```
 
 ## Grid Cell Flash with ColorLayer
 
-For grid-based games, flash the cell at the entity's position:
+The pattern above generalizes to any cell, not just an entity's current position — handy
+for AoE spells, traps, or telegraphed attacks:
 
 ```python
 import mcrfpy
 
 # Add a color layer to your grid (do this once during setup)
-grid.add_layer("color")
-color_layer = grid.layers[-1]  # Get the color layer
+color_layer = mcrfpy.ColorLayer(z_index=1, name="flash")
+grid.add_layer(color_layer)
 
-def flash_cell(grid, x, y, color, duration=0.3):
-    """Flash a grid cell with a color overlay."""
-    # Get the color layer (assumes it's the last layer added)
-    color_layer = None
-    for layer in grid.layers:
-        if isinstance(layer, mcrfpy.ColorLayer):
-            color_layer = layer
-            break
+def flash_cell(grid, color_layer, x, y, color, duration=0.3, steps=10):
+    """Flash a grid cell with a color overlay, fading alpha to 0 over `duration` seconds."""
+    r, g, b = color
+    step_ms = max(1, int(duration * 1000 / steps))
 
-    if not color_layer:
-        return
+    def do_fade(timer, runtime, step=[0]):
+        step[0] += 1
+        alpha = max(0, int(200 * (1 - step[0] / steps)))
+        color_layer.set((x, y), mcrfpy.Color(r, g, b, alpha))
+        if step[0] >= steps:
+            timer.stop()
 
-    # Set cell to flash color
-    cell = color_layer.at(x, y)
-    cell.color = mcrfpy.Color(color[0], color[1], color[2], 200)
+    color_layer.set((x, y), mcrfpy.Color(r, g, b, 200))
+    mcrfpy.Timer(f"flash_{x}_{y}", do_fade, step_ms)
 
-    # Animate alpha back to 0
-    anim = mcrfpy.Animation("a", 0.0, duration, "easeOut")
-    anim.start(cell.color)
-
-def damage_at_position(grid, x, y, duration=0.3):
+def damage_at_position(grid, color_layer, x, y, duration=0.3):
     """Flash red at a grid position when damage occurs."""
-    flash_cell(grid, x, y, (255, 0, 0), duration)
+    flash_cell(grid, color_layer, x, y, (255, 0, 0), duration)
 
 # Usage when entity takes damage
-damage_at_position(grid, int(enemy.x), int(enemy.y))
+damage_at_position(grid, color_layer, enemy.cell_x, enemy.cell_y)
 ```
+
+`ColorLayer.at(x, y)` returns a plain `Color` value (a snapshot, not a live handle) — you
+can't mutate a cell in place by grabbing it and changing its fields. Always write a new
+`Color` back with `color_layer.set((x, y), color)`.
 
 ## Complete Damage System
 
@@ -100,27 +125,30 @@ class DamageEffects:
 
     def _setup_color_layer(self):
         """Ensure grid has a color layer for effects."""
-        self.grid.add_layer("color")
-        self.color_layer = self.grid.layers[-1]
+        self.color_layer = mcrfpy.ColorLayer(z_index=1, name="flash")
+        self.grid.add_layer(self.color_layer)
 
     def flash_entity(self, entity, color, duration=0.3):
-        """Flash an entity with a color tint."""
-        # Flash at entity's grid position
-        x, y = int(entity.x), int(entity.y)
-        self.flash_cell(x, y, color, duration)
+        """Flash the cell an entity currently occupies."""
+        self.flash_cell(entity.cell_x, entity.cell_y, color, duration)
 
-    def flash_cell(self, x, y, color, duration=0.3):
-        """Flash a specific grid cell."""
+    def flash_cell(self, x, y, color, duration=0.3, steps=10):
+        """Flash a specific grid cell, fading out over `duration` seconds."""
         if not self.color_layer:
             return
 
-        cell = self.color_layer.at(x, y)
-        if cell:
-            cell.color = mcrfpy.Color(color[0], color[1], color[2], 180)
+        r, g, b = color
+        step_ms = max(1, int(duration * 1000 / steps))
 
-            # Fade out
-            anim = mcrfpy.Animation("a", 0.0, duration, "easeOut")
-            anim.start(cell.color)
+        def do_fade(timer, runtime, step=[0]):
+            step[0] += 1
+            alpha = max(0, int(180 * (1 - step[0] / steps)))
+            self.color_layer.set((x, y), mcrfpy.Color(r, g, b, alpha))
+            if step[0] >= steps:
+                timer.stop()
+
+        self.color_layer.set((x, y), mcrfpy.Color(r, g, b, 180))
+        mcrfpy.Timer(f"flash_{x}_{y}", do_fade, step_ms)
 
     def damage(self, entity, amount, duration=0.3):
         """Standard damage flash."""
@@ -159,39 +187,53 @@ effects.poison(enemy)                # Purple flash
 effects.area_damage(5, 5, 3, effects.FIRE_ORANGE)  # Area effect
 ```
 
+Each `flash_cell()` call creates a `Timer` named `flash_<x>_<y>`. Since a `Timer` with a
+name that already exists replaces the old one, overlapping flashes on the *same* cell will
+cancel and restart the fade rather than stack — good enough for most feedback effects, but
+worth knowing if you see a flash cut short.
+
 ## Multi-Flash Hit Effect
 
-For more dramatic hits, flash multiple times:
+For more dramatic hits, flash a cell multiple times in succession:
 
 ```python
 import mcrfpy
 
-def multi_flash(grid, x, y, color, flashes=3, flash_duration=0.1):
+def multi_flash(grid, color_layer, x, y, color, flashes=3, flash_duration=0.1):
     """Flash a cell multiple times for emphasis."""
+    r, g, b = color
     delay = 0
 
     for i in range(flashes):
-        # Schedule each flash with increasing delay
-        def do_flash(timer_name, fx=x, fy=y, fc=color, fd=flash_duration):
-            flash_cell(grid, fx, fy, fc, fd)
+        def do_flash(timer, runtime, fr=r, fg=g, fb=b):
+            color_layer.set((x, y), mcrfpy.Color(fr, fg, fb, 200))
+            mcrfpy.Timer(f"multiflash_clear_{x}_{y}_{timer.name}",
+                         lambda t, rt: color_layer.set((x, y), mcrfpy.Color(fr, fg, fb, 0)),
+                         int(flash_duration * 1000), once=True)
 
-        mcrfpy.Timer(f"flash_{x}_{y}_{i}", do_flash, int(delay * 1000), once=True)
+        mcrfpy.Timer(f"multiflash_{x}_{y}_{i}", do_flash, max(1, int(delay * 1000)), once=True)
         delay += flash_duration * 1.5  # Gap between flashes
 
 # Usage for critical hit
-multi_flash(grid, int(enemy.x), int(enemy.y), (255, 255, 0), flashes=3)
+multi_flash(grid, color_layer, enemy.cell_x, enemy.cell_y, (255, 255, 0), flashes=3)
 ```
 
 ## Key Concepts
 
-1. **Animation properties**: `r`, `g`, `b`, `a` for color components
-2. **ColorLayer**: Grid overlay for cell-based effects without modifying tiles
-3. **Easing**: Use "easeOut" for natural fade-out, "easeIn" for building intensity
-4. **Duration**: 0.2-0.4 seconds feels responsive; longer for status effects
+1. **`ColorLayer`**: a grid overlay that stores one `Color` per cell — the supported way
+   to tint or flash cells without touching tile sprites or entity sprites.
+2. **No live cell handle**: `color_layer.at(x, y)` returns a `Color` snapshot; always
+   write changes back with `color_layer.set((x, y), color)`.
+3. **No `Color.animate()`**: only `Drawable`/`Entity` properties can be animated via
+   `.animate()`. Fading a `ColorLayer` cell means stepping the alpha yourself, typically
+   with a repeating `Timer`.
+4. **Duration**: 0.2-0.4 seconds feels responsive; longer for status effects.
 
 ## Tips
 
-- Store original colors before modifying if you need to restore exactly
-- Use ColorLayer for grid-based games to avoid sprite color issues
-- Chain effects using Timer for complex sequences
-- Alpha animation (0->0) effectively hides the overlay after flash
+- Keep one `ColorLayer` per grid and reuse it for every flash effect — creating a new
+  layer per flash is wasteful.
+- Give each in-flight flash's `Timer` a unique, cell-based name so unrelated flashes
+  don't collide, and be aware that flashing the *same* cell twice in quick succession
+  restarts the fade rather than stacking it.
+- Alpha fading to 0 effectively hides the overlay once the flash finishes.

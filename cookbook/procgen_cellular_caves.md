@@ -6,7 +6,9 @@ nav_order: 25
 mcrf:
   objects: [Grid, Entity, Texture, Scene, DijkstraMap, HeightMap]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Cellular Automata Caves
@@ -306,9 +308,9 @@ def smooth_caves_custom(grid, birth_limit=5, death_limit=4):
 
 ---
 
-## Using HeightMap for Cave Features
+## Finding Cave Features
 
-Use Dijkstra maps to identify interesting cave features:
+Walk the grid directly to identify interesting cave features (dead ends, wide rooms, chokepoints). For distance-based variants — e.g. "how far is this cell from the entrance" — feed the map into a `DijkstraMap` via `grid.get_dijkstra_map(source)` and call `.distance((x, y))` or `.to_heightmap()` instead of the manual neighbor count below:
 
 ```python
 def find_cave_features(grid, spawn_point):
@@ -357,10 +359,9 @@ import random
 # Setup
 scene = mcrfpy.Scene("caves")
 scene.activate()
-mcrfpy.step(0.1)
 
 # Create grid
-texture = mcrfpy.Texture("assets/tiles.png", 16, 16)
+texture = mcrfpy.default_texture
 grid = mcrfpy.Grid(grid_size=(60, 40), texture=texture,
                    pos=(0, 0), size=(960, 640))
 scene.children.append(grid)

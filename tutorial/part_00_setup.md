@@ -3,8 +3,8 @@ mcrf:
   objects: [Scene, Caption, Color]
   diataxis: tutorial
   disposition: current
-  verified: "0.2.8"
-  verified_commit: b6720f6
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 0: Setting Up McRogueFace

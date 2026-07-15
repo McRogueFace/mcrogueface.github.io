@@ -3,7 +3,9 @@ title: Grid Interaction Patterns
 mcrf:
   objects: [Grid, Entity, ColorLayer, TileLayer, Frame, Caption, MouseButton, InputState, Key, Vector]
   diataxis: howto
-  disposition: migrated-from-wiki-needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Grid Interaction Patterns
@@ -43,8 +45,8 @@ import mcrfpy
 scene = mcrfpy.Scene("game")
 ui = scene.children
 
-# Load tileset texture
-texture = mcrfpy.Texture("assets/sprites/tileset.png", 16, 16)
+# Load tileset texture (use your own atlas in a real game)
+texture = mcrfpy.default_texture
 
 # Create layers
 terrain = mcrfpy.TileLayer(name="terrain", z_index=-2, texture=texture)
@@ -113,7 +115,8 @@ def on_cell_click(cell_pos, button, action):
             player.grid_y = y
 
     elif button == mcrfpy.MouseButton.RIGHT and action == mcrfpy.InputState.PRESSED:
-        # Inspect cell
+        # Inspect cell (define show_cell_info to update your own UI, e.g. the
+        # Tile Inspector Panel pattern below)
         show_cell_info(x, y, point)
 
     elif button == mcrfpy.MouseButton.MIDDLE and action == mcrfpy.InputState.PRESSED:
@@ -144,13 +147,17 @@ def handle_key(key, action):
         dx, dy = move_map[key]
         new_x = int(player.grid_x + dx)
         new_y = int(player.grid_y + dy)
-        point = player.grid.at(new_x, new_y)
-        if point and point.walkable:
-            player.grid_x = new_x
-            player.grid_y = new_y
+        grid_w, grid_h = player.grid.grid_size
+        if 0 <= new_x < grid_w and 0 <= new_y < grid_h:
+            point = player.grid.at(new_x, new_y)
+            if point.walkable:
+                player.grid_x = new_x
+                player.grid_y = new_y
 
 scene.on_key = handle_key
 ```
+
+`grid.at(x, y)` raises `IndexError` for out-of-range coordinates rather than returning `None`, so bounds-check against `grid.grid_size` before calling it.
 
 ### Smooth Animated Movement
 
@@ -164,15 +171,19 @@ def handle_key(key, action):
         dx, dy = move_map[key]
         new_x = int(player.grid_x + dx)
         new_y = int(player.grid_y + dy)
-        point = player.grid.at(new_x, new_y)
-        if point and point.walkable:
-            player.animate("x", float(new_x), 0.15, mcrfpy.Easing.EASE_OUT_QUAD)
-            player.animate("y", float(new_y), 0.15, mcrfpy.Easing.EASE_OUT_QUAD)
-            player.grid_x = new_x
-            player.grid_y = new_y
+        grid_w, grid_h = player.grid.grid_size
+        if 0 <= new_x < grid_w and 0 <= new_y < grid_h:
+            point = player.grid.at(new_x, new_y)
+            if point.walkable:
+                player.animate("x", float(new_x), 0.15, mcrfpy.Easing.EASE_OUT_QUAD)
+                player.animate("y", float(new_y), 0.15, mcrfpy.Easing.EASE_OUT_QUAD)
+                player.grid_x = new_x
+                player.grid_y = new_y
 
 scene.on_key = handle_key
 ```
+
+Entity `animate("x", ...)` accepts `'x'`/`'y'` as aliases for the tile-coordinate properties `draw_x`/`draw_y`, giving smooth per-frame interpolation while `grid_x`/`grid_y` update the logical cell immediately.
 
 ---
 
@@ -235,12 +246,11 @@ def show_path_to(target_x, target_y):
     i = 0
     while len(path) > 0:
         step = path.walk()
-        if step:
-            x, y = int(step.x), int(step.y)
-            alpha = max(30, 100 - (i * 5))
-            highlight.set((x, y), mcrfpy.Color(100, 200, 255, alpha))
-            current_path_cells.append((x, y))
-            i += 1
+        x, y = int(step.x), int(step.y)
+        alpha = max(30, 100 - (i * 5))
+        highlight.set((x, y), mcrfpy.Color(100, 200, 255, alpha))
+        current_path_cells.append((x, y))
+        i += 1
 
 def on_cell_enter(cell_pos):
     show_path_to(int(cell_pos.x), int(cell_pos.y))

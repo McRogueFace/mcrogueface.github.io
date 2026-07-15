@@ -2,7 +2,9 @@
 mcrf:
   objects: [Entity, Grid, Frame, Caption, Color, FOV]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # McRogueFace Complete Roguelike Template
@@ -206,10 +208,14 @@ grid.entities.append(entity)
 ```python
 # Get tile at position
 point = grid.at(x, y)
-point.tilesprite = 10
+point.tilesprite = 10   # legacy; prefer tile_layer.set((x, y), 10)
 point.walkable = True
 point.transparent = True
-point.color_overlay = mcrfpy.Color(0, 0, 0, 128)
+
+# There is no GridPoint.color_overlay - tint a cell with a ColorLayer instead
+tint_layer = mcrfpy.ColorLayer(z_index=1, name="tint")
+grid.add_layer(tint_layer)
+tint_layer.set((x, y), mcrfpy.Color(0, 0, 0, 128))
 ```
 
 ### FOV Calculation
@@ -217,12 +223,14 @@ point.color_overlay = mcrfpy.Color(0, 0, 0, 128)
 # Update entity's visibility data
 entity.update_visibility()
 
-# Check visibility at position
-state = entity.at(x, y)
-if state.visible:
-    # Currently visible
-elif state.discovered:
-    # Seen before but not now
+# entity.at(x, y) returns the GridPoint only if it is CURRENTLY visible
+# to this entity, otherwise None.
+cell = entity.at(x, y)
+if cell is not None:
+    pass  # Currently visible
+elif entity.perspective_map[x, y] == 1:
+    pass  # Seen before but not now (discovered)
+# perspective_map values: 0=unknown, 1=discovered, 2=visible
 ```
 
 ### Pathfinding
@@ -234,29 +242,29 @@ path = entity.path_to(target_x, target_y)
 
 ### Input Handling
 ```python
-def handle_keypress(key, state):
-    if state != "start":  # Only handle key down
+def handle_keypress(key, action):
+    if action != mcrfpy.InputState.PRESSED:  # Only handle key down
         return
-    if key == "W":
-        # Move up
+    if key == mcrfpy.Key.W:
+        pass  # Move up
 
-mcrfpy.keypressScene(handle_keypress)
+scene.on_key = handle_keypress
 ```
 
 ### UI Building
 ```python
 # Frame with children
-frame = mcrfpy.Frame(x, y, width, height)
+frame = mcrfpy.Frame(pos=(x, y), size=(width, height))
 frame.fill_color = mcrfpy.Color(50, 50, 50, 200)
 frame.outline = 2
 frame.outline_color = mcrfpy.Color(255, 255, 255)
 
 # Caption for text
-caption = mcrfpy.Caption("Text", font, x, y)
+caption = mcrfpy.Caption(text="Text", pos=(x, y))
 caption.fill_color = mcrfpy.Color(255, 255, 255)
 
 # Add to scene
-ui = mcrfpy.sceneUI("game")
+ui = scene.children  # was mcrfpy.sceneUI("game")
 ui.append(frame)
 ui.append(caption)
 ```

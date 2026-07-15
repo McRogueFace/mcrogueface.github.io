@@ -3,6 +3,8 @@ mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Key, InputState]
   diataxis: tutorial
   disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 1: The '@' and the Dungeon Grid
@@ -227,7 +229,7 @@ player = mcrfpy.Entity(
 grid.entities.append(player)
 ```
 
-An `Entity` is a game object that exists on a grid. Unlike tiles, entities can move. The `pos` parameter uses grid coordinates, not pixels.
+An `Entity` is a game object that exists on a grid. Unlike tiles, entities can move. The `grid_pos` parameter uses grid coordinates, not pixels (`Entity.pos`, by contrast, is the entity's pixel position on screen).
 
 ### Handling Keyboard Input
 

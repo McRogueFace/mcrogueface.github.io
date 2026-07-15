@@ -2,7 +2,9 @@
 mcrf:
   objects: [Entity, Sprite]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Status Effects
@@ -130,7 +132,7 @@ def create_poison(damage=2, duration=5):
         print(f"{target.name} takes {damage} poison damage!")
 
         # Visual feedback
-        show_damage_number(target.entity.x * 16, target.entity.y * 16, damage)
+        show_damage_number(target.entity.grid_x * 16, target.entity.grid_y * 16, damage)
         flash_entity_green(target.entity)
 
     def on_apply(target):
@@ -399,11 +401,8 @@ class EffectIndicator:
         for name in list(self.icons.keys()):
             if name not in current_effects:
                 try:
-                    for i, elem in enumerate(self.scene.children):
-                        if elem is self.icons[name]:
-                            self.scene.children.remove(i)
-                            break
-                except:
+                    self.scene.children.remove(self.icons[name])
+                except ValueError:
                     pass
                 del self.icons[name]
 
@@ -411,8 +410,8 @@ class EffectIndicator:
         for i, name in enumerate(current_effects):
             if name not in self.icons and name in self.EFFECT_SPRITES:
                 sprite_idx = self.EFFECT_SPRITES[name]
-                x = self.entity.entity.x * 16 + self.offset_x + i * 10
-                y = self.entity.entity.y * 16 + self.offset_y
+                x = self.entity.entity.grid_x * 16 + self.offset_x + i * 10
+                y = self.entity.entity.grid_y * 16 + self.offset_y
 
                 icon = mcrfpy.Sprite(pos=(x, y), texture=self.texture, sprite_index=sprite_idx, scale=0.5)
                 self.scene.children.append(icon)
@@ -422,11 +421,8 @@ class EffectIndicator:
         """Remove all icons."""
         for icon in self.icons.values():
             try:
-                for i, elem in enumerate(self.scene.children):
-                    if elem is icon:
-                        self.scene.children.remove(i)
-                        break
-            except:
+                self.scene.children.remove(icon)
+            except ValueError:
                 pass
         self.icons.clear()
 ```

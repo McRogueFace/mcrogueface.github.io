@@ -2,7 +2,9 @@
 mcrf:
   objects: [Frame, Caption, Color, Timer, Scene]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Message Log Widget
@@ -79,21 +81,22 @@ class MessageLog:
 
     def _rebuild_display(self):
         """Rebuild all visible Caption elements."""
-        # Clear existing children
+        # Clear existing children (remove() takes a child object, not an index)
         while len(self.frame.children) > 0:
-            self.frame.children.remove(0)
+            self.frame.children.remove(self.frame.children[0])
 
         # Calculate which messages to show
         start_idx = self.scroll_offset
         end_idx = min(start_idx + self.visible_lines, len(self.messages))
 
         # Create Caption for each visible message
+        # (Frame.children are positioned in frame-local coordinates,
+        # not absolute screen coordinates)
         for i, msg_idx in enumerate(range(start_idx, end_idx)):
             msg = self.messages[msg_idx]
             caption = mcrfpy.Caption(
                 text=msg['text'],
-                x=self.frame.x + 5,
-                y=self.frame.y + 5 + (i * self.line_height)
+                pos=(5, 5 + (i * self.line_height))
             )
             caption.fill_color = msg['color']
             self.frame.children.append(caption)
@@ -220,18 +223,18 @@ class EnhancedMessageLog:
     def _rebuild_display(self):
         """Rebuild visible messages."""
         while len(self.frame.children) > 0:
-            self.frame.children.remove(0)
+            self.frame.children.remove(self.frame.children[0])
 
         filtered = self._get_filtered_messages()
         start_idx = self.scroll_offset
         end_idx = min(start_idx + self.visible_lines, len(filtered))
 
+        # Positions are frame-local (relative to the frame's top-left corner)
         for i, msg_idx in enumerate(range(start_idx, end_idx)):
             msg = filtered[msg_idx]
             caption = mcrfpy.Caption(
                 text=msg['text'],
-                x=self.frame.x + 8,
-                y=self.frame.y + 4 + (i * self.line_height)
+                pos=(8, 4 + (i * self.line_height))
             )
             caption.fill_color = msg['color']
             self.frame.children.append(caption)
@@ -288,9 +291,9 @@ def handle_keys(key, state):
     if state != mcrfpy.InputState.PRESSED:
         return
 
-    if key == mcrfpy.Key.PAGEUP:
+    if key == mcrfpy.Key.PAGE_UP:
         log.scroll_up(5)
-    elif key == mcrfpy.Key.PAGEDOWN:
+    elif key == mcrfpy.Key.PAGE_DOWN:
         log.scroll_down(5)
 
 scene.on_key = handle_keys
@@ -306,7 +309,7 @@ log.frame.on_click = on_log_scroll
 
 ## McRogueFace-Specific Considerations
 
-1. **Child Positioning**: Caption positions in Frame.children are in absolute screen coordinates, not relative to the frame. Calculate positions using `frame.x + offset`.
+1. **Child Positioning**: Caption positions in Frame.children are frame-local (relative to the frame's top-left corner), not absolute screen coordinates. A Frame has no camera, so it can't pan its content -- frame-local positions are effectively screen space already. Just use `pos=(offset_x, offset_y)`, no need to add `frame.x`/`frame.y`.
 
 2. **Clipping**: Frame supports `clip_children=True`, which clips children to the frame's bounds. Enable it on the log frame (`self.frame.clip_children = True`) so overflowing messages don't render outside the log area.
 
@@ -350,9 +353,9 @@ mcrfpy.Timer("combat_sim", simulate_combat, 2000)
 def on_key(key, state):
     if state != mcrfpy.InputState.PRESSED:
         return
-    if key == mcrfpy.Key.PAGEUP:
+    if key == mcrfpy.Key.PAGE_UP:
         log.scroll_up(3)
-    elif key == mcrfpy.Key.PAGEDOWN:
+    elif key == mcrfpy.Key.PAGE_DOWN:
         log.scroll_down(3)
     elif key == mcrfpy.Key.C:
         log.set_filter('combat')

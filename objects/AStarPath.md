@@ -4,7 +4,9 @@ title: AStarPath
 mcrf:
   objects: [AStarPath]
   diataxis: reference
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # AStarPath
@@ -19,7 +21,7 @@ An `AStarPath` represents a computed shortest path between two points on a Grid.
 
 ```python
 # Create path from grid
-path = grid.find_path((player.x, player.y), (target_x, target_y))
+path = grid.find_path(player.cell_pos, (target_x, target_y))
 
 if path:
     # Check path length
@@ -29,11 +31,10 @@ if path:
     next_pos = path.peek()
 
     # Walk the path step by step
-    while path.remaining > 0:
+    while path:
         next_step = path.walk()
-        if next_step:
-            x, y = next_step
-            player.x, player.y = x, y
+        x, y = next_step
+        player.cell_pos = (x, y)
 ```
 
 ## Constructor
@@ -57,36 +58,44 @@ path = grid.find_path(start_pos, end_pos)
 
 | Method | Description |
 |--------|-------------|
-| `walk()` | Return and consume the next step, or None if exhausted |
-| `peek()` | Return the next step without consuming it |
+| `walk()` | Return and consume the next step as a Vector; raises `IndexError` if exhausted |
+| `peek()` | Return the next step as a Vector without consuming it; raises `IndexError` if exhausted |
+
+`AStarPath` also supports `len()` and `bool()` — both reflect `remaining`, so `while path:` is a
+convenient way to drain it.
 
 ## Usage Patterns
 
 ### Basic Movement
 
 ```python
-path = grid.find_path(entity.pos, goal)
+path = grid.find_path(entity.cell_pos, goal)
 if path:
     next_step = path.walk()
-    if next_step:
-        entity.x, entity.y = next_step
+    entity.cell_pos = next_step
 ```
+
+`cell_pos` is the entity's logical grid cell (a Vector); it is distinct from `pos`/`x`/`y`,
+which are the entity's *pixel* position on screen.
 
 ### Animated Movement
 
 ```python
-path = grid.find_path(player.pos, target)
+path = grid.find_path(player.cell_pos, target)
 
 def move_step(timer, runtime_ms):
-    if path.remaining > 0:
+    if path:
         x, y = path.walk()
-        player.animate("x", x, duration=0.15)
-        player.animate("y", y, duration=0.15)
+        player.animate("draw_x", x, 0.15)
+        player.animate("draw_y", y, 0.15)
     else:
         timer.stop()
 
 mcrfpy.Timer("move", move_step, 200)  # Move every 200ms
 ```
+
+`draw_x`/`draw_y` animate the entity's fractional `draw_pos` (smooth tile-to-tile motion),
+separate from the logical `cell_pos` used for collision and pathfinding.
 
 ### Path Validation
 
@@ -95,7 +104,7 @@ path = grid.find_path(start, end)
 
 if path is None:
     print("No path exists!")
-elif path.remaining == 0:
+elif len(path) == 0:
     print("Already at destination")
 else:
     print(f"Path found: {path.remaining} steps from {path.origin} to {path.destination}")

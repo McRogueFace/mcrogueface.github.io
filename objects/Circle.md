@@ -5,6 +5,8 @@ mcrf:
   objects: [Circle]
   diataxis: reference
   disposition: needs-review
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Circle
@@ -71,7 +73,7 @@ mcrfpy.Circle(radius=0, center=None, fill_color=None, outline_color=None, outlin
 |--------|-------------|
 | `animate(property, target, duration, easing)` | Animate a property over time |
 | `move(dx, dy)` | Move by relative offset |
-| `resize(dw, dh)` | Resize by relative amount |
+| `resize(width, height)` | Resize to new dimensions |
 | `realign()` | Recalculate position based on alignment |
 
 ## Events
@@ -101,7 +103,7 @@ def on_hover_enter(pos):
 def on_hover_exit(pos):
     button.fill_color = mcrfpy.Color(50, 50, 200)
 
-def on_click(pos, button, action):
+def on_click(pos, btn, action):
     print("Button clicked!")
 
 button.on_enter = on_hover_enter

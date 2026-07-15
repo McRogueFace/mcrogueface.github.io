@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Grid, Entity, Texture, Caption, Color, Frame, ColorLayer, FOV, Key, InputState]
   diataxis: tutorial
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Part 8: Items and Inventory
@@ -1496,8 +1498,8 @@ Items do not block movement - you can walk over them. Only entities in `entity_d
 ### Using Items Takes a Turn
 
 ```python
-elif key in ["1", "2", "3", "4", "5"]:
-    index = int(key) - 1
+elif key in NUMBER_KEYS:
+    index = NUMBER_KEYS.index(key)
     if use_item(index):
         enemy_turn()  # Using an item takes a turn
 ```

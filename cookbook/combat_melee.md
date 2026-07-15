@@ -1,8 +1,10 @@
 ---
 mcrf:
-  objects: [Entity, Frame, Caption, Color, Timer, Grid, Animation]
+  objects: [Entity, Frame, Caption, Color, Timer, Grid]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Melee Combat System
@@ -140,11 +142,11 @@ class CombatEntity:
 
     @property
     def x(self):
-        return int(self.entity.x)
+        return self.entity.grid_x
 
     @property
     def y(self):
-        return int(self.entity.y)
+        return self.entity.grid_y
 
     @property
     def hp(self):
@@ -158,7 +160,7 @@ class CombatEntity:
 
     def attack_target(self, target: 'CombatEntity') -> dict:
         """Attack another combat entity."""
-        result = attack(self.fighter, target.fighter)
+        result = attack_with_variance(self.fighter, target.fighter)
 
         # Log the attack
         if result["is_critical"]:
@@ -179,10 +181,9 @@ class CombatEntity:
         self.alive = False
         print(f"{self.name} has died!")
 
-        # Remove from grid
+        # Remove from grid (Entity.die() detaches it from its grid)
         try:
-            idx = self.entity.index()
-            self.grid.entities.remove(idx)
+            self.entity.die()
         except:
             pass
 
@@ -217,11 +218,8 @@ def show_damage_number(scene, x, y, damage, is_critical=False):
     # Remove after animation
     def cleanup(timer, runtime):
         try:
-            for i, elem in enumerate(scene.children):
-                if elem is caption:
-                    scene.children.remove(i)
-                    break
-        except:
+            scene.children.remove(caption)
+        except ValueError:
             pass
 
     mcrfpy.Timer(f"dmg_{id(caption)}", cleanup, 800)
@@ -324,12 +322,11 @@ class HealthBar:
 
     def remove(self):
         """Remove health bar from UI."""
-        try:
-            for i, elem in enumerate(self.scene.children):
-                if elem is self.bg or elem is self.fg:
-                    self.scene.children.remove(i)
-        except:
-            pass
+        for elem in (self.bg, self.fg):
+            try:
+                self.scene.children.remove(elem)
+            except ValueError:
+                pass
 ```
 
 ## Combat Log
@@ -373,11 +370,8 @@ class CombatLog:
         # Remove old captions
         for caption in self.captions:
             try:
-                for i, elem in enumerate(self.scene.children):
-                    if elem is caption:
-                        self.scene.children.remove(i)
-                        break
-            except:
+                self.scene.children.remove(caption)
+            except ValueError:
                 pass
         self.captions.clear()
 
@@ -468,8 +462,9 @@ def on_enemy_killed(enemy):
 4. **Death Animation**: Consider delaying entity removal for a death animation:
    ```python
    def die_with_animation(entity):
-       # Play death animation
-       entity.animate("opacity", 0.0, 0.5, mcrfpy.Easing.LINEAR)
+       # Entity.animate() only accepts draw_x/draw_y, sprite_scale, sprite_index,
+       # and sprite_offset_x/y -- there's no entity opacity to fade, so shrink instead.
+       entity.animate("sprite_scale", 0.0, 0.5, mcrfpy.Easing.LINEAR)
        # Remove after animation
        mcrfpy.Timer("remove", lambda timer, runtime: remove_entity(entity), 500)
    ```

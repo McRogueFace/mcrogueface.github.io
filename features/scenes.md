@@ -2,7 +2,9 @@
 mcrf:
   objects: [Scene, Key, InputState, Caption, Frame]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Scene Management
@@ -66,6 +68,7 @@ class GameScene(mcrfpy.Scene):
     def __init__(self):
         super().__init__("game")
         self.setup_ui()
+        self.on_key = self.handle_key
 
     def on_enter(self):
         """Called when scene becomes active."""
@@ -77,9 +80,9 @@ class GameScene(mcrfpy.Scene):
         print("Leaving game scene")
         self.stop_timers()
 
-    def on_keypress(self, key, action):
+    def handle_key(self, key, action):
         """Called for keyboard input while active."""
-        if action == "start":
+        if action == mcrfpy.InputState.PRESSED:
             self.handle_input(key)
 
     def update(self, dt):
@@ -97,7 +100,7 @@ class GameScene(mcrfpy.Scene):
 1. `__init__` - Scene creation
 2. `on_enter` - Scene activated (via activate())
 3. `update` - Every frame while active
-4. `on_keypress` - Keyboard events while active
+4. `on_key` handler - Keyboard events (assign your handler in `__init__`, e.g. `self.on_key = self.handle_key`)
 5. `on_exit` - Another scene becomes active
 
 ## Scene Children
@@ -135,7 +138,7 @@ popped = scene.children.pop()
 ```python
 # On Scene object (preferred - works on any scene)
 def handle_key(key, action):
-    if action == "start":
+    if action == mcrfpy.InputState.PRESSED:
         print(f"Key pressed: {key}")
 
 scene.on_key = handle_key
@@ -146,28 +149,27 @@ scene.on_key = handle_key
 ```python
 def handle_key(key, action):
     """
-    key: String like "Up", "Down", "A", "Space", "Escape", "Num1"
-    action: "start" (pressed) or "end" (released)
+    key: mcrfpy.Key enum member, e.g. mcrfpy.Key.UP, mcrfpy.Key.A, mcrfpy.Key.SPACE
+    action: mcrfpy.InputState.PRESSED or mcrfpy.InputState.RELEASED
     """
-    if action != "start":
+    if action != mcrfpy.InputState.PRESSED:
         return
 
-    key_lower = key.lower()
-    if key_lower == "escape":
+    if key == mcrfpy.Key.ESCAPE:
         switch_to_menu()
-    elif key_lower in ("up", "w"):
+    elif key in (mcrfpy.Key.UP, mcrfpy.Key.W):
         move_player(0, -1)
 ```
 
 ### Common Key Names
 
-| Key | Name |
+| Key | Enum member |
 |-----|------|
-| Arrow keys | "Up", "Down", "Left", "Right" |
-| Letters | "A" through "Z" |
-| Numbers | "0" through "9", "Num0" through "Num9" |
-| Special | "Space", "Escape", "Return", "Tab", "Backspace" |
-| Function | "F1" through "F12" |
+| Arrow keys | `Key.UP`, `Key.DOWN`, `Key.LEFT`, `Key.RIGHT` |
+| Letters | `Key.A` through `Key.Z` |
+| Numbers | `Key.NUM_0` through `Key.NUM_9` (top row) |
+| Special | `Key.SPACE`, `Key.ESCAPE`, `Key.ENTER`, `Key.TAB`, `Key.BACKSPACE` |
+| Function | `Key.F1` through `Key.F15` |
 
 ## Scene Transitions
 
@@ -190,6 +192,7 @@ class MenuScene(mcrfpy.Scene):
     def __init__(self):
         super().__init__("menu")
         self.create_menu()
+        self.on_key = self.handle_key
 
     def create_menu(self):
         title = mcrfpy.Caption(pos=(400, 100), text="My Roguelike")
@@ -218,18 +221,17 @@ class MenuScene(mcrfpy.Scene):
                 label.fill_color = mcrfpy.Color(200, 200, 200)
                 label.text = f"  {self.options[i]}"
 
-    def on_keypress(self, key, action):
-        if action != "start":
+    def handle_key(self, key, action):
+        if action != mcrfpy.InputState.PRESSED:
             return
 
-        key = key.lower()
-        if key in ("up", "w"):
+        if key in (mcrfpy.Key.UP, mcrfpy.Key.W):
             self.selected = (self.selected - 1) % len(self.options)
             self.update_selection()
-        elif key in ("down", "s"):
+        elif key in (mcrfpy.Key.DOWN, mcrfpy.Key.S):
             self.selected = (self.selected + 1) % len(self.options)
             self.update_selection()
-        elif key in ("return", "space"):
+        elif key in (mcrfpy.Key.ENTER, mcrfpy.Key.SPACE):
             self.select_option()
 
     def select_option(self):
@@ -249,6 +251,7 @@ class GameScene(mcrfpy.Scene):
         super().__init__("game")
         self.grid = None
         self.player = None
+        self.on_key = self.handle_key
 
     def on_enter(self):
         print("Starting game...")
@@ -256,14 +259,13 @@ class GameScene(mcrfpy.Scene):
     def on_exit(self):
         print("Pausing game...")
 
-    def on_keypress(self, key, action):
-        if action != "start":
+    def handle_key(self, key, action):
+        if action != mcrfpy.InputState.PRESSED:
             return
 
-        key = key.lower()
-        if key == "escape":
+        if key == mcrfpy.Key.ESCAPE:
             menu_scene.activate()
-        elif key in ("up", "w"):
+        elif key in (mcrfpy.Key.UP, mcrfpy.Key.W):
             self.move_player(0, -1)
         # ... more controls
 
@@ -305,14 +307,16 @@ class PauseScene(mcrfpy.Scene):
         resume_text.fill_color = mcrfpy.Color(180, 180, 180)
         self.children.append(resume_text)
 
-    def on_keypress(self, key, action):
-        if action == "start" and key.lower() == "escape":
+        self.on_key = self.handle_key
+
+    def handle_key(self, key, action):
+        if action == mcrfpy.InputState.PRESSED and key == mcrfpy.Key.ESCAPE:
             game_scene.activate()
 
 
 # In game scene, switch to pause
-def on_keypress(self, key, action):
-    if action == "start" and key.lower() == "escape":
+def handle_key(self, key, action):
+    if action == mcrfpy.InputState.PRESSED and key == mcrfpy.Key.ESCAPE:
         pause_scene.activate()
 ```
 
@@ -389,8 +393,10 @@ class TitleScene(mcrfpy.Scene):
         start_text.fill_color = mcrfpy.Color(100, 255, 100)
         self.children.append(start_text)
 
-    def on_keypress(self, key, action):
-        if action == "start" and key.lower() == "space":
+        self.on_key = self.handle_key
+
+    def handle_key(self, key, action):
+        if action == mcrfpy.InputState.PRESSED and key == mcrfpy.Key.SPACE:
             game.activate()
 
 
@@ -400,6 +406,7 @@ class GameScene(mcrfpy.Scene):
         self.grid = None
         self.player = None
         self.setup_game()
+        self.on_key = self.handle_key
 
     def setup_game(self):
         # Create grid
@@ -437,31 +444,29 @@ class GameScene(mcrfpy.Scene):
     def on_exit(self):
         print("Game paused")
 
-    def on_keypress(self, key, action):
-        if action != "start":
+    def handle_key(self, key, action):
+        if action != mcrfpy.InputState.PRESSED:
             return
 
-        key = key.lower()
-
-        if key == "escape":
+        if key == mcrfpy.Key.ESCAPE:
             title.activate()
             return
 
         dx, dy = 0, 0
-        if key in ("up", "w"): dy = -1
-        elif key in ("down", "s"): dy = 1
-        elif key in ("left", "a"): dx = -1
-        elif key in ("right", "d"): dx = 1
+        if key in (mcrfpy.Key.UP, mcrfpy.Key.W): dy = -1
+        elif key in (mcrfpy.Key.DOWN, mcrfpy.Key.S): dy = 1
+        elif key in (mcrfpy.Key.LEFT, mcrfpy.Key.A): dx = -1
+        elif key in (mcrfpy.Key.RIGHT, mcrfpy.Key.D): dx = 1
 
         if dx or dy:
             self.move_player(dx, dy)
 
     def move_player(self, dx, dy):
-        new_x = int(self.player.x) + dx
-        new_y = int(self.player.y) + dy
+        new_x = self.player.grid_x + dx
+        new_y = self.player.grid_y + dy
 
         if self.grid.at(new_x, new_y).walkable:
-            self.player.pos = (new_x, new_y)
+            self.player.grid_pos = (new_x, new_y)
             self.grid.center = self.player.pos
 
 
@@ -478,7 +483,7 @@ title.activate()
 - Scenes persist in memory when not active
 - Only one scene can be active at a time
 - `on_key` can be set on any scene, not just the active one
-- Scene transitions run asynchronously
+- `activate()` deactivates the current scene and activates the new one immediately; pass `transition`/`duration` for an animated visual crossfade/slide that plays over `duration` seconds
 - UI elements stay in their scene when switching
 - Timers continue running across scene changes (stop them in `on_exit` if needed)
 

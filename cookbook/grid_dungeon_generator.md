@@ -6,7 +6,9 @@ nav_order: 2
 mcrf:
   objects: [Grid, Entity, Texture, Scene, BSP]
   diataxis: howto
-  disposition: needs-review
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Room and Corridor Generator
@@ -29,6 +31,8 @@ This recipe creates classic roguelike dungeons with:
 
 ## Quick Start
 
+> **Note:** This Quick Start is an illustrative sketch. `rooms_overlap()`, `carve_room()`, and `connect_rooms()` are pseudocode placeholders -- see the fully-worked equivalents (`Room.intersects`, `DungeonGenerator._carve_room`, `DungeonGenerator._dig_corridor`) in the Complete Generator section below.
+
 ```python
 import mcrfpy
 import random
@@ -36,7 +40,7 @@ import random
 def generate_dungeon(grid, room_count=8):
     """Generate a dungeon with rooms and corridors."""
     rooms = []
-    grid_w, grid_h = grid.grid_size
+    grid_w, grid_h = int(grid.grid_size.x), int(grid.grid_size.y)
 
     # Fill with walls first
     for x in range(grid_w):
@@ -136,7 +140,7 @@ class DungeonGenerator:
 
     def __init__(self, grid, seed=None):
         self.grid = grid
-        self.grid_w, self.grid_h = grid.grid_size
+        self.grid_w, self.grid_h = int(grid.grid_size.x), int(grid.grid_size.y)
         self.rooms = []
 
         if seed is not None:
@@ -271,6 +275,7 @@ import mcrfpy
 
 # Setup
 scene = mcrfpy.Scene("dungeon")
+mcrfpy.current_scene = scene
 
 texture = mcrfpy.Texture("assets/dungeon.png", 16, 16)
 grid = mcrfpy.Grid(grid_size=(60, 40), texture=texture, pos=(0, 0), size=(960, 640))
@@ -304,7 +309,7 @@ print(f"Generated dungeon with {len(rooms)} rooms")
 
 Binary Space Partitioning creates more structured layouts:
 
-> **Note:** `mcrfpy.BSP` provides native binary space partitioning built into the engine. The hand-rolled `BSPNode` class below remains here as an illustration of the algorithm.
+> **Note:** `mcrfpy.BSP` provides native binary space partitioning built into the engine. The hand-rolled `BSPNode` class below remains here as an illustration of the algorithm. Like the Quick Start above, `create_rooms()` calls `connect_points()` and `carve_room(grid, self.room)` as pseudocode placeholders (not defined on this page) -- a runnable version would substitute the equivalent `DungeonGenerator._dig_corridor` / `DungeonGenerator._carve_room` methods from the Complete Generator section. Note the placeholder `carve_room` here takes `(grid, room)` while the Quick Start's placeholder takes `(grid, x, y, w, h)`; these are two independent illustrative sketches with different signatures, not the same function.
 
 ```python
 class BSPNode:
@@ -387,7 +392,7 @@ class BSPNode:
 
 def generate_bsp_dungeon(grid, iterations=4):
     """Generate a BSP-based dungeon."""
-    grid_w, grid_h = grid.grid_size
+    grid_w, grid_h = int(grid.grid_size.x), int(grid.grid_size.y)
 
     # Fill with walls
     for x in range(grid_w):

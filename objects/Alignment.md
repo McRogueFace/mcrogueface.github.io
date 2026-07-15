@@ -4,7 +4,9 @@ title: Alignment
 mcrf:
   objects: [Alignment]
   diataxis: reference
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Alignment
@@ -13,22 +15,30 @@ Alignment enum for positioning UI elements within their parent.
 
 ## Overview
 
-The `Alignment` IntEnum controls how UI elements are positioned relative to their parent container. It affects how `h_align` and `v_align` properties position elements and which margins apply.
+The `Alignment` IntEnum controls how UI elements are positioned relative to their parent container. Any drawable's single `align` property takes one of the nine `Alignment` values (or `None` to disable and fall back to manual `pos` positioning); the `margin`, `horiz_margin`, and `vert_margin` properties control the offset from the parent's edges.
 
 ## Quick Reference
 
 ```python
+import mcrfpy
+
+scene = mcrfpy.Scene("alignment_demo")
+mcrfpy.current_scene = scene
+
+container = mcrfpy.Frame(pos=(50, 50), size=(400, 300), fill_color=mcrfpy.Color(40, 40, 60))
+scene.children.append(container)
+
 # Center a caption in its parent frame
 caption = mcrfpy.Caption(text="Centered", pos=(0, 0))
-caption.h_align = mcrfpy.Alignment.CENTER
-caption.v_align = mcrfpy.Alignment.CENTER
+caption.align = mcrfpy.Alignment.CENTER
+container.children.append(caption)
 
-# Position in top-right corner with margin
-sprite = mcrfpy.Sprite(texture=tex, pos=(0, 0))
-sprite.h_align = mcrfpy.Alignment.RIGHT
-sprite.v_align = mcrfpy.Alignment.TOP
+# Position a sprite in the top-right corner with margin
+sprite = mcrfpy.Sprite(texture=mcrfpy.default_texture, pos=(0, 0))
+sprite.align = mcrfpy.Alignment.TOP_RIGHT
 sprite.horiz_margin = 10
 sprite.vert_margin = 10
+container.children.append(sprite)
 ```
 
 ## Values
@@ -56,20 +66,21 @@ Different alignments use different margin properties:
 | `CENTER_LEFT`, `CENTER_RIGHT` | Applied | Not used |
 | Corners (`TOP_LEFT`, etc.) | Applied | Applied |
 
-## Usage with h_align and v_align
+## Usage with `align`
 
-Elements have separate horizontal and vertical alignment:
+Unlike CSS-style layout systems, McRogueFace does not expose separate horizontal and vertical alignment properties. A single `align` property takes one of the nine combined `Alignment` values, which together describe both axes at once:
 
 ```python
-# Different h_align and v_align combinations
-element.h_align = mcrfpy.Alignment.LEFT   # or CENTER, RIGHT
-element.v_align = mcrfpy.Alignment.TOP    # or CENTER, BOTTOM
+# One property covers both axes
+element.align = mcrfpy.Alignment.TOP_LEFT     # start of both axes
+element.align = mcrfpy.Alignment.CENTER       # middle of both axes
+element.align = mcrfpy.Alignment.BOTTOM_RIGHT # end of both axes
 
-# The alignment values map to these behaviors:
-# LEFT/TOP = start of axis
-# CENTER = middle of axis
-# RIGHT/BOTTOM = end of axis
+# The first word (TOP/CENTER/BOTTOM) controls the vertical axis;
+# the second word (LEFT/CENTER/RIGHT) controls the horizontal axis.
 ```
+
+Setting `align = None` disables automatic alignment and reverts to manual `pos`-based positioning. Call `element.realign()` to recompute position after the parent is resized.
 
 ## Related
 

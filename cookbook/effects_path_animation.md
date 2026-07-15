@@ -2,7 +2,9 @@
 mcrf:
   objects: [Entity, Grid, Timer, Animation, Behavior, AStarPath]
   diataxis: howto
-  disposition: rewrite-pending
+  disposition: current
+  verified: "0.2.8-dev"
+  verified_commit: 3a85dd8
 ---
 
 # Path Animation (Multi-Step Movement)
@@ -17,18 +19,18 @@ import mcrfpy
 class PathAnimator:
     """Animate an entity along a series of waypoints."""
 
-    def __init__(self, entity, path, step_duration=0.2, easing="easeInOut"):
+    def __init__(self, entity, path, step_duration=0.2, easing=None):
         """
         Args:
             entity: The Entity to animate
             path: List of (x, y) waypoints in grid coordinates
             step_duration: Seconds per step
-            easing: Animation easing function
+            easing: mcrfpy.Easing value (default: EASE_IN_OUT)
         """
         self.entity = entity
         self.path = path
         self.step_duration = step_duration
-        self.easing = easing
+        self.easing = easing if easing is not None else mcrfpy.Easing.EASE_IN_OUT
         self.index = 0
         self.on_complete = None
         self.on_step = None
@@ -49,23 +51,24 @@ class PathAnimator:
         target_x, target_y = self.path[self.index]
 
         # Create animations for this step
-        def on_step_complete(anim, target):
+        def on_step_complete(target, prop, value):
             # Callback for step completion
             if self.on_step:
                 self.on_step(self, self.index)
             self.index += 1
             self._animate_next()
 
-        # Animate X
-        if self.entity.x != target_x:
-            anim_x = mcrfpy.Animation("x", float(target_x), self.step_duration,
-                                       self.easing, callback=on_step_complete)
-            anim_x.start(self.entity)
+        # Animate X (draw_x/draw_y are the tile-coordinate properties used
+        # for smooth movement between grid cells; compare against draw_pos,
+        # not entity.x/entity.y, which are pixel coordinates)
+        pos = self.entity.draw_pos
+        if pos.x != target_x:
+            self.entity.animate("draw_x", float(target_x), self.step_duration,
+                                 self.easing, callback=on_step_complete)
         # Animate Y
-        elif self.entity.y != target_y:
-            anim_y = mcrfpy.Animation("y", float(target_y), self.step_duration,
-                                       self.easing, callback=on_step_complete)
-            anim_y.start(self.entity)
+        elif pos.y != target_y:
+            self.entity.animate("draw_y", float(target_y), self.step_duration,
+                                 self.easing, callback=on_step_complete)
         else:
             # Already at position, skip to next
             self.index += 1
@@ -89,11 +92,11 @@ import mcrfpy
 class DiagonalPathAnimator:
     """Path animator with diagonal movement support."""
 
-    def __init__(self, entity, path, step_duration=0.2, easing="easeInOut"):
+    def __init__(self, entity, path, step_duration=0.2, easing=None):
         self.entity = entity
         self.path = path
         self.step_duration = step_duration
-        self.easing = easing
+        self.easing = easing if easing is not None else mcrfpy.Easing.EASE_IN_OUT
         self.index = 0
         self.on_complete = None
         self.on_step = None
@@ -104,7 +107,7 @@ class DiagonalPathAnimator:
         self.index = 0
         self._animate_next()
 
-    def _on_anim_done(self, anim, target):
+    def _on_anim_done(self, target, prop, value):
         """Track when both X and Y animations complete."""
         self._pending_anims -= 1
         if self._pending_anims <= 0:
@@ -121,23 +124,22 @@ class DiagonalPathAnimator:
             return
 
         target_x, target_y = self.path[self.index]
-        current_x, current_y = self.entity.x, self.entity.y
+        pos = self.entity.draw_pos
+        current_x, current_y = pos.x, pos.y
 
         self._pending_anims = 0
 
-        # Animate X if different
+        # Animate X if different (draw_x/draw_y = tile-coordinate properties)
         if current_x != target_x:
             self._pending_anims += 1
-            anim_x = mcrfpy.Animation("x", float(target_x), self.step_duration,
-                                       self.easing, callback=self._on_anim_done)
-            anim_x.start(self.entity)
+            self.entity.animate("draw_x", float(target_x), self.step_duration,
+                                 self.easing, callback=self._on_anim_done)
 
         # Animate Y if different
         if current_y != target_y:
             self._pending_anims += 1
-            anim_y = mcrfpy.Animation("y", float(target_y), self.step_duration,
-                                       self.easing, callback=self._on_anim_done)
-            anim_y.start(self.entity)
+            self.entity.animate("draw_y", float(target_y), self.step_duration,
+                                 self.easing, callback=self._on_anim_done)
 
         # If already at target, move to next
         if self._pending_anims == 0:
@@ -193,11 +195,11 @@ class PatrolAnimator:
 
         target_x, target_y = self.path[self.index]
 
-        def on_arrive(anim, target):
+        def on_arrive(target, prop, value):
             if not self.is_running:
                 return
             # Pause at waypoint
-            def resume(timer_name):
+            def resume(timer, runtime):
                 if self.is_running:
                     self.index = (self.index + 1) % len(self.path)
                     self._move_to_next()
@@ -205,18 +207,17 @@ class PatrolAnimator:
             mcrfpy.Timer(f"patrol_pause_{id(self)}", resume,
                         int(self.pause_duration * 1000), once=True)
 
-        # Animate movement
-        if self.entity.x != target_x:
-            anim = mcrfpy.Animation("x", float(target_x), self.step_duration,
-                                    "easeInOut", callback=on_arrive)
-            anim.start(self.entity)
-        elif self.entity.y != target_y:
-            anim = mcrfpy.Animation("y", float(target_y), self.step_duration,
-                                    "easeInOut", callback=on_arrive)
-            anim.start(self.entity)
+        # Animate movement (draw_x/draw_y = tile-coordinate properties)
+        pos = self.entity.draw_pos
+        if pos.x != target_x:
+            self.entity.animate("draw_x", float(target_x), self.step_duration,
+                                 mcrfpy.Easing.EASE_IN_OUT, callback=on_arrive)
+        elif pos.y != target_y:
+            self.entity.animate("draw_y", float(target_y), self.step_duration,
+                                 mcrfpy.Easing.EASE_IN_OUT, callback=on_arrive)
         else:
             # Already there, move to next after pause
-            on_arrive(None, None)
+            on_arrive(None, None, None)
 
 
 # Usage
@@ -249,9 +250,9 @@ class VariableSpeedPath:
         self.waypoints = []
         for wp in waypoints:
             if len(wp) == 2:
-                self.waypoints.append((wp[0], wp[1], 0.3, "easeInOut"))
+                self.waypoints.append((wp[0], wp[1], 0.3, mcrfpy.Easing.EASE_IN_OUT))
             elif len(wp) == 3:
-                self.waypoints.append((wp[0], wp[1], wp[2], "easeInOut"))
+                self.waypoints.append((wp[0], wp[1], wp[2], mcrfpy.Easing.EASE_IN_OUT))
             else:
                 self.waypoints.append(wp)
 
@@ -270,35 +271,33 @@ class VariableSpeedPath:
 
         x, y, duration, easing = self.waypoints[self.index]
 
-        def done(anim, target):
+        def done(target, prop, value):
             self.index += 1
             self._next()
 
-        # Animate (using Y callback since we animate both)
-        need_x = self.entity.x != x
-        need_y = self.entity.y != y
+        # Animate (using the Y callback since we animate both; draw_x/draw_y
+        # are the tile-coordinate properties)
+        pos = self.entity.draw_pos
+        need_x = pos.x != x
+        need_y = pos.y != y
 
         if need_x and need_y:
-            anim_x = mcrfpy.Animation("x", float(x), duration, easing)
-            anim_y = mcrfpy.Animation("y", float(y), duration, easing, callback=done)
-            anim_x.start(self.entity)
-            anim_y.start(self.entity)
+            self.entity.animate("draw_x", float(x), duration, easing)
+            self.entity.animate("draw_y", float(y), duration, easing, callback=done)
         elif need_x:
-            anim = mcrfpy.Animation("x", float(x), duration, easing, callback=done)
-            anim.start(self.entity)
+            self.entity.animate("draw_x", float(x), duration, easing, callback=done)
         elif need_y:
-            anim = mcrfpy.Animation("y", float(y), duration, easing, callback=done)
-            anim.start(self.entity)
+            self.entity.animate("draw_y", float(y), duration, easing, callback=done)
         else:
-            done(None, None)
+            done(None, None, None)
 
 
 # Usage - different speeds for different segments
 waypoints = [
-    (5, 5),                    # Default speed
-    (5, 10, 0.5),              # Slower
-    (10, 10, 0.2, "linear"),   # Fast, linear
-    (10, 5, 1.0, "easeOut"),   # Slow arrival
+    (5, 5),                                        # Default speed
+    (5, 10, 0.5),                                   # Slower
+    (10, 10, 0.2, mcrfpy.Easing.LINEAR),             # Fast, linear
+    (10, 5, 1.0, mcrfpy.Easing.EASE_OUT),            # Slow arrival
 ]
 path = VariableSpeedPath(entity, waypoints)
 path.start()
@@ -317,22 +316,23 @@ def animate_to_target(entity, grid, target_x, target_y, step_duration=0.15):
 
     Args:
         entity: Entity to move
-        grid: Grid with walkable tiles
+        grid: Grid with walkable tiles (unused directly - entity.find_path
+               consults the grid the entity is attached to)
         target_x, target_y: Destination in grid coordinates
         step_duration: Animation time per tile
     """
-    # Use grid's pathfinding (A* algorithm)
-    start_x, start_y = int(entity.x), int(entity.y)
+    # Use the entity's own pathfinding (A* algorithm)
+    path = entity.find_path((target_x, target_y))
 
-    # Compute path using grid's pathfinding
-    path = grid.compute_path(start_x, start_y, target_x, target_y)
-
-    if not path or len(path) == 0:
+    if not path:
         print("No path found!")
         return None
 
-    # Convert path to waypoint list (skip first point - current position)
-    waypoints = [(p.x, p.y) for p in path[1:]]
+    # Consume the path into a waypoint list
+    waypoints = []
+    while path:
+        step = path.walk()
+        waypoints.append((step.x, step.y))
 
     # Create and start animator
     animator = PathAnimator(entity, waypoints, step_duration)
@@ -376,30 +376,28 @@ class CameraFollowingPath:
 
         x, y = self.path[self.index]
 
-        def done(anim, target):
+        def done(target, prop, value):
             self.index += 1
             self._next()
 
-        # Animate entity
-        if self.entity.x != x:
-            anim = mcrfpy.Animation("x", float(x), self.step_duration,
-                                    "easeInOut", callback=done)
-            anim.start(self.entity)
-        elif self.entity.y != y:
-            anim = mcrfpy.Animation("y", float(y), self.step_duration,
-                                    "easeInOut", callback=done)
-            anim.start(self.entity)
+        # Animate entity (draw_x/draw_y = tile-coordinate properties)
+        pos = self.entity.draw_pos
+        if pos.x != x:
+            self.entity.animate("draw_x", float(x), self.step_duration,
+                                 mcrfpy.Easing.EASE_IN_OUT, callback=done)
+        elif pos.y != y:
+            self.entity.animate("draw_y", float(y), self.step_duration,
+                                 mcrfpy.Easing.EASE_IN_OUT, callback=done)
         else:
-            done(None, None)
+            done(None, None, None)
             return
 
-        # Animate camera to follow
-        cam_x = mcrfpy.Animation("center_x", (x + 0.5) * 16,
-                                  self.step_duration, "easeInOut")
-        cam_y = mcrfpy.Animation("center_y", (y + 0.5) * 16,
-                                  self.step_duration, "easeInOut")
-        cam_x.start(self.grid)
-        cam_y.start(self.grid)
+        # Animate camera to follow (center_x/center_y are in pixel space;
+        # tile size here is 16px)
+        self.grid.animate("center_x", (x + 0.5) * 16,
+                           self.step_duration, mcrfpy.Easing.EASE_IN_OUT)
+        self.grid.animate("center_y", (y + 0.5) * 16,
+                           self.step_duration, mcrfpy.Easing.EASE_IN_OUT)
 
 
 # Usage
@@ -415,7 +413,7 @@ mover.start()
 2. **Index tracking**: Keep track of current position in path
 3. **Completion handling**: Fire callbacks when path is complete
 4. **Diagonal support**: Animate both X and Y simultaneously with completion tracking
-5. **Pathfinding integration**: Use `grid.compute_path()` for dynamic routes
+5. **Pathfinding integration**: Use `entity.find_path(target)` (or `grid.find_path(start, end)`) for dynamic routes
 
 ## Tips
 
