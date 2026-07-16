@@ -22,9 +22,14 @@ game source links. It has no effect on snippet links (always site repo).
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import quote
+
+sys.path.insert(0, str(Path(__file__).parent))
+from lzstring import compress_to_encoded_uri_component  # noqa: E402
 
 # --- Fixed locations ---------------------------------------------------------
 SITE_ROOT = Path("/home/john/Development/mcrogueface.github.io")
@@ -39,6 +44,42 @@ LIBRARY_DIR = SITE_ROOT / "library"
 DEMO_SCREENS_DIR = ENGINE_ROOT / "tests" / "demo" / "screens"
 DEMO_SHOTS_DIR = ENGINE_ROOT / "tests" / "demo" / "screenshots"
 GAMES_DIR = ENGINE_ROOT / "games"
+
+# Snippet preview screenshots: a generated, gitignored artifact in the ENGINE repo,
+# produced by `make snippet-shots` (#381). They are copied INTO this site repo, where
+# they are served and committed -- the engine repo never carries them. SRC is where the
+# engine writes them; DST is the served, committed location here.
+SNIPPET_SHOTS_SRC = ENGINE_ROOT / "snippet-shots"
+SNIPPET_SHOTS_DST = SITE_ROOT / "assets" / "images" / "snippet-shots"
+# Web path (Jekyll baseurl-relative) used in <img src>.
+SNIPPET_SHOTS_WEB = "/assets/images/snippet-shots"
+
+# The deployed playground reads shared code from the URL fragment
+# (see src/shell.html: parseUrlFragment):
+#   #src=<lz-string>   inline, self-contained, no git ref -> can't rot
+#   #url=<raw file>    playground fetches raw.githubusercontent.com at a pinned
+#                      commit (CORS-open); used when the inline form is too long
+# Short snippets go inline; long ones (compressed > INLINE_URL_LIMIT) use the
+# raw-file loader pinned to the snippet commit sha.
+PLAYGROUND_WEB = "/playground/"
+INLINE_URL_LIMIT = 1024  # compressed #src= chars above which we switch to #url=
+
+
+def playground_url(info: dict, engine_slug, snippet_ref) -> str:
+    """Baseurl-relative Open-in-Playground link for one snippet.
+
+    Inline (#src=) when the compressed source is short; otherwise a raw-file
+    (#url=) link pinned to `snippet_ref`. Falls back to inline if the engine
+    github slug is unknown -- a long URL still works, a broken raw link doesn't.
+    """
+    compressed = compress_to_encoded_uri_component(info["source"])
+    if len(compressed) <= INLINE_URL_LIMIT or not engine_slug:
+        frag = f"#src={compressed}"
+    else:
+        rel = f"tests/snippets/{info['stem']}.py"
+        raw = raw_url(engine_slug, snippet_ref, rel)
+        frag = f"#url={quote(raw, safe='')}"
+    return f"{{{{ site.baseurl }}}}{PLAYGROUND_WEB}{frag}"
 
 # Fallback pins used only when git is unavailable / detached in a way that
 # rev-parse cannot resolve. These are the known-good HEAD shas at authoring
@@ -107,6 +148,26 @@ def tag_on_remote(repo: Path, remote: str, tag: str) -> bool:
     return bool(out)
 
 
+def full_head_sha(repo: Path) -> str | None:
+    return git(repo, "rev-parse", "HEAD")
+
+
+def snippets_dirty(repo: Path) -> bool:
+    """True if the snippet dir has uncommitted changes -- then no commit sha
+    faithfully represents what we are rendering, so a raw-file pin would serve
+    different bytes than the previews. Caller must fail rather than pin."""
+    out = git(repo, "status", "--porcelain", "tests/snippets/")
+    return bool(out)
+
+
+def sha_on_remote(repo: Path, remote: str, sha: str) -> bool:
+    """Is `sha` reachable from a branch on `remote` (i.e. actually pushed)?"""
+    out = git(repo, "branch", "-r", "--contains", sha)
+    if not out:
+        return False
+    return any(ln.strip().startswith(f"{remote}/") for ln in out.splitlines())
+
+
 def raw_url(slug: str, ref: str, path: str) -> str:
     return f"https://raw.githubusercontent.com/{slug}/{ref}/{path}"
 
@@ -142,11 +203,14 @@ def parse_snippet(path: Path) -> dict:
         "objects": [],
         "status": "",
         "verified": "",
+        "source": "",
     }
     try:
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        text = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return info
+    info["source"] = text
+    lines = text.splitlines()
 
     for line in lines[:8]:
         stripped = line.strip()
@@ -172,16 +236,34 @@ def parse_snippet(path: Path) -> dict:
     return info
 
 
-def status_badge(status: str) -> str:
-    if not status:
-        return "&mdash;"
-    icons = {"ok": "&#9989; ok", "broken": "&#10060; broken",
-             "wip": "&#128679; wip", "partial": "&#9888; partial"}
-    return icons.get(status.lower(), status)
+# --- snippet preview screenshots ---------------------------------------------
+def sync_snippet_shots() -> set[str]:
+    """Copy the engine's snippet screenshots into this repo; return the stems copied.
+
+    The PNGs are a generated, gitignored artifact in the engine (#381); this repo is
+    where they are served and committed. Fails loudly if they are absent rather than
+    quietly shipping a gallery with no previews -- run `make snippet-shots` in the
+    engine first (release-docs chains it)."""
+    shots = (sorted(SNIPPET_SHOTS_SRC.glob("[0-9]*.png"))
+             if SNIPPET_SHOTS_SRC.is_dir() else [])
+    if not shots:
+        sys.exit(
+            f"build_library: no snippet screenshots in {SNIPPET_SHOTS_SRC}.\n"
+            "  Run `make snippet-shots` in the engine repo first "
+            "(release-docs chains it).")
+    SNIPPET_SHOTS_DST.mkdir(parents=True, exist_ok=True)
+    # Refresh: drop stale images so a removed or renamed snippet leaves no orphan.
+    for old in SNIPPET_SHOTS_DST.glob("*.png"):
+        old.unlink()
+    stems = set()
+    for src in shots:
+        shutil.copy2(src, SNIPPET_SHOTS_DST / src.name)
+        stems.add(src.stem)
+    return stems
 
 
 # --- section builders --------------------------------------------------------
-def build_snippets_section(engine_slug, engine_ref) -> str:
+def build_snippets_section(shots, engine_slug, snippet_ref) -> tuple[str, dict]:
     snippets = sorted(SNIPPETS_DIR.glob("[0-9]*.py"))
     parsed = [parse_snippet(p) for p in snippets]
 
@@ -191,16 +273,13 @@ def build_snippets_section(engine_slug, engine_ref) -> str:
         f"{len(parsed)} focused, copy-paste examples covering the whole "
         "`mcrfpy` API. Each snippet fills the 1024x768 playground canvas.\n")
     out.append(
-        "> **Open in playground:** the "
-        "[playground]({{ site.baseurl }}/playground/) accepts shared code via "
-        "an LZString-compressed `#src=` URL fragment or a `#gist=` id, but "
-        "there is **no by-URL loader** to open a repo snippet directly. Copy "
-        "the source below and paste it into the editor, then press Run "
-        "(Ctrl+Enter).\n")
+        "> **Open in Playground** opens the exact code shown here in the "
+        "[playground]({{ site.baseurl }}/playground/) &mdash; press Run "
+        "(Ctrl+Enter). Short snippets travel inline in the URL "
+        "(LZString-compressed `#src=`); longer ones load the raw file from the "
+        "pinned commit (`#url=`). No copy-paste either way.\n")
 
-    if engine_slug is None:
-        out.append("_(Could not resolve a github.com remote for the engine "
-                   "repo; source links omitted.)_\n")
+    counts = {"inline": 0, "raw": 0}
 
     # Group by leading category token, preserving first-seen order.
     groups: dict[str, list] = {}
@@ -209,26 +288,26 @@ def build_snippets_section(engine_slug, engine_ref) -> str:
 
     for cat, items in groups.items():
         out.append(f"\n### {cat.replace('_', ' ').title()}\n")
-        out.append("| # | Snippet | Objects | Status | Source |")
-        out.append("|---|---------|---------|--------|--------|")
+        out.append("| Snippet | Preview | Source |")
+        out.append("|---------|---------|--------|")
         for info in items:
             title = info["title"]
             if info["desc"]:
                 title = f"**{title}**<br><span style=\"color:#888\">" \
                         f"{info['desc']}</span>"
-            objs = ", ".join(f"`{o}`" for o in info["objects"]) or "&mdash;"
-            badge = status_badge(info["status"])
-            if engine_slug:
-                rel = f"tests/snippets/{info['stem']}.py"
-                link = f"[view]({blob_url(engine_slug, engine_ref, rel)}) &middot; " \
-                       f"[raw]({raw_url(engine_slug, engine_ref, rel)})"
+            if info["stem"] in shots:
+                src = f"{{{{ site.baseurl }}}}{SNIPPET_SHOTS_WEB}/{info['stem']}.png"
+                preview = (f'<img src="{src}" alt="{info["title"]} preview" '
+                           f'loading="lazy" width="220">')
             else:
-                link = "&mdash;"
-            out.append(f"| {info['number']} | {title} | {objs} | {badge} | "
-                       f"{link} |")
+                preview = "&mdash;"
+            url = playground_url(info, engine_slug, snippet_ref)
+            counts["raw" if "#url=" in url else "inline"] += 1
+            link = f"[&#9654; Open in Playground]({url})"
+            out.append(f"| {title} | {preview} | {link} |")
         out.append("")
 
-    return "\n".join(out)
+    return "\n".join(out), counts
 
 
 def build_demos_section(engine_slug, engine_ref):
@@ -358,6 +437,10 @@ def main() -> int:
     ap.add_argument("--ref", default=None,
                     help="Engine-repo ref for demo/game source links "
                          "(default: tag 0.2.8 if pushed, else engine HEAD sha).")
+    ap.add_argument("--snippet-ref", default=None,
+                    help="Engine commit/tag that long snippets' raw-file "
+                         "(#url=) playground links pin to (default: engine HEAD "
+                         "sha, which must be pushed to github to resolve).")
     args = ap.parse_args()
 
     site_ref = head_sha(SITE_ROOT, FALLBACK_SITE_REF)
@@ -384,9 +467,36 @@ def main() -> int:
             ref_note = (f"engine HEAD sha {engine_ref} "
                         f"(tag {RELEASE_TAG} not on remote)")
 
+    # Resolve the commit that raw-file (#url=) snippet links pin to. It must
+    # faithfully represent the snippet bytes we are rendering, so refuse to pin
+    # if the snippet dir is dirty (Fail Early: no silently-wrong links).
+    gh_remote = None
+    for name, url in remotes(ENGINE_ROOT).items():
+        if "github.com" in url:
+            gh_remote = name
+            break
+    if args.snippet_ref:
+        snippet_ref = args.snippet_ref
+        snippet_ref_note = f"explicit --snippet-ref {snippet_ref}"
+    else:
+        if snippets_dirty(ENGINE_ROOT):
+            sys.exit(
+                "build_library: tests/snippets/ has uncommitted changes; no "
+                "commit represents these bytes. Commit them, then rebuild (or "
+                "pass --snippet-ref <sha/tag>). Raw-file playground links must "
+                "pin to a faithful ref.")
+        snippet_ref = full_head_sha(ENGINE_ROOT) or FALLBACK_ENGINE_REF
+        snippet_ref_note = f"engine HEAD {snippet_ref[:7]}"
+        if gh_remote and not sha_on_remote(ENGINE_ROOT, gh_remote, snippet_ref):
+            snippet_ref_note += (
+                f" -- WARNING: not yet on '{gh_remote}'; raw-file (#url=) links "
+                f"404 until this commit is pushed")
+
     LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
 
-    snippets_md = build_snippets_section(engine_slug, engine_ref)
+    shots = sync_snippet_shots()
+    snippets_md, snippet_link_counts = build_snippets_section(
+        shots, engine_slug, snippet_ref)
     demos_md, demo_stats = build_demos_section(engine_slug, engine_ref)
     games_md, games = build_games_section(engine_slug, engine_ref)
 
@@ -400,14 +510,14 @@ def main() -> int:
     page.append(
         "A gallery of runnable examples for McRogueFace: bite-sized "
         "**playground snippets**, full **engine demo screens**, and "
-        "**games**. Source links are pinned to specific commits so they keep "
-        "working as the code evolves.\n")
+        "**games**. Snippet links open the code straight in the playground; "
+        "demo/game source links are pinned to a specific commit.\n")
     page.append(
-        f"<sub>Snippets pinned to site `{site_ref}`"
-        + (f" ([{site_slug}](https://github.com/{site_slug}))" if site_slug else "")
-        + f"; demos/games pinned to engine `{engine_ref}`"
+        "<sub>Short snippets carry their source inline in the link; longer "
+        f"ones load the raw file pinned to engine `{snippet_ref[:7]}`"
         + (f" ([{engine_slug}](https://github.com/{engine_slug}))" if engine_slug else "")
-        + ". Generated by `tools/build_library.py`.</sub>\n")
+        + f". Demos/games pinned to engine `{engine_ref}`. "
+        + "Generated by `tools/build_library.py`.</sub>\n")
     page.append(snippets_md)
     page.append(demos_md)
     page.append(games_md)
@@ -423,7 +533,11 @@ def main() -> int:
     print(f"  ref pinning: {ref_note}")
     print(f"  site ref:    {site_ref}  slug: {site_slug}")
     print(f"  engine ref:  {engine_ref}  slug: {engine_slug}")
-    print(f"  snippets:    {len(sorted(SNIPPETS_DIR.glob('[0-9]*.py')))}")
+    print(f"  snippet ref: {snippet_ref_note}")
+    print(f"  snippets:    {len(sorted(SNIPPETS_DIR.glob('[0-9]*.py')))} "
+          f"({len(shots)} with previews -> {SNIPPET_SHOTS_DST})")
+    print(f"  play links:  {snippet_link_counts['inline']} inline (#src=) / "
+          f"{snippet_link_counts['raw']} raw-file (#url=)")
     print(f"  demo screens: {demo_stats['screens']} "
           f"(thumbnails {demo_stats['available']} available / "
           f"{demo_stats['missing']} missing)")
