@@ -22,6 +22,7 @@ game source links. It has no effect on snippet links (always site repo).
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -39,6 +40,15 @@ LIBRARY_DIR = SITE_ROOT / "library"
 DEMO_SCREENS_DIR = ENGINE_ROOT / "tests" / "demo" / "screens"
 DEMO_SHOTS_DIR = ENGINE_ROOT / "tests" / "demo" / "screenshots"
 GAMES_DIR = ENGINE_ROOT / "games"
+
+# Snippet preview screenshots: a generated, gitignored artifact in the ENGINE repo,
+# produced by `make snippet-shots` (#381). They are copied INTO this site repo, where
+# they are served and committed -- the engine repo never carries them. SRC is where the
+# engine writes them; DST is the served, committed location here.
+SNIPPET_SHOTS_SRC = ENGINE_ROOT / "snippet-shots"
+SNIPPET_SHOTS_DST = SITE_ROOT / "assets" / "images" / "snippet-shots"
+# Web path (Jekyll baseurl-relative) used in <img src>.
+SNIPPET_SHOTS_WEB = "/assets/images/snippet-shots"
 
 # Fallback pins used only when git is unavailable / detached in a way that
 # rev-parse cannot resolve. These are the known-good HEAD shas at authoring
@@ -180,8 +190,34 @@ def status_badge(status: str) -> str:
     return icons.get(status.lower(), status)
 
 
+# --- snippet preview screenshots ---------------------------------------------
+def sync_snippet_shots() -> set[str]:
+    """Copy the engine's snippet screenshots into this repo; return the stems copied.
+
+    The PNGs are a generated, gitignored artifact in the engine (#381); this repo is
+    where they are served and committed. Fails loudly if they are absent rather than
+    quietly shipping a gallery with no previews -- run `make snippet-shots` in the
+    engine first (release-docs chains it)."""
+    shots = (sorted(SNIPPET_SHOTS_SRC.glob("[0-9]*.png"))
+             if SNIPPET_SHOTS_SRC.is_dir() else [])
+    if not shots:
+        sys.exit(
+            f"build_library: no snippet screenshots in {SNIPPET_SHOTS_SRC}.\n"
+            "  Run `make snippet-shots` in the engine repo first "
+            "(release-docs chains it).")
+    SNIPPET_SHOTS_DST.mkdir(parents=True, exist_ok=True)
+    # Refresh: drop stale images so a removed or renamed snippet leaves no orphan.
+    for old in SNIPPET_SHOTS_DST.glob("*.png"):
+        old.unlink()
+    stems = set()
+    for src in shots:
+        shutil.copy2(src, SNIPPET_SHOTS_DST / src.name)
+        stems.add(src.stem)
+    return stems
+
+
 # --- section builders --------------------------------------------------------
-def build_snippets_section(engine_slug, engine_ref) -> str:
+def build_snippets_section(engine_slug, engine_ref, shots) -> str:
     snippets = sorted(SNIPPETS_DIR.glob("[0-9]*.py"))
     parsed = [parse_snippet(p) for p in snippets]
 
@@ -209,8 +245,8 @@ def build_snippets_section(engine_slug, engine_ref) -> str:
 
     for cat, items in groups.items():
         out.append(f"\n### {cat.replace('_', ' ').title()}\n")
-        out.append("| # | Snippet | Objects | Status | Source |")
-        out.append("|---|---------|---------|--------|--------|")
+        out.append("| # | Snippet | Preview | Objects | Status | Source |")
+        out.append("|---|---------|---------|---------|--------|--------|")
         for info in items:
             title = info["title"]
             if info["desc"]:
@@ -218,14 +254,20 @@ def build_snippets_section(engine_slug, engine_ref) -> str:
                         f"{info['desc']}</span>"
             objs = ", ".join(f"`{o}`" for o in info["objects"]) or "&mdash;"
             badge = status_badge(info["status"])
+            if info["stem"] in shots:
+                src = f"{{{{ site.baseurl }}}}{SNIPPET_SHOTS_WEB}/{info['stem']}.png"
+                preview = (f'<img src="{src}" alt="{info["title"]} preview" '
+                           f'loading="lazy" width="220">')
+            else:
+                preview = "&mdash;"
             if engine_slug:
                 rel = f"tests/snippets/{info['stem']}.py"
                 link = f"[view]({blob_url(engine_slug, engine_ref, rel)}) &middot; " \
                        f"[raw]({raw_url(engine_slug, engine_ref, rel)})"
             else:
                 link = "&mdash;"
-            out.append(f"| {info['number']} | {title} | {objs} | {badge} | "
-                       f"{link} |")
+            out.append(f"| {info['number']} | {title} | {preview} | {objs} | "
+                       f"{badge} | {link} |")
         out.append("")
 
     return "\n".join(out)
@@ -386,7 +428,8 @@ def main() -> int:
 
     LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
 
-    snippets_md = build_snippets_section(engine_slug, engine_ref)
+    shots = sync_snippet_shots()
+    snippets_md = build_snippets_section(engine_slug, engine_ref, shots)
     demos_md, demo_stats = build_demos_section(engine_slug, engine_ref)
     games_md, games = build_games_section(engine_slug, engine_ref)
 
@@ -423,7 +466,8 @@ def main() -> int:
     print(f"  ref pinning: {ref_note}")
     print(f"  site ref:    {site_ref}  slug: {site_slug}")
     print(f"  engine ref:  {engine_ref}  slug: {engine_slug}")
-    print(f"  snippets:    {len(sorted(SNIPPETS_DIR.glob('[0-9]*.py')))}")
+    print(f"  snippets:    {len(sorted(SNIPPETS_DIR.glob('[0-9]*.py')))} "
+          f"({len(shots)} with previews -> {SNIPPET_SHOTS_DST})")
     print(f"  demo screens: {demo_stats['screens']} "
           f"(thumbnails {demo_stats['available']} available / "
           f"{demo_stats['missing']} missing)")
