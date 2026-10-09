@@ -5,8 +5,8 @@ mcrf:
   objects: [Sound]
   diataxis: reference
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Sound
@@ -37,12 +37,12 @@ print(f"Duration: {hit_sound.duration}s")
 ## Constructor
 
 ```python
-mcrfpy.Sound(filename: str)
+mcrfpy.Sound(source)
 ```
 
 | Argument | Type | Description |
 |----------|------|-------------|
-| `filename` | str | Filename string or SoundBuffer object |
+| `source` | str or SoundBuffer | Filename string or SoundBuffer object |
 
 Supported formats: OGG, WAV, FLAC
 
@@ -65,7 +65,7 @@ Supported formats: OGG, WAV, FLAC
 | `play()` | Start or resume playback |
 | `pause()` | Pause playback (keeps position) |
 | `stop()` | Stop playback (resets position) |
-| `play_varied(pitch_range=0.1, volume_range=3.0)` | Play with randomized pitch/volume |
+| `play_varied(pitch_range=0.1, volume_range=3.0)` | Play with randomized pitch/volume; returns the `(pitch, volume)` used for this playback (0.3.0: plays on a separate voice so the variation is heard). Seed with `mcrfpy.set_random_seed()` for reproducible variation. |
 
 ## Usage Notes
 

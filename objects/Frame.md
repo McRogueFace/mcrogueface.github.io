@@ -5,8 +5,8 @@ mcrf:
   objects: [Frame]
   diataxis: reference
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Frame
@@ -102,6 +102,10 @@ mcrfpy.Frame(pos=None, size=None, **kwargs)
 | `realign()` | Reapply alignment relative to parent |
 
 The read-only `bounds` property returns a `(pos, size)` pair of Vectors.
+
+## Caching
+
+With `cache_subtree=True` a frame renders itself and all its children to a texture and re-blits it while nothing changes. Changes to children (text, colors, position, nested content) invalidate the cache, so cached frames stay current. Before 0.3.0 (#368), changes to child content could be frozen out of a cached frame.
 
 ## Related
 

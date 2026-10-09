@@ -7,8 +7,8 @@ mcrf:
   objects: [Grid, DijkstraMap, Color]
   diataxis: howto
   disposition: needs-review
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Dijkstra Distance Maps
@@ -374,8 +374,10 @@ rather than calling `get_dijkstra_map(roots=...)` again.
    the nearest of several sources, instead of computing and merging maps by hand.
 3. **`step_from` vs `descent_step`**: `step_from` follows a precomputed path
    toward the root; `descent_step` looks only at immediate neighbors each call.
-4. **Blocked paths**: `distance()`, `step_from()`, and `path_from()` all
-   return `None` for unreachable cells — check for `None`, not `float('inf')`.
+4. **Blocked paths**: `distance()` and `step_from()` return `None` for
+   unreachable cells — check for `None`, not `float('inf')`. `path_from()`
+   returns an `AStarPath` that is empty (0 steps remaining) when there is no
+   route, and otherwise walks from the start cell toward the root.
 5. **Direction**: distances decrease toward the root; descend the field to
    approach it, use `invert()` to flee it.
 

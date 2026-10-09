@@ -4,8 +4,8 @@ mcrf:
   objects: [Timer, Frame, Scene, Color, Easing]
   diataxis: howto
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Headless Mode
@@ -19,6 +19,7 @@ McRogueFace supports headless operation for automated testing, CI pipelines, and
 
 **Key Files:**
 - `src/GameEngine.cpp::step()` - Simulation advancement
+- `src/McRFPy_API.cpp::_step()` / `_advance()` - Python bindings for `step()` and `advance()`
 - `src/McRFPy_Automation.cpp::_screenshot()` - Synchronous capture
 
 ---
@@ -37,7 +38,7 @@ Launch McRogueFace with the `--headless` flag:
 
 In headless mode:
 - No window is created (uses RenderTexture internally)
-- Simulation time is frozen until `step()` is called
+- Simulation time is frozen until `step()` or `advance()` is called
 - Screenshots capture current state synchronously
 
 ---
@@ -63,18 +64,37 @@ print(f"Advanced {dt} seconds to next event")
 
 ### What step() Does
 
-1. Advances internal `simulation_time` by the specified duration
-2. Updates all active animations
-3. Fires any timers whose intervals have elapsed
-4. Does NOT render (call `screenshot()` to trigger render)
+`step()` runs one full simulation frame:
 
-Note: `step()` fires exactly one timer event per call, regardless of how large `dt` is. If a timer's interval has elapsed multiple times within the requested `dt`, call `step()` again to fire it again — it will not "catch up" in a single call.
+1. Advances the simulation clock by the specified duration
+2. Runs the scene update, timers whose intervals have elapsed, and Python `Scene.update()` callbacks
+3. Updates all active animations and scene transitions (including their completion)
+4. Records frame-time metrics and increments the frame counter
+5. Does NOT render or process input (call `screenshot()` to trigger a render)
+
+To let a span of simulated time pass with timer intervals honored, use `advance()`:
+
+```python
+mcrfpy.advance(2500)   # int MILLISECONDS (step() takes float seconds)
+print(mcrfpy.get_metrics()["simulation_time_ms"])  # simulated ms; "runtime" is wall-clock seconds
+```
+
+`advance(ms)` is headless-only; `ms` must be an int >= 0. Prefer `step()` for single-frame control and `advance()` for moving the clock across a longer span.
+
+### Reproducible runs
+
+Seed the engine's internal random streams (entity behaviors, `Sound.play_varied`) before anything consumes randomness:
+
+```python
+mcrfpy.set_random_seed(1234)    # unsigned 32-bit int
+print(mcrfpy.get_random_seed())  # 1234; record this to replay an unseeded run
+```
 
 ---
 
 ## Timers in Headless Mode
 
-Timers work with simulation time. Timer callbacks receive `(timer_object, runtime_ms)`:
+Timers run on simulation time in headless mode, so they fire deterministically. Timer callbacks receive `(timer_object, runtime_ms)`:
 
 ```python
 import mcrfpy
@@ -109,13 +129,14 @@ t.stop()      # Stop the timer
 t.pause()     # Pause (can resume later)
 t.resume()    # Resume after pause
 t.restart()   # Restart from beginning
+t.start()     # Start (or re-add) the timer
 
 # Properties
 t.name        # Timer name (str)
 t.interval    # Interval in ms (int)
-t.active      # Is timer running? (bool)
-t.paused      # Is timer paused? (bool)
-t.stopped     # Is timer stopped? (bool)
+t.active      # Running state (bool, read-write)
+t.paused      # Is timer paused? (bool, read-only)
+t.stopped     # Is timer stopped? (bool, read-only)
 t.remaining   # Time until next fire, in ms (int, read-only)
 t.once        # Fire only once? (bool)
 t.callback    # The callback function
@@ -266,10 +287,16 @@ for i in range(100):
 ## API Reference
 
 **Module Functions:**
-- `mcrfpy.step(dt=None)` - Advance simulation time
+- `mcrfpy.step(dt=None)` - Run one full simulation frame
   - `dt` (float or None): Seconds to advance, or None for next event
   - Returns: Actual time advanced (float)
   - In windowed mode: Returns 0.0 (no-op)
+  - Raises `RuntimeError` if called from a background thread holding `mcrfpy.lock()`
+- `mcrfpy.advance(ms)` - Advance the simulation clock by `ms` milliseconds (int >= 0, headless only)
+- `mcrfpy.get_metrics()["simulation_time_ms"]` - Simulated milliseconds (`"runtime"` is wall-clock seconds)
+- `mcrfpy.set_random_seed(n)` / `mcrfpy.get_random_seed()` - Seed / read the engine's random streams
+
+A headless `--exec` script must end with `sys.exit()`, since `step()`/`advance()` are the only headless clock; pass `--run-forever` for a long-lived self-driving headless process.
 
 **Automation Functions:**
 - `automation.screenshot(filename)` - Capture current frame

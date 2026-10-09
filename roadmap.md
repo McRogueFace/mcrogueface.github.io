@@ -6,6 +6,8 @@ mcrf:
   objects: []
   diataxis: meta
   disposition: rewrite-pending
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Roadmap & Future
@@ -19,40 +21,37 @@ mcrf:
 
 ---
 
-## Current Status: 0.2.1-prerelease-7drl2026
+## Current Status: 0.2.8 released, 0.3.0 in preparation
 
 <div class="status-banner">
-  <h3>Preparing for 7DRL 2026!</h3>
-  <p>Active development toward the Seven Day Roguelike Challenge</p>
+  <h3>0.3.0: Python 3.15</h3>
+  <p>The current release is 0.2.8. The next release, 0.3.0, embeds CPython 3.15 and is being prepared now.</p>
 </div>
 
-### Recent Achievements
+### What shipped since 0.2.8 (on master, headed for 0.3.0)
 
-- **HeightMap System** - Complete procedural terrain generation toolkit
-- **BSP Dungeons** - Binary Space Partitioning with room adjacency
-- **Alignment System** - Reactive UI positioning (9 anchor points)
-- **Dijkstra-to-HeightMap** - Pathfinding data for procgen
-- **Test Modernization** - pytest integration with `mcrfpy.step()` pattern
+- **Python 3.15** - CPython 3.15.0 is embedded on Linux, Windows and the web build. `mcrfpy` refuses to import in subinterpreters, and release builds keep frame pointers so `perf` and gdb can unwind from Python through the engine.
+- **Grid type split** - `GridData` (the map: cells, layers, entities, FOV, pathfinding) is now public and separate from `GridView` (the drawable camera). `mcrfpy.Grid` is the same type as `GridView`. `entity.grid` now returns a `GridData`.
+- **Grid input works again** - cell callbacks, hover, clickable overlay children, and several views over one map.
+- **About 33% faster** overall than 0.2.8 on the headless Crucible benchmark, with dense grid storage, O(1) `grid.entities` indexing and idle-view render caching.
+- **Zero-copy numpy views** - `with layer.edit() as view:` on color and tile layers, and the buffer protocol on `DiscreteMap`.
+- **Deterministic headless simulation** - `mcrfpy.step()` is a full simulation frame, `mcrfpy.advance(ms)` advances simulation time, and `mcrfpy.set_random_seed()` seeds the engine's random streams.
+- **`GridData.observe()`** - snapshot what an observer sees through a field of view (experimental).
+- **Fixes** - `DijkstraMap.path_from()` no longer returns its path reversed, `.parent` and `find()` keep Python subclass identity, and `mcrfpy.lock()` deadlocks in headless and multi-thread use are gone.
+- **Docs are tests** - the site's code samples run in the engine's test suite.
+
+The full list, including breaking changes, is in the 0.3.0 release notes in the engine repository (`docs/release-notes-0.3.0.md`). Progress is tracked on the [0.3.0 release board](https://dev.ffwf.net/forgejo/john/McRogueFace/projects/8).
+
+### Still being finished for 0.3.0
+
+- Bug fixes: leaks in position setters and `get_metrics()`, `--exec` tracebacks, a flaky audio teardown in the test suite, and project scaffolding for the new Python version.
+- `Sound.play_varied()` will play on a separate voice so the variation is actually heard.
+- Timers will catch up across a wide step, so an interval of T over a long span fires the expected number of times.
+- `clear()` will be added to `UICollection` and `EntityCollection`.
+- `VisibilityMask` will get value equality and hashing.
+- `--audio-off` / `config.audio_enabled` will be made to work.
 
 For complete development history, see [Project History](history.md).
-
----
-
-## Immediate Milestone: 7DRL 2026
-
-**Seven Day Roguelike Challenge**
-February 28 - March 8, 2026
-
-### Goals
-- Stable engine for jam participants
-- Complete documentation and tutorials
-- Performance validated for typical roguelike scope
-
-### Pre-Jam Checklist
-- [ ] Documentation audit complete
-- [ ] All tutorials use modern API
-- [ ] Quick-reference verified accurate
-- [ ] Example games runnable
 
 ---
 
@@ -67,7 +66,7 @@ The following major systems are **implemented and functional**:
 - **Input System** - Keyboard/Mouse classes with state queries
 
 ### Grid & Entities
-- **Grid Rendering** - Chunk-based with dirty flags and RenderTexture caching
+- **Grid Rendering** - `GridView` cameras over a shared `GridData`, with dirty tracking and RenderTexture caching
 - **Entity System** - SpatialHash for O(1) queries, 5000+ entity benchmarks
 - **FOV System** - Thread-safe field-of-view with configurable algorithms
 - **Pathfinding API** - A* and Dijkstra with HeightMap integration
@@ -90,14 +89,14 @@ The following major systems are **implemented and functional**:
 
 ---
 
-## Version 1.0 Target: Mid-2026
+## Version 1.0 Target
 
 ### Remaining Work
 
 #### API Stability
-- [ ] Finalize Scene/Timer/Animation APIs
-- [ ] Complete deprecation of old patterns
-- [ ] Comprehensive test coverage
+- [ ] Finalize Scene/Timer/Animation APIs (the public surface is already locked behind a snapshot test, and breaking changes are being bundled)
+- [x] Complete deprecation of old patterns (camelCase module functions, `sprite_number`, string enum comparisons removed)
+- [ ] Comprehensive test coverage (the suite is at 639 tests, up from about 300 at 0.2.8)
 
 #### Documentation
 - [ ] All docs using modern API patterns
@@ -173,8 +172,10 @@ The following have been evaluated and deemed misaligned with McRogueFace's begin
 | Nov 2024 | Python 3.14, Grid layers, drawing primitives |
 | Dec 2025 | Performance optimizations, LLM research features |
 | Jan 2026 | HeightMap, BSP, Alignment, test modernization |
-| **Feb-Mar 2026** | **7DRL 2026 target** |
-| Mid 2026 | Version 1.0 target |
+| Feb-Mar 2026 | 7DRL 2026 |
+| Mar-Jul 2026 | 0.2.8, API freeze work, fuzz-driven bug sweep, Grid type split |
+| **Oct 2026** | **0.3.0 in preparation (Python 3.15)** |
+| TBD | Version 1.0 |
 
 For detailed month-by-month history, see [Project History](history.md).
 

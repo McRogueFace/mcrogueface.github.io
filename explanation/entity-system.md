@@ -3,6 +3,8 @@ mcrf:
   objects: [Entity, Grid, ColorLayer]
   diataxis: explanation
   disposition: needs-review
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # The Entity System
@@ -13,8 +15,8 @@ mcrf:
 
 An Entity is a "discrete, moveable object" that lives on a Grid. This relationship is bidirectional:
 
-- Entities reference their grid via `entity.grid`
-- Grids track entities via `grid.entities` (an EntityCollection)
+- Entities reference their grid via `entity.grid`, which returns the map itself (a `GridData`, not the drawable `Grid`/`GridView`). Assigning either a `GridData` or a view attaches the entity.
+- Grids track entities via `grid.entities` (an EntityCollection, vector-backed: indexing is O(1), and the same collection is shared by every view of the map)
 
 An entity can only exist on 0 or 1 grids at a time. Adding an entity to a new grid automatically removes it from the old one. I want you to think of an Entity as "the" character, item, or object being interacted with. If you have a villain or companion that leaves the map and will return again, setting `villain.grid = None` will move that entity to "nowhere" - not visible on screen in any Grid. You can still interact with their object with that variable, though, and add them to a different Grid later on. In fact, `villain.die()` will also remove the villain from the Grid: but death's permanence is up to you.
 
@@ -23,6 +25,8 @@ An entity can only exist on 0 or 1 grids at a time. Adding an entity to a new gr
 1. **Automatic SpatialHash updates**: When an entity moves, the spatial index updates automatically
 2. **Efficient C++ iteration**: The collection lives in C++, avoiding Python overhead for bulk operations
 3. **Clean subclassing**: Python users subclass Entity; render-relevant properties stay in C++
+
+Python identity is stable: `grid.entities[0]` and `entity.grid` hand back the same wrapper object every time, and while an entity is on a grid its Python subclass wrapper is kept alive, so attributes you set on a `GoblinEntity` survive even if you drop your own references.
 
 Emphasis on subclassing: if you create a new Python class that inherits from `mcrfpy.Entity`, that entity can be placed on a grid. This means all of your custom behavior can be entrusted to McRogueFace's object handling, and your custom `GoblinEntity` or `HeroEntity` can carry all the data related to their health bars or inventory.
 

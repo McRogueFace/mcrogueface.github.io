@@ -5,6 +5,8 @@ mcrf:
   objects: []
   diataxis: reference
   disposition: needs-review
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Reference
@@ -54,7 +56,7 @@ Detailed reference for every McRogueFace object.
 
 | Object | Description |
 |--------|-------------|
-| [Grid](objects/Grid) | Tile-based game world |
+| [Grid](objects/Grid) | Tile-based game world: `GridData` (the map) and `GridView` (the drawable camera); `Grid` is an alias of `GridView` ([GridData](reference/generated/GridData), [GridView](reference/generated/GridView)) |
 | [GridPoint](objects/GridPoint) | Individual tile data (walkable, transparent) |
 | [Entity](objects/Entity) | Game objects that exist on grids (per-entity FOV memory via `perspective_map`) |
 | [TileLayer](objects/TileLayer) | Tile sprite layer for grids |
@@ -115,7 +117,7 @@ Detailed reference for every McRogueFace object.
 
 ## Module Functions
 
-For every top-level `mcrfpy` function (`step`, `find`, `find_all`, `get_metrics`, `bresenham`, the benchmark API, ...), see the auto-generated [Module Functions](reference/generated/functions) reference, extracted directly from the C++ docstrings.
+For every top-level `mcrfpy` function (`step`, `advance`, `lock`, `find`, `find_all`, `get_metrics`, `bresenham`, the benchmark API, ...), see the auto-generated [Module Functions](reference/generated/functions) reference, extracted directly from the C++ docstrings.
 
 ## Quick Reference
 

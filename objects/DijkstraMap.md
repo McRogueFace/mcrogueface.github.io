@@ -5,8 +5,8 @@ mcrf:
   objects: [DijkstraMap, AStarPath, Grid]
   diataxis: reference
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # DijkstraMap
@@ -60,8 +60,8 @@ Dijkstra maps are cached by the Grid. Calling `get_dijkstra_map()` with the same
 | Method | Description |
 |--------|-------------|
 | `distance(pos)` | Get distance from pos (Vector, Entity, or (x, y) tuple) to root, or `None` if unreachable |
-| `path_from(pos)` | Get complete path from pos to root as an `AStarPath` |
-| `step_from(pos)` | Get next step toward root as a Vector, or `None` if at root/unreachable |
+| `path_from(pos)` | Get complete path from pos to root as an `AStarPath`, ordered from `pos` toward the root (`origin` is `pos`, `destination` is the root) |
+| `step_from(pos)` | Get next step toward root as a Vector (always a cell adjacent to `pos`), or `None` if at root/unreachable |
 | `descent_step(pos)` | Get the adjacent cell with the lowest distance (steepest single-hop descent) |
 | `invert()` | Return a new `DijkstraMap` with distances inverted (a "flee" field), root unchanged |
 | `to_heightmap(size=None, unreachable=-1.0)` | Convert distances to a `HeightMap` for visualization |

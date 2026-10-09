@@ -5,8 +5,8 @@ mcrf:
   objects: [Scene, Caption, Sprite, Frame, Grid, Entity, Timer, Color, Alignment, DijkstraMap]
   diataxis: reference
   disposition: current
-  verified: "0.2.9-dev"
-  verified_commit: b6720f6
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # McRogueFace Quick Reference
@@ -292,14 +292,41 @@ music.play()
 ## Headless Mode & Testing
 
 ```python
-# Advance simulation time (seconds); timers fire at most ONCE per step call
+# step(dt) runs one FULL simulation frame (seconds): timers, animations,
+# Scene.update, transitions - everything except render and input
 mcrfpy.step(0.1)
-mcrfpy.step(0.1)  # call repeatedly for repeated timer fires
+
+# advance(ms) moves the simulation clock by exactly ms milliseconds (int)
+mcrfpy.advance(250)
+
+# Reproducible randomness (entity behaviors, Sound.play_varied)
+mcrfpy.set_random_seed(42)
+mcrfpy.get_random_seed()   # -> 42
 
 # Screenshots (synchronous in headless)
 from mcrfpy import automation
 automation.screenshot("game.png")
 ```
+
+A headless `--exec` script must end with `sys.exit(0)` (or pass `--run-forever`),
+because `step()` is the only clock.
+
+## Observing a Map
+
+`GridData.observe()` returns an immutable snapshot of what an observer can see
+(`view.grid_data` gives the map from a `Grid`; it does not touch the shared
+`compute_fov()` state):
+
+```python
+snap = grid.grid_data.observe(origin=(5, 5), fov_radius=8)
+snap["tick"], snap["mask"], snap["walkable"], snap["transparent"], snap["entities"]
+```
+
+## Background Threads
+
+Touch engine objects from a worker thread only inside `with mcrfpy.lock():` -
+mutation only, with I/O outside the block. Calling `mcrfpy.step()` or
+`mcrfpy.advance()` while holding the lock raises `RuntimeError`.
 
 ## Common Patterns
 

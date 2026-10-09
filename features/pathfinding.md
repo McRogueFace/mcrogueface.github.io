@@ -3,8 +3,8 @@ mcrf:
   objects: [Grid, Entity, DijkstraMap, AStarPath, Behavior]
   diataxis: howto
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Pathfinding
@@ -136,13 +136,14 @@ single step toward it:
 # Compute from player's grid position
 dijkstra = grid.get_dijkstra_map(player.grid_pos)
 
-# Full path from enemy back to player
+# Full path from enemy to the root (player), in walking order:
+# path.walk() yields the first step first
 path = dijkstra.path_from(enemy.grid_pos)
 if path:
     next_pos = path.walk()
     enemy.grid_pos = next_pos
 
-# Or just take one step toward the root without building a full path
+# Or just take one step toward the root (an adjacent cell) without building a full path
 step = dijkstra.step_from(enemy.grid_pos)
 if step is not None:
     enemy.grid_pos = step

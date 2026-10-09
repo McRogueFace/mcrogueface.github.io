@@ -6,6 +6,8 @@ mcrf:
   objects: []
   diataxis: meta
   disposition: rewrite-pending
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # McRogueFace Project History
@@ -150,6 +152,19 @@ Incremental improvements and API refinement between jam events.
 
 ---
 
+## 0.2.8 and the 0.3.0 Cycle (2026)
+
+**0.2.8** was tagged on June 30, 2026. The 0.3.0 cycle that followed (in development as of October 2026) is the Python 3.15 release. The draft release notes in the engine repo (`docs/release-notes-0.3.0.md`) are the full list; the highlights:
+
+- **Python 3.15**: CPython 3.15.0 is embedded on Linux, Windows and WebAssembly. The `mcrfpy` module uses multi-phase initialization and refuses to load in subinterpreters. Release builds keep frame pointers (PEP 831), so `perf` and gdb can unwind from Python through the engine.
+- **Grid type split**: `UIGrid` was removed. `GridData` (the map: cells, layers, entities, FOV, pathfinding) is now public and not drawable; `GridView` (the drawable camera) carries position, size, zoom and cell callbacks. `mcrfpy.Grid` is the same type as `GridView`.
+- **Faster and leaner**: the chunk system was replaced by dense walkable/transparent arrays, idle grid views no longer re-render, and the new Crucible benchmark measures about 33% faster than 0.2.8.
+- **Headless simulation**: `mcrfpy.step()` is now a full simulation frame, `mcrfpy.advance()` and `set_random_seed()` were added, and `GridData.observe()` snapshots what an observer sees.
+- **Threading**: `mcrfpy.lock()` is a tested frame barrier for background threads.
+- **Docs as tests**: the site's code samples run in the engine test suite (639 tests).
+
+---
+
 ## Version History
 
 | Version | Date | Milestone |
@@ -157,7 +172,9 @@ Incremental improvements and API refinement between jam events.
 | Initial | Feb 2023 | Proof of concept |
 | 7DRL 2024 | Mar 2024 | First playable games |
 | 0.2.0-prerelease | Jan 2026 | 7DRL 2026 preparation |
-| 0.2.1-prerelease | Jan 2026 | Current development |
+| 0.2.1-prerelease | Jan 2026 | Development build |
+| 0.2.8 | Jun 2026 | Released |
+| 0.3.0 | In development | Python 3.15, Grid type split |
 
 ---
 

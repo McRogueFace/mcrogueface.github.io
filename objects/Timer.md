@@ -5,8 +5,8 @@ mcrf:
   objects: [Timer, Key, InputState]
   diataxis: reference
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Timer
@@ -73,9 +73,11 @@ The callback receives two arguments:
 ```python
 def my_callback(timer, runtime):
     # timer: the Timer instance that fired
-    # runtime: total milliseconds since game started
+    # runtime: engine time in milliseconds when the timer fired
     pass
 ```
+
+In headless mode, timers run on simulation time: they fire only as `mcrfpy.step(dt)` / `mcrfpy.advance(ms)` move the simulation clock, and the same script produces the same firings every run.
 
 ## Properties
 

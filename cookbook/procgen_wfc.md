@@ -7,8 +7,8 @@ mcrf:
   objects: [Grid, Texture, Scene]
   diataxis: howto
   disposition: current
-  verified: "0.2.8-dev"
-  verified_commit: 3a85dd8
+  verified: "0.3.0-dev"
+  verified_commit: 73acab0
 ---
 
 # Wave Function Collapse
